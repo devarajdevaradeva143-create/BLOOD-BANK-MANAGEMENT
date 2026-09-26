@@ -1,7 +1,8 @@
 import { config } from '../config/env.js';
 import { DONOR_KNOWLEDGE, REQUEST_KNOWLEDGE } from '../data/bloodbank-faq.js';
 
-const OPENAI_URL = 'https://api.openai.com/v1/chat/completions';
+const GEMINI_URL = (model) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 function systemPrompt(lang, page) {
   const languageLine =
@@ -37,7 +38,7 @@ function systemPrompt(lang, page) {
   ].join('\n');
 }
 
-// Scoped keyword fallback when OPENAI_API_KEY is missing or OpenAI fails.
+// Scoped keyword fallback when GEMINI_API_KEY is missing or Gemini fails.
 // page='donor' -> donor-only answers, redirects request topics out.
 // page='request' -> request-only answers, redirects donor topics out.
 export function fallbackReply(text, lang = 'en', page = 'donor') {
@@ -116,6 +117,7 @@ export function fallbackReply(text, lang = 'en', page = 'donor') {
 
 export async function chatCompletion(messages, { lang = 'en', page = 'donor' } = {}) {
   const apiKey = config.chat.apiKey;
+  const model = config.chat.model;
   const lastUser = [...messages].reverse().find((m) => m.role === 'user');
 
   if (!apiKey) {
@@ -125,28 +127,25 @@ export async function chatCompletion(messages, { lang = 'en', page = 'donor' } =
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
   try {
-    const res = await fetch(OPENAI_URL, {
+    const url = `${GEMINI_URL(model)}?key=${apiKey}`;
+    const contents = [
+      { role: 'user', parts: [{ text: systemPrompt(lang, page) }] },
+      ...messages.map((m) => ({ role: m.role, parts: [{ text: m.content }] })),
+    ];
+    const res = await fetch(url, {
       method: 'POST',
       signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.chat.model,
-        temperature: 0.3,
-        max_tokens: config.chat.maxTokens,
-        messages: [{ role: 'system', content: systemPrompt(lang, page) }, ...messages],
-      }),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents }),
     });
     if (!res.ok) {
       const errText = await res.text().catch(() => '');
-      throw new Error(`OpenAI ${res.status}: ${errText.slice(0, 200)}`);
+      throw new Error(`Gemini ${res.status}: ${errText.slice(0, 200)}`);
     }
     const data = await res.json();
-    const reply = data?.choices?.[0]?.message?.content?.trim();
-    if (!reply) throw new Error('Empty OpenAI reply');
-    return { reply, fallback: false, model: config.chat.model };
+    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+    if (!reply) throw new Error('Empty Gemini reply');
+    return { reply, fallback: false, model };
   } catch (err) {
     console.error('chatCompletion failed, using fallback:', err?.message || err);
     return { reply: fallbackReply(lastUser?.content, lang, page), fallback: true, model: 'faq-fallback' };

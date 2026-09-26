@@ -42,8 +42,8 @@ export const config = {
   pepper: process.env.PIN_PEPPER || process.env.PEPPER || '',
 
   chat: {
-    apiKey: process.env.OPENAI_API_KEY || '',
-    model: process.env.OPENAI_MODEL || 'gpt-4o-mini',
+    apiKey: process.env.GEMINI_API_KEY || '',
+    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
     maxTokens: Number(process.env.CHAT_MAX_TOKENS || 500),
   },
 
