@@ -101,6 +101,13 @@ export default function DonorLogin() {
     navigate("/register");
   };
 
+  const handleDemoLogin = () => {
+    setEmail(DEMO_DONOR.email);
+    setPassword(DEMO_DONOR.password);
+    setError("");
+    setNote("");
+  };
+
   return (
     <div className={s["login-page"]}>
       {/* LEFT SECTION */}
@@ -239,7 +246,10 @@ export default function DonorLogin() {
           </form>
 
           <div className={s["demo-hint"]}>
-            <strong>{t("login.demo.label")}:</strong> {t("login.demo.value")}
+            <span>{t("login.demo.label")}: {t("login.demo.value")}</span>
+            <button type="button" className={s["demo-login-btn"]} onClick={handleDemoLogin}>
+              {t("login.demo.autofill")}
+            </button>
           </div>
 
           <div className={s["or-divider"]}>

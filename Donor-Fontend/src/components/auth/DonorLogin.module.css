@@ -445,24 +445,43 @@
 /* ============ DEMO HINT ============ */
 
 .demo-hint {
-  margin-top: 16px;
-  padding: 10px 12px;
-  border: 1px dashed #f0b5b5;
-  border-radius: 8px;
-  background: #fffafa;
-  color: #7a4b4b;
-  font-size: 13px;
-  text-align: center;
+    margin-top: 16px;
+    padding: 10px 12px;
+    border: 1px dashed #f0b5b5;
+    border-radius: 8px;
+    background: #fffafa;
+    color: #7a4b4b;
+    font-size: 13px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
 }
 
 :global(.dark) .demo-hint {
-  border-color: rgba(217, 35, 35, 0.5);
-  background: rgba(217, 35, 35, 0.08);
-  color: #fca5a5;
+    border-color: rgba(217, 35, 35, 0.5);
+    background: rgba(217, 35, 35, 0.08);
+    color: #fca5a5;
 }
 
-.demo-hint strong {
-  color: #dc2626;
+.demo-login-btn {
+    padding: 3px 12px;
+    border: 1px solid #dc2626;
+    border-radius: 6px;
+    background: #dc2626;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.15s ease;
+    white-space: nowrap;
+}
+
+.demo-login-btn:hover {
+    background: #b91c1c;
+    border-color: #b91c1c;
 }
 
 /* ============ OR ============ */
