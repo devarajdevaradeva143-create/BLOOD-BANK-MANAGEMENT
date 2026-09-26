@@ -1,172 +1,7 @@
-.register-page {
-  min-height: 100vh;
-  display: flex;
-  background: #f8fafc;
-  font-family: Inter, Arial, Helvetica, sans-serif;
-}
-
-:global(.dark) .register-page {
-  background: #0f172a;
-}
-
-/* ============ LEFT ============ */
-
-.register-info {
-  width: 40%;
-  min-height: 100vh;
-  padding: 45px 55px;
-  position: relative;
-  overflow: hidden;
-  color: #ffffff;
-  background: radial-gradient(
-    130% 130% at 0% 0%,
-    #b91c1c 0%,
-    #991b1b 42%,
-    #7f1d1d 100%
-  );
-}
-
-:global(.dark) .register-info {
-  background: radial-gradient(
-    130% 130% at 0% 0%,
-    #7f1d1d 0%,
-    #5f1414 45%,
-    #400d0d 100%
-  );
-}
-
-.hero-blob-1 {
-  position: absolute;
-  top: -130px;
-  right: -110px;
-  width: 340px;
-  height: 340px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.07);
-  pointer-events: none;
-}
-
-.hero-blob-2 {
-  position: absolute;
-  bottom: -150px;
-  left: -130px;
-  width: 380px;
-  height: 380px;
-  border-radius: 50%;
-  background: rgba(0, 0, 0, 0.12);
-  pointer-events: none;
-}
-
-.hero-blob-3 {
-  position: absolute;
-  bottom: 100px;
-  right: -70px;
-  width: 210px;
-  height: 210px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.05);
-  pointer-events: none;
-}
-
-.register-brand {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.register-brand-icon {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  backdrop-filter: blur(6px);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.register-brand h1 {
-  margin: 0;
-  color: #ffffff;
-  font-size: 32px;
-}
-
-.register-brand p {
-  margin: 4px 0 0;
-  color: rgba(255, 255, 255, 0.75);
-  font-weight: 600;
-}
-
-.register-message {
-  position: relative;
-  z-index: 1;
-  margin-top: 100px;
-  max-width: 480px;
-}
-
-.register-message h2 {
-  color: #ffffff;
-  font-size: 34px;
-  margin-bottom: 20px;
-}
-
-.register-message > p {
-  color: rgba(255, 255, 255, 0.82);
-  line-height: 1.7;
-  font-size: 17px;
-}
-
-.register-highlights {
-  margin-top: 45px;
-  display: flex;
-  flex-direction: column;
-  gap: 25px;
-}
-
-.register-highlights > div {
-  display: flex;
-  gap: 16px;
-  align-items: center;
-}
-
-.register-highlights span {
-  width: 50px;
-  height: 50px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.register-highlights span svg {
-  width: 22px;
-  height: 22px;
-  color: #ffffff;
-}
-
-.register-highlights h3 {
-  margin: 0 0 5px;
-  color: #ffffff;
-  font-size: 16px;
-}
-
-.register-highlights p {
-  margin: 0;
-  color: rgba(255, 255, 255, 0.72);
-  font-size: 14px;
-}
-
 /* ============ RIGHT ============ */
 
 .register-section {
-  width: 60%;
+  width: 52%;
   min-height: 100vh;
   padding: 35px 50px;
   display: flex;
@@ -468,26 +303,10 @@
 
 /* ============ RESPONSIVE ============ */
 
-@media (max-width: 1000px) {
-  .register-page {
-    flex-direction: column;
-  }
-
-  .register-info,
+@media (max-width: 900px) {
   .register-section {
     width: 100%;
     min-height: auto;
-  }
-
-  .register-info {
-    padding: 30px;
-  }
-
-  .register-message {
-    margin-top: 45px;
-  }
-
-  .register-section {
     padding: 30px 20px;
   }
 }
@@ -500,13 +319,5 @@
 
   .register-card {
     padding: 30px 22px;
-  }
-
-  .register-brand h1 {
-    font-size: 27px;
-  }
-
-  .register-message h2 {
-    font-size: 27px;
   }
 }

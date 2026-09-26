@@ -4,6 +4,7 @@ export default {
   "chat.placeholder": { en: "Ask about donation…", ta: "தானம் பற்றி கேளுங்கள்…" },
   "chat.open": { en: "Open chat", ta: "அரட்டையைத் திற" },
   "chat.close": { en: "Close chat", ta: "அரட்டையை மூடு" },
+  "chat.clear": { en: "Clear chat", ta: "உரையாடலை அழி" },
   "chat.greeting": {
     en: "Hi! I can help with eligibility, donation process, registration and FAQs.",
     ta: "வணக்கம்! தகுதி, தான செயல்முறை, பதிவு மற்றும் கேள்விகளில் உதவுவேன்.",

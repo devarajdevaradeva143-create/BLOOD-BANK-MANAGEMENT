@@ -9,6 +9,8 @@ import faq from "./faq";
 import contact from "./contact";
 import chat from "./chat";
 import login from "./login";
+import profile from "./profile";
+import donate from "./donate";
 
 export default {
   core,
@@ -22,4 +24,6 @@ export default {
   faq,
   contact,
   chat,
+  profile,
+  donate,
 };

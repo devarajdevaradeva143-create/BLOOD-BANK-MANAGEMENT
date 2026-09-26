@@ -45,7 +45,7 @@ export default {
   "signup.field.dob": { en: "Date of Birth", ta: "பிறந்த தேதி" },
   "signup.field.gender": { en: "Gender", ta: "பாலினம்" },
   "signup.field.bloodGroup": { en: "Blood Group", ta: "இரத்தக் குழு" },
-  "signup.field.address": { en: "Address", ta: "முகவரி" },
+  "signup.field.district": { en: "District", ta: "மாவட்டம்" },
   "signup.field.password": { en: "Password", ta: "கடவுச்சொல்" },
   "signup.field.confirmPassword": {
     en: "Confirm Password",
@@ -68,9 +68,9 @@ export default {
     en: "Select Blood Group",
     ta: "இரத்தக் குழுவைத் தேர்ந்தெடுக்கவும்",
   },
-  "signup.placeholder.address": {
-    en: "Enter your address",
-    ta: "உங்கள் முகவரியை உள்ளிடவும்",
+  "signup.placeholder.district": {
+    en: "Select your district",
+    ta: "உங்கள் மாவட்டத்தைத் தேர்ந்தெடுக்கவும்",
   },
   "signup.placeholder.password": { en: "Create password", ta: "கடவுச்சொல் உருவாக்கவும்" },
   "signup.placeholder.confirmPassword": {
@@ -81,6 +81,10 @@ export default {
   "signup.option.female": { en: "Female", ta: "பெண்" },
   "signup.option.other": { en: "Other", ta: "மற்றவை" },
   "signup.strength.label": { en: "Password Strength", ta: "கடவுச்சொல் வலிமை" },
+  "password.generate": {
+    en: "Suggest a strong password",
+    ta: "வலுவான கடவுச்சொல்லைப் பரிந்துரைக்கவும்",
+  },
   "signup.strength.weak": { en: "Weak", ta: "பலவீனம்" },
   "signup.strength.medium": { en: "Medium", ta: "நடுத்தரம்" },
   "signup.strength.strong": { en: "Strong", ta: "வலுவானது" },

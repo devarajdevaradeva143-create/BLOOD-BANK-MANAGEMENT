@@ -7,28 +7,24 @@ import {
   HeartHandshake,
   Loader2,
   ShieldCheck,
+  Sparkles,
+  Users,
 } from "lucide-react";
 import s from "./DonorRegister.module.css";
+import ls from "./DonorLogin.module.css";
 import { useLanguage } from "../../i18n/LanguageContext";
+import { TN_DISTRICTS } from "../../data/constants";
+import {
+  generateStrongPassword,
+  getPasswordStrength,
+} from "../../utils/passwordStrength";
 
-const HIGHLIGHTS = [
-  { key: "donate", Icon: Droplet },
-  { key: "save", Icon: HeartHandshake },
-  { key: "secure", Icon: ShieldCheck },
+const BENEFITS = [
+  { key: "save", Icon: Droplet },
+  { key: "community", Icon: Users },
+  { key: "safe", Icon: ShieldCheck },
+  { key: "regular", Icon: HeartHandshake },
 ];
-
-function getPasswordStrength(password) {
-  if (!password) return "";
-  let score = 0;
-  if (password.length >= 8) score++;
-  if (/[A-Z]/.test(password)) score++;
-  if (/[a-z]/.test(password)) score++;
-  if (/[0-9]/.test(password)) score++;
-  if (/[^A-Za-z0-9]/.test(password)) score++;
-  if (score <= 2) return "weak";
-  if (score <= 4) return "medium";
-  return "strong";
-}
 
 export default function DonorRegister() {
   const { t } = useLanguage();
@@ -41,7 +37,7 @@ export default function DonorRegister() {
     dob: "",
     gender: "",
     bloodGroup: "",
-    address: "",
+    district: "",
     password: "",
     confirmPassword: "",
   });
@@ -72,7 +68,7 @@ export default function DonorRegister() {
       !form.dob ||
       !form.gender ||
       !form.bloodGroup ||
-      !form.address ||
+      !form.district ||
       !form.password ||
       !form.confirmPassword
     ) {
@@ -144,17 +140,27 @@ export default function DonorRegister() {
 
   const strength = getPasswordStrength(form.password);
 
-  return (
-    <div className={s["register-page"]}>
-      {/* LEFT SIDE */}
-      <div className={s["register-info"]}>
-        <span className={s["hero-blob-1"]} aria-hidden="true" />
-        <span className={s["hero-blob-2"]} aria-hidden="true" />
-        <span className={s["hero-blob-3"]} aria-hidden="true" />
+  const handleSuggestPassword = () => {
+    const generated = generateStrongPassword();
+    setForm({
+      ...form,
+      password: generated,
+      confirmPassword: generated,
+    });
+    setError("");
+  };
 
-        <div className={s["register-brand"]}>
-          <div className={s["register-brand-icon"]}>
-            <HeartHandshake size={27} />
+  return (
+    <div className={ls["login-page"]}>
+      {/* LEFT SECTION — same blood bank details as login page */}
+      <div className={ls["login-info"]}>
+        <span className={ls["hero-blob-1"]} aria-hidden="true" />
+        <span className={ls["hero-blob-2"]} aria-hidden="true" />
+        <span className={ls["hero-blob-3"]} aria-hidden="true" />
+
+        <div className={ls.brand}>
+          <div className={ls["brand-icon"]}>
+            <HeartHandshake size={28} />
           </div>
           <div>
             <h1>Life Saver</h1>
@@ -162,28 +168,35 @@ export default function DonorRegister() {
           </div>
         </div>
 
-        <div className={s["register-message"]}>
-          <h2>{t("signup.info.heading")}</h2>
+        <div className={ls["info-content"]}>
+          <h2>{t("login.info.heading")}</h2>
 
-          <p>{t("signup.info.description")}</p>
+          <p className={ls["info-description"]}>{t("login.info.description")}</p>
 
-          <div className={s["register-highlights"]}>
-            {HIGHLIGHTS.map(({ key, Icon }) => (
-              <div key={key}>
-                <span>
+          <div className={ls.benefits}>
+            {BENEFITS.map(({ key, Icon }) => (
+              <div className={ls.benefit} key={key}>
+                <span className={ls["benefit-icon"]}>
                   <Icon />
                 </span>
-                <section>
-                  <h3>{t(`signup.highlight.${key}.title`)}</h3>
-                  <p>{t(`signup.highlight.${key}.text`)}</p>
-                </section>
+                <div>
+                  <h3>{t(`login.benefit.${key}.title`)}</h3>
+                  <p>{t(`login.benefit.${key}.text`)}</p>
+                </div>
               </div>
             ))}
           </div>
         </div>
+
+        <div className={ls["blood-illustration"]}>
+          <div className={ls["blood-drop"]}>
+            <Droplet />
+          </div>
+          <p>{t("login.illustration")}</p>
+        </div>
       </div>
 
-      {/* RIGHT SIDE */}
+      {/* RIGHT SECTION — register form */}
       <div className={s["register-section"]}>
         <div className={s["register-card"]}>
           <div className={s["register-icon"]}>
@@ -287,15 +300,20 @@ export default function DonorRegister() {
             </div>
 
             <div className={s["register-field"]}>
-              <label htmlFor="reg-address">{t("signup.field.address")} *</label>
-              <textarea
-                id="reg-address"
-                name="address"
-                placeholder={t("signup.placeholder.address")}
-                value={form.address}
+              <label htmlFor="reg-district">{t("signup.field.district")} *</label>
+              <select
+                id="reg-district"
+                name="district"
+                value={form.district}
                 onChange={handleChange}
-                rows="3"
-              />
+              >
+                <option value="">{t("signup.placeholder.district")}</option>
+                {TN_DISTRICTS.map((district) => (
+                  <option key={district} value={district}>
+                    {district}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className={s["form-row"]}>
@@ -312,6 +330,14 @@ export default function DonorRegister() {
                     value={form.password}
                     onChange={handleChange}
                   />
+                  <button
+                    type="button"
+                    aria-label={t("password.generate")}
+                    title={t("password.generate")}
+                    onClick={handleSuggestPassword}
+                  >
+                    <Sparkles />
+                  </button>
                   <button
                     type="button"
                     aria-label={

@@ -30,7 +30,7 @@ export default function EmergencyCta() {
               {t("home.emergency.call")}
             </a>
             <Link
-              to="/register"
+              to="/donate"
               className="inline-flex items-center justify-center gap-2 rounded-lg border-2 border-white/70 px-8 py-4 text-base font-bold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-brand-600"
             >
               <UserPlus className="h-5 w-5" />

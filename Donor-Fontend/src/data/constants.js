@@ -327,3 +327,32 @@ export const CONTACT_INFO = {
     "Life Saver Blood Bank Management in Tamil Nadu, 24 Anna Salai, Chennai, Tamil Nadu 600002",
   hours: "Mon – Sat: 8:00 AM – 8:00 PM  |  Emergency: 24/7",
 };
+
+export const MOCK_DONOR = {
+  name: "Arun Kumar",
+  email: "arun@example.com",
+  phone: "9876543210",
+  dob: "1990-05-15",
+  gender: "Male",
+  bloodGroup: "O+",
+  address: "123, Anna Salai, Chennai",
+  district: "Chennai",
+  donorId: "DB-2026001",
+  registrationDate: "2024-01-15",
+  lastDonationDate: "2025-09-20",
+  totalDonations: 12,
+  eligibilityStatus: "Eligible",
+  nextEligibleDate: "2025-12-19",
+  isActive: true,
+};
+
+export const DONATION_CENTERS = [
+  "Government General Hospital, Chennai",
+  "Stanley Medical College, Chennai",
+  "Coimbatore Medical College Hospital",
+  "Madurai Medical College Hospital",
+  "Sri Ramachandra Blood Bank, Chennai",
+  "JIPMER Blood Centre, Puducherry",
+  "Trichy SRM Blood Bank",
+  "Salem Government Hospital Blood Centre",
+];

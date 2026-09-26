@@ -1,4 +1,4 @@
-export default {
+﻿export default {
   "nav.home": { en: "Home", ta: "முகப்பு" },
   "nav.about": { en: "About", ta: "அறிமுகம்" },
   "nav.donate": { en: "Donate Blood", ta: "இரத்தம் வழங்குங்கள்" },
@@ -11,6 +11,7 @@ export default {
     en: "Blood Bank Management in Tamil Nadu",
     ta: "தமிழ்நாட்டில் இரத்த வங்கி மேலாண்மை",
   },
+  "nav.profile": { en: "My Profile", ta: "என் சுயவிவரம்" },
   "nav.donateNow": { en: "Donate Now", ta: "இப்போது வழங்குங்கள்" },
   "nav.openMenu": { en: "Open menu", ta: "மெனுவைத் திறக்கவும்" },
   "nav.closeMenu": { en: "Close menu", ta: "மெனுவை மூடவும்" },

@@ -1,6 +1,16 @@
 import { useState } from "react";
 import { Link, NavLink, useNavigate } from "react-router-dom";
-import { Droplet, Languages, LogIn, LogOut, Menu, Moon, Sun, X } from "lucide-react";
+import {
+  Droplet,
+  Languages,
+  LogIn,
+  LogOut,
+  Menu,
+  Moon,
+  Sun,
+  X,
+  User,
+} from "lucide-react";
 import { useTheme } from "../context/ThemeContext";
 import { useDonorAuth } from "../context/DonorAuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
@@ -23,9 +33,7 @@ export default function Navbar() {
   const links = [
     { to: "/", label: t("nav.home") },
     { to: "/about", label: t("nav.about") },
-    { to: "/register", label: t("nav.donate") },
-    { to: "/eligibility", label: t("nav.eligibility") },
-    { to: "/process", label: t("nav.process") },
+    { to: "/donate", label: t("nav.donate") },
     { to: "/benefits", label: t("nav.benefits") },
     { to: "/faq", label: t("nav.faq") },
     { to: "/contact", label: t("nav.contact") },
@@ -85,7 +93,7 @@ export default function Navbar() {
             className="flex h-9 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
           >
             <Languages className="h-4 w-4" aria-hidden="true" />
-            {lang === "en" ? "தமிழ்" : "EN"}
+            {lang === "en" ? "Tamil" : "EN"}
           </button>
 
           <button
@@ -101,22 +109,24 @@ export default function Navbar() {
             )}
           </button>
 
-          <Link
-            to="/register"
-            className="hidden items-center justify-center rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950 md:inline-flex"
-          >
-            {t("nav.donateNow")}
-          </Link>
-
           {isAuthenticated ? (
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="hidden items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white md:inline-flex"
-            >
-              <LogOut className="h-4 w-4" aria-hidden="true" />
-              {t("nav.logout")}
-            </button>
+            <>
+              <Link
+                to="/profile"
+                className="hidden items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-3 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-50 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white md:inline-flex"
+              >
+                <User className="h-4 w-4" aria-hidden="true" />
+                {t("nav.profile")}
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="hidden items-center justify-center gap-1.5 rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white md:inline-flex"
+              >
+                <LogOut className="h-4 w-4" aria-hidden="true" />
+                {t("nav.logout")}
+              </button>
+            </>
           ) : (
             <Link
               to="/login"
@@ -160,22 +170,25 @@ export default function Navbar() {
                 {link.label}
               </NavLink>
             ))}
-            <Link
-              to="/register"
-              onClick={closeMenu}
-              className="mt-2 inline-flex items-center justify-center rounded-lg bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-700 md:hidden"
-            >
-              {t("nav.donateNow")}
-            </Link>
             {isAuthenticated ? (
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
-              >
-                <LogOut className="h-4 w-4" aria-hidden="true" />
-                {t("nav.logout")}
-              </button>
+              <>
+                <Link
+                  to="/profile"
+                  onClick={closeMenu}
+                  className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  <User className="h-4 w-4" aria-hidden="true" />
+                  {t("nav.profile")}
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:bg-gray-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800"
+                >
+                  <LogOut className="h-4 w-4" aria-hidden="true" />
+                  {t("nav.logout")}
+                </button>
+              </>
             ) : (
               <Link
                 to="/login"

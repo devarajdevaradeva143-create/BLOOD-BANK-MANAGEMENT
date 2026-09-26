@@ -18,3 +18,22 @@ body {
   background-color: theme("colors.slate.950");
   color: theme("colors.slate.100");
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .certificate-print,
+  .certificate-print * {
+    visibility: visible;
+  }
+
+  .certificate-print {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    box-shadow: none;
+  }
+}

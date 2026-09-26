@@ -12,6 +12,7 @@ import {
   Users,
 } from "lucide-react";
 import s from "./DonorLogin.module.css";
+import ForgotPassword from "./ForgotPassword";
 import { useDonorAuth } from "../../context/DonorAuthContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 
@@ -40,6 +41,7 @@ export default function DonorLogin() {
     location.state?.justRegistered ? t("login.registered.success") : ""
   );
   const [loading, setLoading] = useState(false);
+  const [view, setView] = useState("login");
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -94,7 +96,15 @@ export default function DonorLogin() {
 
   const handleForgotPassword = () => {
     setError("");
-    setNote(t("login.forgot.note"));
+    setNote("");
+    setView("forgot");
+  };
+
+  const handleForgotBack = (emailUsed = "", message = "") => {
+    setView("login");
+    if (emailUsed) setEmail(emailUsed);
+    setError("");
+    setNote(message);
   };
 
   const handleRegister = () => {
@@ -161,10 +171,14 @@ export default function DonorLogin() {
             <Droplet size={32} />
           </div>
 
-          <h2>{t("login.title")}</h2>
-          <p className={s["login-subtitle"]}>{t("login.subtitle")}</p>
+          {view === "forgot" ? (
+            <ForgotPassword email={email} onBack={handleForgotBack} />
+          ) : (
+            <>
+              <h2>{t("login.title")}</h2>
+              <p className={s["login-subtitle"]}>{t("login.subtitle")}</p>
 
-          <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit}>
             {/* EMAIL */}
             <div className={s["form-group"]}>
               <label htmlFor="login-email">{t("login.email")}</label>
@@ -269,6 +283,8 @@ export default function DonorLogin() {
               {t("login.register")}
             </button>
           </p>
+            </>
+          )}
         </div>
       </div>
     </div>

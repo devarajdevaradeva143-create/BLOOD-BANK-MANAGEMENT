@@ -35,7 +35,7 @@ export default function Hero() {
 
             <div className="mt-8 flex flex-wrap gap-4">
               <Link
-                to="/register"
+                to="/donate"
                 className="inline-flex items-center gap-2 rounded-lg bg-brand-600 px-6 py-3 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-slate-950"
               >
                 <Heart className="h-4 w-4" />

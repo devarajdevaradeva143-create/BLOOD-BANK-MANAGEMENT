@@ -16,7 +16,7 @@ import {
 } from "../../data/constants";
 import { useLanguage } from "../../i18n/LanguageContext";
 
-export default function EligibilityChecker() {
+export default function EligibilityChecker({ onProceed, proceedLabel }) {
   const [answers, setAnswers] = useState({ ...EMPTY_ELIGIBILITY });
   const { t } = useLanguage();
 
@@ -155,13 +155,24 @@ export default function EligibilityChecker() {
                 {t("eligibility.eligible.text")}
               </p>
               <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  to="/register"
-                  className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
-                >
-                  {t("eligibility.eligible.proceed")}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                {onProceed ? (
+                  <button
+                    type="button"
+                    onClick={onProceed}
+                    className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
+                  >
+                    {proceedLabel ?? t("eligibility.eligible.proceed")}
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                ) : (
+                  <Link
+                    to="/register"
+                    className="inline-flex items-center gap-2 rounded-xl bg-brand-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-700"
+                  >
+                    {t("eligibility.eligible.proceed")}
+                    <ArrowRight className="h-4 w-4" />
+                  </Link>
+                )}
                 <Link
                   to="/process"
                   className="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-800 transition-colors hover:bg-emerald-100 dark:border-emerald-700 dark:bg-slate-900 dark:text-emerald-300 dark:hover:bg-emerald-950/60"

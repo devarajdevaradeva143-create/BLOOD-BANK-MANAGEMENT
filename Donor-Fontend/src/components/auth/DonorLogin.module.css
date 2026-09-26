@@ -596,3 +596,78 @@
     font-size: 27px;
   }
 }
+
+/* ============ FORGOT PASSWORD ============ */
+
+.forgot-steps {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.forgot-steps span {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.forgot-steps .step-active {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+:global(.dark) .forgot-steps span {
+  background: #1e293b;
+  color: #94a3b8;
+}
+
+:global(.dark) .forgot-steps .step-active {
+  background: rgba(185, 28, 28, 0.25);
+  color: #f87171;
+}
+
+.forgot-back {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 16px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #b91c1c;
+  font-size: 14px;
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.forgot-back:hover {
+  text-decoration: underline;
+}
+
+:global(.dark) .forgot-back {
+  color: #f87171;
+}
+
+.password-strength {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.password-strength.weak {
+  color: #dc2626;
+}
+
+.password-strength.medium {
+  color: #c47a00;
+}
+
+.password-strength.strong {
+  color: #218838;
+}

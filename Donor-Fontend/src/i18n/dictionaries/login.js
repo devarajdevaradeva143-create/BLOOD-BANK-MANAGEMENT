@@ -57,9 +57,65 @@ export default {
     ta: "பதிவு வெற்றிகரமாக! உங்கள் மின்னஞ்சல் மற்றும் கடவுச்சொல்லுடன் உள்நுழையவும்.",
   },
   "login.forgot": { en: "Forgot Password?", ta: "கடவுச்சொல் மறந்துவிட்டதா?" },
-  "login.forgot.note": {
-    en: "Demo mode: password reset is not available. Register a new account or use the demo login below.",
-    ta: "டெமோ முறை: கடவுச்சொல் மீட்டமைப்பு கிடைக்காது. புதிய கணக்கைப் பதிவு செய்யவும் அல்லது கீழே உள்ள டெமோ உள்நுழைவைப் பயன்படுத்தவும்.",
+  "login.forgot.title": { en: "Reset Password", ta: "கடவுச்சொல் மீட்டமைப்பு" },
+  "login.forgot.subtitle": {
+    en: "Verify your email, enter the OTP and set a new password",
+    ta: "மின்னஞ்சலை உறுதிசெய்து, OTP-ஐ உள்ளிட்டு புதிய கடவுச்சொல்லை அமைக்கவும்",
+  },
+  "login.forgot.back": { en: "Back to Login", ta: "உள்நுழைவுக்குத் திரும்பு" },
+  "login.forgot.step1": { en: "1 · Verify Email", ta: "1 · மின்னஞ்சல் சரிபார்ப்பு" },
+  "login.forgot.step2": {
+    en: "2 · Set New Password",
+    ta: "2 · புதிய கடவுச்சொல்",
+  },
+  "login.forgot.sendOtp": { en: "Send OTP", ta: "OTP அனுப்பு" },
+  "login.forgot.sending": { en: "Sending OTP...", ta: "OTP அனுப்பப்படுகிறது..." },
+  "login.forgot.otpSent": {
+    en: "Demo mode: OTP generated successfully. Use this OTP: {otp}",
+    ta: "டெமோ முறை: OTP வெற்றிகரமாக உருவாக்கப்பட்டது. இந்த OTP-ஐப் பயன்படுத்தவும்: {otp}",
+  },
+  "login.forgot.otp": { en: "OTP", ta: "OTP" },
+  "login.forgot.otpPlaceholder": {
+    en: "Enter 6-digit OTP",
+    ta: "6 இலக்க OTP-ஐ உள்ளிடவும்",
+  },
+  "login.forgot.newPassword": { en: "New Password", ta: "புதிய கடவுச்சொல்" },
+  "login.forgot.newPasswordPlaceholder": {
+    en: "Enter new password",
+    ta: "புதிய கடவுச்சொல்லை உள்ளிடவும்",
+  },
+  "login.forgot.confirmPassword": {
+    en: "Confirm New Password",
+    ta: "புதிய கடவுச்சொல்லை உறுதிசெய்யவும்",
+  },
+  "login.forgot.confirmPasswordPlaceholder": {
+    en: "Re-enter new password",
+    ta: "புதிய கடவுச்சொல்லை மீண்டும் உள்ளிடவும்",
+  },
+  "login.forgot.reset": { en: "Reset Password", ta: "கடவுச்சொல்லை மீட்டமை" },
+  "login.forgot.resetting": {
+    en: "Resetting...",
+    ta: "மீட்டமைக்கப்படுகிறது...",
+  },
+  "login.forgot.success": {
+    en: "Password reset successful! Redirecting to login...",
+    ta: "கடவுச்சொல் மீட்டமைப்பு வெற்றி! உள்நுழைவுக்கு மாற்றப்படுகிறது...",
+  },
+  "login.forgot.resetSuccess": {
+    en: "Password changed successfully! Please login with your new password.",
+    ta: "கடவுச்சொல் வெற்றிகரமாக மாற்றப்பட்டது! புதிய கடவுச்சொல்லுடன் உள்நுழையவும்.",
+  },
+  "login.forgot.error.notFound": {
+    en: "No account found with this email. Please register first.",
+    ta: "இந்த மின்னஞ்சலுக்கு கணக்கு இல்லை. முதலில் பதிவு செய்யவும்.",
+  },
+  "login.forgot.error.otpRequired": {
+    en: "Please enter the OTP.",
+    ta: "OTP-ஐ உள்ளிடவும்.",
+  },
+  "login.forgot.error.otpInvalid": {
+    en: "Invalid or expired OTP. Please try again.",
+    ta: "OTP தவறானது அல்லது காலாவதியானது. மீண்டும் முயற்சிக்கவும்.",
   },
   "login.error.emailRequired": {
     en: "Please enter your email address.",

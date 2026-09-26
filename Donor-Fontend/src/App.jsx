@@ -4,12 +4,14 @@ import RequireAuth from "./components/auth/RequireAuth";
 import LoginPage from "./pages/LoginPage";
 import HomePage from "./pages/HomePage";
 import AboutPage from "./pages/AboutPage";
+import DonatePage from "./pages/DonatePage";
 import RegisterPage from "./pages/RegisterPage";
 import EligibilityPage from "./pages/EligibilityPage";
 import ProcessPage from "./pages/ProcessPage";
 import BenefitsPage from "./pages/BenefitsPage";
 import FaqPage from "./pages/FaqPage";
 import ContactPage from "./pages/ContactPage";
+import ProfilePage from "./pages/ProfilePage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
@@ -21,11 +23,13 @@ function App() {
         <Route element={<RequireAuth />}>
           <Route index element={<HomePage />} />
           <Route path="about" element={<AboutPage />} />
+          <Route path="donate" element={<DonatePage />} />
           <Route path="eligibility" element={<EligibilityPage />} />
           <Route path="process" element={<ProcessPage />} />
           <Route path="benefits" element={<BenefitsPage />} />
           <Route path="faq" element={<FaqPage />} />
           <Route path="contact" element={<ContactPage />} />
+          <Route path="profile" element={<ProfilePage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>

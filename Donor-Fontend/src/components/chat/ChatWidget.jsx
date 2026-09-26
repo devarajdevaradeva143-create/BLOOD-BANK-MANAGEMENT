@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { MessageCircle, X, Send, Loader2 } from "lucide-react";
+import { MessageCircle, X, Send, Loader2, Trash2 } from "lucide-react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { sendChatMessage } from "../../lib/chat";
 
@@ -41,6 +41,12 @@ export default function ChatWidget() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages, open]);
 
+  function handleClear() {
+    if (sending) return;
+    setMessages([{ role: "assistant", content: t("chat.greeting") }]);
+    setInput("");
+  }
+
   async function send(text) {
     const content = String(text ?? input).trim();
     if (!content || sending) return;
@@ -79,13 +85,23 @@ export default function ChatWidget() {
               <p className="text-sm font-bold">{t("chat.title")}</p>
               <p className="text-xs text-red-100">{t("chat.subtitle")}</p>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              aria-label={t("chat.close")}
-              className="rounded-lg p-1.5 hover:bg-white/20"
-            >
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleClear}
+                aria-label={t("chat.clear")}
+                title={t("chat.clear")}
+                className="rounded-lg p-1.5 hover:bg-white/20"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                aria-label={t("chat.close")}
+                className="rounded-lg p-1.5 hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
