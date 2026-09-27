@@ -13,7 +13,24 @@ function loadDonationHistory() {
   try {
     const hRaw = localStorage.getItem("donorDonations");
     const hist = hRaw ? JSON.parse(hRaw) : [];
-    return Array.isArray(hist) ? hist : [];
+    if (!Array.isArray(hist)) return [];
+    // Admin removed — pazhaya pending entries-ah approved-ah migrate pannu.
+    let changed = false;
+    const fixed = hist.map((h) => {
+      if (h && h.status && h.status !== "approved") {
+        changed = true;
+        return { ...h, status: "approved" };
+      }
+      return h;
+    });
+    if (changed) {
+      try {
+        localStorage.setItem("donorDonations", JSON.stringify(fixed));
+      } catch {
+        // ignore
+      }
+    }
+    return fixed;
   } catch {
     return [];
   }
@@ -245,8 +262,6 @@ export default function ProfilePage() {
     } catch {
       // ignore, fallback to passed entry
     }
-    const status = fresh.status || "approved";
-    if (status !== "approved") return;
     // History-la missing fields-irundha profile data-va merge pannu.
     setCertData({
       requestId: fresh.requestId || `CERT-${Date.now()}`,
@@ -262,20 +277,6 @@ export default function ProfilePage() {
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
-  };
-
-  const badgeClass = (status) => {
-    if (status === "pending")
-      return "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300";
-    if (status === "rejected")
-      return "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300";
-    return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300";
-  };
-
-  const badgeLabel = (status) => {
-    if (status === "pending") return "Pending admin approval";
-    if (status === "rejected") return "Rejected";
-    return "Approved";
   };
 
   return (
@@ -366,9 +367,7 @@ export default function ProfilePage() {
               .slice()
               .reverse()
               .map((h, i) => {
-                const status = h.status || "approved";
                 const district = h.district || "—";
-                const approved = status === "approved";
                 return (
                   <div
                     key={h.requestId || i}
@@ -383,30 +382,17 @@ export default function ProfilePage() {
                         {h.requestId || ""} · {h.center || ""}
                       </p>
                       <p className="text-xs text-gray-500 dark:text-slate-400">
-                        District: {district} — indha district admin approval
+                        District: {district}
                       </p>
-                      <span
-                        className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(status)}`}
-                      >
-                        {badgeLabel(status)}
-                      </span>
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <button
-                        type="button"
-                        onClick={() => approved && openCertificate(h)}
-                        disabled={!approved}
-                        className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white ${approved ? "bg-red-600 hover:bg-red-700" : "cursor-not-allowed bg-gray-300 dark:bg-slate-700"}`}
-                      >
-                        <Download className="h-4 w-4" />
-                        Certificate
-                      </button>
-                      {!approved && (
-                        <p className="text-xs text-gray-500 dark:text-slate-400">
-                          Admin approval-kaga wait pannunga
-                        </p>
-                      )}
-                    </div>
+                    <button
+                      type="button"
+                      onClick={() => openCertificate(h)}
+                      className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-700"
+                    >
+                      <Download className="h-4 w-4" />
+                      Certificate
+                    </button>
                   </div>
                 );
               })}

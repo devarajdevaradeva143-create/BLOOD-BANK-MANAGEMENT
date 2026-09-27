@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Award, Bell, BellRing, CheckCircle2, Info, Loader2 } from "lucide-react";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
@@ -7,7 +7,6 @@ import {
   cancelDonationReminder,
   scheduleDonationReminder,
 } from "../../services/reminderApi";
-import { getDonationById } from "../../services/donationStore";
 import { useLanguage } from "../../i18n/LanguageContext";
 
 function DetailRow({ label, children }) {
@@ -26,25 +25,6 @@ export default function Confirmation({ data, onNewRequest }) {
   const [showCertificate, setShowCertificate] = useState(false);
   const [reminder, setReminder] = useState(null);
   const [reminding, setReminding] = useState(false);
-  const [status, setStatus] = useState(data?.status || "pending");
-
-  // Poll the store so the certificate button appears live once
-  // that district admin approves (e.g. approved in another tab).
-  useEffect(() => {
-    const id = data?.requestId;
-    if (!id) return;
-    const sync = () => {
-      try {
-        const rec = getDonationById(id);
-        if (rec && rec.status) setStatus(rec.status);
-      } catch {
-        // ignore storage errors
-      }
-    };
-    sync();
-    const timer = setInterval(sync, 2000);
-    return () => clearInterval(timer);
-  }, [data?.requestId]);
 
   const nextDonationDate = (() => {
     const d = new Date(data.date);
@@ -85,11 +65,6 @@ export default function Confirmation({ data, onNewRequest }) {
       <p className="mx-auto mt-3 max-w-2xl text-base leading-relaxed text-gray-600 dark:text-slate-400">
         {t("donate.confirm.subtitle")}
       </p>
-      {data.district && (
-        <p className="mx-auto mt-3 max-w-2xl text-sm font-semibold text-gray-700 dark:text-slate-300">
-          Request sent to {data.district} district admin
-        </p>
-      )}
 
       <div className="mt-8 divide-y divide-gray-200 border-t border-gray-200 text-left dark:divide-slate-700 dark:border-slate-700">
         <DetailRow label={t("donate.confirm.requestId")}>
@@ -113,19 +88,9 @@ export default function Confirmation({ data, onNewRequest }) {
           {`${data.date} · ${data.time}`}
         </DetailRow>
         <DetailRow label={t("donate.confirm.status")}>
-          {status === "approved" ? (
-            <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-              {t("donate.confirm.statusApproved")}
-            </span>
-          ) : status === "rejected" ? (
-            <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-800 dark:bg-red-950 dark:text-red-400">
-              {t("donate.confirm.statusRejected")}
-            </span>
-          ) : (
-            <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-400">
-              {t("donate.confirm.statusPending")}
-            </span>
-          )}
+          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+            Approved
+          </span>
         </DetailRow>
       </div>
 
@@ -194,19 +159,13 @@ export default function Confirmation({ data, onNewRequest }) {
       </p>
 
       <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-        {status === "approved" ? (
-          <Button
-            variant="outline"
-            onClick={() => setShowCertificate(true)}
-          >
-            <Award className="h-4 w-4" />
-            {t("donate.certificate.open")}
-          </Button>
-        ) : (
-          <p className="max-w-md text-sm text-gray-500 dark:text-slate-400">
-            Admin approval-kaga wait pannunga — approve aana piragu certificate download panna mudiyum.
-          </p>
-        )}
+        <Button
+          variant="outline"
+          onClick={() => setShowCertificate(true)}
+        >
+          <Award className="h-4 w-4" />
+          {t("donate.certificate.open")}
+        </Button>
         <Button variant="primary" onClick={onNewRequest}>
           {t("donate.confirm.newRequest")}
         </Button>

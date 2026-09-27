@@ -7,7 +7,7 @@ import Confirmation from "../components/donate/Confirmation";
 import EligibilityChecker from "../components/eligibility/EligibilityChecker";
 import { useToast } from "../context/ToastContext";
 import { useLanguage } from "../i18n/LanguageContext";
-import { saveDonation } from "../services/donationStore";
+import { saveDonation, updateDonationStatus } from "../services/donationStore";
 
 export default function DonatePage() {
   const { t } = useLanguage();
@@ -33,7 +33,7 @@ export default function DonatePage() {
     const requestId = `REQ-${dateNow}-${Math.floor(1000 + Math.random() * 9000)}`;
     const donationDate = payload.date || now.toISOString().slice(0, 10);
 
-    // Persist via the shared store — status forced to 'pending'.
+    // Admin illa — donate panna udane approved + total+1.
     let saved = null;
     try {
       saved = saveDonation({
@@ -48,15 +48,18 @@ export default function DonatePage() {
         time: payload.time || "",
         status: "pending",
       });
+      if (saved) updateDonationStatus(saved.requestId || requestId, "approved", "system");
     } catch {
       // ignore storage errors
     }
 
-    // Only sync basic contact info into registeredDonor if missing.
-    // Do NOT increment totalDonations here (count happens on admin approval).
+    // registeredDonor-la total+1, last + next date update pannu.
     try {
       const raw = localStorage.getItem("registeredDonor");
       const reg = raw ? JSON.parse(raw) : {};
+      const prevTotal = Number(reg.totalDonations ?? 0) || 0;
+      const next = new Date(donationDate);
+      next.setDate(next.getDate() + 90);
       const updated = {
         ...reg,
         name: reg.name || payload.donorName || "",
@@ -64,6 +67,11 @@ export default function DonatePage() {
         phone: reg.phone || payload.mobile || "",
         bloodGroup: reg.bloodGroup || payload.bloodGroup || "",
         district: reg.district || payload.district || "",
+        totalDonations: prevTotal + 1,
+        lastDonationDate: donationDate,
+        nextEligibleDate: next.toISOString().slice(0, 10),
+        eligibilityStatus: "Not Eligible",
+        isActive: true,
       };
       localStorage.setItem("registeredDonor", JSON.stringify(updated));
     } catch {
@@ -80,8 +88,9 @@ export default function DonatePage() {
       center: payload.center,
       date: donationDate,
       time: payload.time,
-      status: "pending",
+      status: "approved",
     };
+    record.status = "approved";
     setSubmitted({
       requestId: record.requestId,
       donorName: record.donorName,
@@ -92,7 +101,7 @@ export default function DonatePage() {
       center: record.center,
       date: record.date,
       time: record.time,
-      status: "pending",
+      status: "approved",
     });
     toast.success(t("donate.toast.success"));
   };

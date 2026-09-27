@@ -12,7 +12,6 @@ import BenefitsPage from "./pages/BenefitsPage";
 import FaqPage from "./pages/FaqPage";
 import ContactPage from "./pages/ContactPage";
 import ProfilePage from "./pages/ProfilePage";
-import AdminApprovalsPage from "./pages/AdminApprovalsPage";
 import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
@@ -32,7 +31,6 @@ function App() {
           <Route path="contact" element={<ContactPage />} />
           <Route path="profile" element={<ProfilePage />} />
         </Route>
-        <Route path="admin/approvals" element={<AdminApprovalsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
