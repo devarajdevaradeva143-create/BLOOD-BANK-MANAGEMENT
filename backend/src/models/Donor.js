@@ -22,6 +22,8 @@ const donorSchema = new mongoose.Schema(
     },
     mobileVerified: { type: Boolean, default: false },
     email: { type: String, lowercase: true, trim: true },
+    // bcrypt(password + pepper). Absent for legacy donors created before auth.
+    passwordHash: { type: String, select: false },
     district: { type: String, trim: true },
     city: { type: String, trim: true },
     pincode: { type: String, trim: true, match: [/^\d{6}$/, 'Invalid pincode'] },

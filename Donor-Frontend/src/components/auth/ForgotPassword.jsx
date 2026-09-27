@@ -40,9 +40,10 @@ export default function ForgotPassword({ email: initialEmail, onBack }) {
     setError("");
   };
 
-  const handleSendOtp = (e) => {
+  const handleSendOtp = async (e) => {
     e.preventDefault();
     setError("");
+    setNote("");
 
     const trimmed = email.trim().toLowerCase();
     if (!trimmed) {
@@ -55,19 +56,27 @@ export default function ForgotPassword({ email: initialEmail, onBack }) {
     }
 
     setLoading(true);
-    requestPasswordReset(trimmed).then((res) => {
-      setLoading(false);
+    try {
+      const res = await requestPasswordReset(trimmed);
       if (!res.ok) {
-        setError(t("login.forgot.error.notFound"));
+        if (res.reason === "cooldown") {
+          setError(t("login.forgot.error.cooldown"));
+        } else if (res.reason === "network") {
+          setError(t("login.forgot.error.network"));
+        } else {
+          setError(t("login.forgot.error.notFound"));
+        }
         return;
       }
       setEmail(trimmed);
-      setNote(t("login.forgot.otpSent", { otp: res.otp }));
+      setNote(t("login.forgot.otpSent"));
       setStep(2);
-    });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleReset = (e) => {
+  const handleReset = async (e) => {
     e.preventDefault();
     setError("");
 
@@ -105,19 +114,27 @@ export default function ForgotPassword({ email: initialEmail, onBack }) {
     }
 
     setLoading(true);
-    resetPassword({
-      email,
-      otp: otp.trim(),
-      newPassword,
-    }).then((res) => {
-      setLoading(false);
+    try {
+      const res = await resetPassword({
+        email,
+        otp: otp.trim(),
+        newPassword,
+      });
       if (!res.ok) {
-        setError(t("login.forgot.error.otpInvalid"));
+        if (res.reason === "cooldown") {
+          setError(t("login.forgot.error.cooldown"));
+        } else if (res.reason === "network") {
+          setError(t("login.forgot.error.network"));
+        } else {
+          setError(t("login.forgot.error.otpInvalid"));
+        }
         return;
       }
       setNote(t("login.forgot.success"));
       setTimeout(() => onBack(email, t("login.forgot.resetSuccess")), 1400);
-    });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

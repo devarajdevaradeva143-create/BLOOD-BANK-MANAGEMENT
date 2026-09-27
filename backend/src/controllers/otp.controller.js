@@ -22,18 +22,18 @@ function otpError(message, statusCode) {
  * Finds the latest unexpired, unconsumed OTP for (mobile, purpose),
  * enforces attempts < 5, compares the code hash, marks consumed.
  *
- * @param {string} mobile  plain 10-digit mobile / contact
+ * @param {string} mobile  plain identifier (mobile / email / staffId-derived target)
  * @param {string} code    plain 6-digit code
- * @param {'donor'|'request'} purpose
+ * @param {'donor'|'request'|'reset'} purpose
  * @returns {Promise<import('mongoose').Document>} the consumed Otp doc
- */
+  */
 export async function verifyOtpInternal(mobile, code, purpose) {
   const target = String(mobile || '').trim();
   const plainCode = String(code || '').trim();
   if (!target || !plainCode) {
-    throw otpError('Mobile and OTP code are required', 400);
+    throw otpError('Identifier and OTP code are required', 400);
   }
-  if (!['donor', 'request'].includes(purpose)) {
+  if (!['donor', 'request', 'reset'].includes(purpose)) {
     throw otpError('Invalid OTP purpose', 400);
   }
 

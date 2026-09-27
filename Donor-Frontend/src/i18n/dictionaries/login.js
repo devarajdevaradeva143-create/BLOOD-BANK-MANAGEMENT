@@ -71,8 +71,8 @@ export default {
   "login.forgot.sendOtp": { en: "Send OTP", ta: "OTP அனுப்பு" },
   "login.forgot.sending": { en: "Sending OTP...", ta: "OTP அனுப்பப்படுகிறது..." },
   "login.forgot.otpSent": {
-    en: "Demo mode: OTP generated successfully. Use this OTP: {otp}",
-    ta: "டெமோ முறை: OTP வெற்றிகரமாக உருவாக்கப்பட்டது. இந்த OTP-ஐப் பயன்படுத்தவும்: {otp}",
+    en: "OTP sent! Check the backend console (dev) for the 6-digit code — valid for 5 minutes.",
+    ta: "OTP அனுப்பப்பட்டது! 6 இலக்க குறியீட்டிற்கு backend console-ஐப் பார்க்கவும் — 5 நிமிடங்கள் செல்லும்.",
   },
   "login.forgot.otp": { en: "OTP", ta: "OTP" },
   "login.forgot.otpPlaceholder": {
@@ -116,6 +116,14 @@ export default {
   "login.forgot.error.otpInvalid": {
     en: "Invalid or expired OTP. Please try again.",
     ta: "OTP தவறானது அல்லது காலாவதியானது. மீண்டும் முயற்சிக்கவும்.",
+  },
+  "login.forgot.error.cooldown": {
+    en: "Please wait a minute before requesting another OTP.",
+    ta: "மற்றொரு OTP-ஐக் கோருவதற்கு முன் ஒரு நிமிடம் காத்திருக்கவும்.",
+  },
+  "login.forgot.error.network": {
+    en: "Unable to reach server. Check that the backend is running.",
+    ta: "சேவையகத்தை அணுக முடியவில்லை. Backend இயங்குகிறதா எனச் சரிபார்க்கவும்.",
   },
   "login.error.emailRequired": {
     en: "Please enter your email address.",

@@ -11,7 +11,19 @@ export async function hashPin(pin) {
 }
 
 export async function comparePin(pin, hash) {
+  if (!hash) return false;
   return bcrypt.compare(withPepper(pin), hash);
 }
 
-export default { hashPin, comparePin };
+// Donor / hospital passwords are longer than staff PINs — same peppered
+// bcrypt scheme, higher cost. Aliases keep intent clear at call sites.
+export async function hashPassword(password) {
+  return bcrypt.hash(withPepper(password), 12);
+}
+
+export async function comparePassword(password, hash) {
+  if (!hash) return false;
+  return bcrypt.compare(withPepper(password), hash);
+}
+
+export default { hashPin, comparePin, hashPassword, comparePassword };
