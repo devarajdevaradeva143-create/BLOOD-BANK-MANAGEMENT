@@ -11,6 +11,7 @@ import { notFound, errorHandler } from './middleware/error.js';
 import authRoutes from './routes/auth.routes.js';
 import otpRoutes from './routes/otp.routes.js';
 import donorRoutes from './routes/donors.routes.js';
+import hospitalRoutes from './routes/hospitals.routes.js';
 import requestRoutes from './routes/requests.routes.js';
 import unitsRoutes from './routes/units.routes.js';
 import availabilityRoutes from './routes/availability.routes.js';
@@ -50,6 +51,7 @@ app.get('/healthz', (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/donors', donorRoutes);
+app.use('/api/hospitals', hospitalRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/units', unitsRoutes);
 app.use('/api/availability', availabilityRoutes);

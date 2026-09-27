@@ -3,14 +3,17 @@ import toast from 'react-hot-toast'
 import {
   ArrowRight,
   Building2,
+  CircleAlert,
   Eye,
   EyeOff,
   HeartPulse,
+  LoaderCircle,
   Lock,
   Mail,
   MapPin,
   Phone,
 } from 'lucide-react'
+import AuthSidePanel from '../components/AuthSidePanel'
 import { loginUser, registerHospital } from '../lib/auth'
 
 const HospitalRegister = ({ onSuccess, onLogin }) => {
@@ -56,6 +59,22 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
   }
 
   const passwordStrength = getPasswordStrength()
+
+  const strengthMeta =
+    passwordStrength === 0
+      ? null
+      : passwordStrength <= 2
+        ? { label: 'Weak password', text: 'text-red-600', bar: 'bg-red-500' }
+        : passwordStrength === 3
+          ? { label: 'Fair password', text: 'text-amber-600', bar: 'bg-amber-400' }
+          : passwordStrength === 4
+            ? { label: 'Good password', text: 'text-lime-600', bar: 'bg-lime-500' }
+            : { label: 'Strong password', text: 'text-emerald-600', bar: 'bg-emerald-500' }
+
+  const inputCls =
+    'h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100'
+  const labelCls = 'mb-1 block text-xs font-semibold text-[#17324d]'
+  const iconCls = 'pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400'
 
   const handleRegister = (e) => {
     e.preventDefault()
@@ -131,251 +150,136 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
 
   return (
     <div className="min-h-screen bg-white flex overflow-hidden">
-      {/* ================= LEFT SECTION ================= */}
-      <div className="hidden lg:flex lg:w-[48%] relative bg-gradient-to-br from-[#fff7f8] via-white to-[#fff1f3] overflow-hidden">
-        <div className="absolute -top-24 -left-24 w-72 h-72 rounded-full bg-red-100/40" />
-
-        <div className="absolute top-72 -left-32 w-80 h-80 rounded-full bg-red-50/70" />
-
-        <div className="absolute bottom-[-170px] right-[-80px] w-[480px] h-[480px] rounded-full bg-red-50" />
-
-        <div className="relative z-10 w-full px-14 xl:px-20 pt-10">
-          {/* Logo */}
-          <div className="flex items-center gap-4">
-            <div className="w-[58px] h-[64px] bg-gradient-to-b from-red-500 to-red-700 rounded-[50%] flex items-center justify-center shadow-lg shadow-red-200">
-              <HeartPulse size={34} className="text-white" />
-            </div>
-
-            <div>
-              <h1 className="text-[31px] font-bold text-[#102a43] leading-none">
-                Life Saver
-              </h1>
-
-              <p className="text-[17px] font-bold text-red-600 mt-1">
-                Blood Bank Management
-              </p>
-            </div>
-          </div>
-
-          {/* Hero */}
-          <div className="mt-8">
-            <h2 className="text-[21px] font-bold text-[#12345b]">
-              Be a Hero. Donate Blood. Save Lives.
-            </h2>
-
-            <p className="mt-2 text-[14px] leading-5 text-[#526b87] max-w-[390px]">
-              Your donation can give someone a second chance at life. Join our
-              community of blood donors and make a difference today.
-            </p>
-          </div>
-
-          {/* Benefits */}
-          <div className="mt-6 space-y-3.5">
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-red-600 text-xl">💧</span>
-              </div>
-
-              <div>
-                <h3 className="text-[14px] font-bold text-[#12345b]">
-                  Save Lives
-                </h3>
-
-                <p className="text-[12px] text-[#58708b]">
-                  One donation can save up to 3 lives.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-red-600 text-xl">👥</span>
-              </div>
-
-              <div>
-                <h3 className="text-[14px] font-bold text-[#12345b]">
-                  Build a Healthier Community
-                </h3>
-
-                <p className="text-[12px] text-[#58708b]">
-                  Help patients, families and communities in need.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-red-600 text-xl">🛡</span>
-              </div>
-
-              <div>
-                <h3 className="text-[14px] font-bold text-[#12345b]">
-                  Safe &amp; Reliable
-                </h3>
-
-                <p className="text-[12px] text-[#58708b]">
-                  Your safety is our priority.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="w-11 h-11 rounded-full bg-red-100 flex items-center justify-center">
-                <span className="text-red-600 text-xl">❤️</span>
-              </div>
-
-              <div>
-                <h3 className="text-[14px] font-bold text-[#12345b]">
-                  Be a Regular Donor
-                </h3>
-
-                <p className="text-[12px] text-[#58708b]">
-                  Donate, make a habit, create a bigger impact.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {/* Bottom Illustration */}
-          <div className="absolute left-14 xl:left-20 bottom-0 flex items-end">
-            <div className="relative w-[230px] h-[140px]">
-              <div className="absolute left-4 bottom-0 w-20 h-28 bg-[#f3bd95] rounded-t-[45px] rotate-[-13deg]" />
-
-              <div className="absolute right-4 bottom-0 w-20 h-28 bg-[#f3bd95] rounded-t-[45px] rotate-[13deg]" />
-
-              <div className="absolute left-1/2 -translate-x-1/2 bottom-5 w-[90px] h-[110px] bg-gradient-to-b from-red-500 to-red-700 rounded-[55%_55%_65%_65%] rotate-45 shadow-xl flex items-center justify-center">
-                <HeartPulse size={42} className="text-white -rotate-45" />
-              </div>
-            </div>
-
-            <div className="mb-14 ml-4">
-              <p className="text-red-600 text-[25px] italic font-semibold leading-6">
-                Give Blood
-              </p>
-
-              <p className="text-red-600 text-[25px] italic font-semibold leading-6">
-                Give Hope
-              </p>
-
-              <div className="w-24 h-1 bg-red-500 mt-2 rounded-full rotate-[-7deg]" />
-            </div>
-          </div>
-
-          <div className="absolute bottom-0 left-0 right-0 h-5 bg-red-600 rounded-tr-[100%]" />
-        </div>
-      </div>
+      {/* ================= LEFT SECTION (same blood bank details as login) ================= */}
+      <AuthSidePanel />
 
       {/* ================= RIGHT SECTION ================= */}
-      <div className="w-full lg:w-[52%] min-h-screen flex items-center justify-center px-5 sm:px-8 py-8 overflow-y-auto">
-        <div className="w-full max-w-[600px]">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-[0_8px_35px_rgba(15,23,42,0.08)] px-6 sm:px-8 py-7">
+      <div className="w-full lg:w-1/2 min-h-screen flex items-center justify-center px-5 sm:px-8 py-8 overflow-y-auto">
+      <div className="w-full max-w-[600px]">
+        {/* Brand (side panel is hidden below lg) */}
+        <div className="mb-5 flex items-center justify-center gap-3 lg:hidden">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-red-600 shadow-md shadow-red-200">
+            <HeartPulse size={24} className="text-white" />
+          </div>
+          <div className="text-left">
+            <p className="text-base font-bold leading-tight text-[#102a43]">Life Saver</p>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-red-600">
+              Blood Bank Management
+            </p>
+          </div>
+        </div>
+          <div className="animate-fade-in-up overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_20px_60px_-15px_rgba(220,38,38,0.25)]">
+            <div className="h-1.5 bg-gradient-to-r from-red-800 via-red-500 to-red-800" />
+
+            <div className="px-6 py-7 sm:px-8">
             {/* Icon */}
             <div className="flex justify-center">
-              <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
-                <div className="w-11 h-11 rounded-full bg-red-600 flex items-center justify-center">
-                  <HeartPulse size={25} className="text-white" />
-                </div>
+              <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-red-700 shadow-lg shadow-red-200">
+                <HeartPulse size={27} className="text-white" />
               </div>
             </div>
 
             {/* Heading */}
-            <div className="text-center mt-2">
-              <h2 className="text-[24px] font-bold text-[#102a43]">
+            <div className="mt-3 text-center">
+              <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-600">
+                Join the network
+              </p>
+              <h2 className="mt-1 text-2xl font-bold text-[#102a43]">
                 Hospital Registration
               </h2>
-
-              <p className="text-[12px] text-[#627b95] mt-1">
+              <p className="mt-1 text-xs text-[#627b95]">
                 Create your hospital account to request blood units
               </p>
             </div>
 
             {/* Form */}
-            <form onSubmit={handleRegister} className="mt-6 space-y-3">
+            <form onSubmit={handleRegister} className="mt-6 space-y-5" noValidate>
+              {/* Hospital Information */}
+              <div className="flex items-center gap-2">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-red-100 text-red-600">
+                  <Building2 size={13} />
+                </span>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                  Hospital Information
+                </h3>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
               {/* Row 1 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                 {/* Hospital Name */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#17324d] mb-1">
+                  <label htmlFor="reg-hospital-name" className={labelCls}>
                     Hospital Name
                   </label>
-
                   <div className="relative">
-                    <Building2
-                      size={16}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#526b87]"
-                    />
-
+                    <Building2 size={16} className={iconCls} />
                     <input
+                      id="reg-hospital-name"
                       name="hospitalName"
                       value={form.hospitalName}
                       onChange={handleChange}
-                      placeholder="Enter hospital name"
-                      className="w-full h-9 rounded-md border border-[#cbd7e5] pl-9 pr-2 text-[11px] outline-none text-slate-700 placeholder:text-[#9aabc0] focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                      placeholder="e.g. Govt. General Hospital"
+                      className={inputCls}
                     />
                   </div>
                 </div>
 
                 {/* Registration Number */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#17324d] mb-1">
-                    Hospital Registration No.
+                  <label htmlFor="reg-number" className={labelCls}>
+                    Registration No.
                   </label>
-
                   <input
+                    id="reg-number"
                     name="registrationNumber"
                     value={form.registrationNumber}
                     onChange={handleChange}
-                    placeholder="Enter registration number"
-                    className="w-full h-9 rounded-md border border-[#cbd7e5] px-3 text-[11px] outline-none text-slate-700 placeholder:text-[#9aabc0] focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                    placeholder="e.g. TN-REG-12345"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100"
                   />
                 </div>
               </div>
 
               {/* Row 2 */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                 {/* Email */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#17324d] mb-1">
+                  <label htmlFor="reg-email" className={labelCls}>
                     Email Address
                   </label>
-
                   <div className="relative">
-                    <Mail
-                      size={16}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#526b87]"
-                    />
-
+                    <Mail size={16} className={iconCls} />
                     <input
+                      id="reg-email"
                       type="email"
+                      autoComplete="email"
                       name="email"
                       value={form.email}
                       onChange={handleChange}
-                      placeholder="Enter your email address"
-                      className="w-full h-9 rounded-md border border-[#cbd7e5] pl-9 pr-2 text-[11px] outline-none text-slate-700 placeholder:text-[#9aabc0] focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                      placeholder="hospital@example.com"
+                      className={inputCls}
                     />
                   </div>
                 </div>
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#17324d] mb-1">
+                  <label htmlFor="reg-phone" className={labelCls}>
                     Phone Number
                   </label>
-
                   <div className="relative">
-                    <Phone
-                      size={16}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#526b87]"
-                    />
-
+                    <Phone size={16} className={iconCls} />
                     <input
+                      id="reg-phone"
                       type="tel"
+                      autoComplete="tel"
                       name="phone"
                       maxLength={10}
                       value={form.phone}
                       onChange={handleChange}
-                      placeholder="Enter phone number"
-                      className="w-full h-9 rounded-md border border-[#cbd7e5] pl-9 pr-2 text-[11px] outline-none text-slate-700 placeholder:text-[#9aabc0] focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                      placeholder="10-digit mobile number"
+                      className={inputCls}
                     />
                   </div>
                 </div>
@@ -383,102 +287,108 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
 
               {/* Address */}
               <div>
-                <label className="block text-[11px] font-semibold text-[#17324d] mb-1">
-                  Address
+                <label htmlFor="reg-address" className={labelCls}>
+                  Hospital Address
                 </label>
-
                 <div className="relative">
-                  <MapPin
-                    size={16}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 text-[#526b87]"
-                  />
-
+                  <MapPin size={16} className={iconCls} />
                   <input
+                    id="reg-address"
                     name="address"
                     value={form.address}
                     onChange={handleChange}
-                    placeholder="Enter hospital address"
-                    className="w-full h-9 rounded-md border border-[#cbd7e5] pl-9 pr-2 text-[11px] outline-none text-slate-700 placeholder:text-[#9aabc0] focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                    placeholder="Street, area, district"
+                    className={inputCls}
                   />
                 </div>
               </div>
 
+              {/* Account Security */}
+              <div className="flex items-center gap-2 pt-1">
+                <span className="flex h-6 w-6 items-center justify-center rounded-md bg-red-100 text-red-600">
+                  <Lock size={13} />
+                </span>
+                <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                  Account Security
+                </h3>
+                <div className="h-px flex-1 bg-slate-200" />
+              </div>
+
               {/* Password Row */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
                 {/* Password */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#17324d] mb-1">
+                  <label htmlFor="reg-password" className={labelCls}>
                     Password
                   </label>
-
                   <div className="relative">
-                    <Lock
-                      size={16}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#526b87]"
-                    />
-
+                    <Lock size={16} className={iconCls} />
                     <input
+                      id="reg-password"
                       type={showPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
                       name="password"
                       value={form.password}
                       onChange={handleChange}
-                      placeholder="Create password"
-                      className="w-full h-9 rounded-md border border-[#cbd7e5] pl-9 pr-9 text-[11px] outline-none text-slate-700 placeholder:text-[#9aabc0] focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                      placeholder="Min. 8 characters"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100"
                     />
-
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500"
+                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                     >
                       {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
                     </button>
                   </div>
 
                   {/* Strength */}
-                  <div className="mt-1.5 flex items-center gap-1">
-                    {[1, 2, 3, 4, 5].map((level) => (
-                      <div
-                        key={level}
-                        className={`h-1.5 flex-1 rounded-full ${
-                          passwordStrength >= level
-                            ? passwordStrength <= 2
-                              ? 'bg-red-500'
-                              : passwordStrength <= 4
-                                ? 'bg-yellow-400'
-                                : 'bg-green-500'
-                            : 'bg-slate-200'
-                        }`}
-                      />
-                    ))}
-                  </div>
+                  {form.password ? (
+                    <div className="mt-2">
+                      <div className="flex items-center gap-1">
+                        {[1, 2, 3, 4, 5].map((level) => (
+                          <div
+                            key={level}
+                            className={`h-1.5 flex-1 rounded-full transition ${
+                              passwordStrength >= level ? strengthMeta.bar : 'bg-slate-200'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <p className={`mt-1 text-[11px] font-semibold ${strengthMeta.text}`}>
+                        {strengthMeta.label} — use uppercase, number &amp; symbol
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-1.5 text-[11px] text-slate-400">
+                      Use 8+ characters with uppercase, number &amp; symbol
+                    </p>
+                  )}
                 </div>
 
                 {/* Confirm */}
                 <div>
-                  <label className="block text-[11px] font-semibold text-[#17324d] mb-1">
+                  <label htmlFor="reg-confirm" className={labelCls}>
                     Confirm Password
                   </label>
-
                   <div className="relative">
-                    <Lock
-                      size={16}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#526b87]"
-                    />
-
+                    <Lock size={16} className={iconCls} />
                     <input
+                      id="reg-confirm"
                       type={showConfirmPassword ? 'text' : 'password'}
+                      autoComplete="new-password"
                       name="confirmPassword"
                       value={form.confirmPassword}
                       onChange={handleChange}
-                      placeholder="Confirm password"
-                      className="w-full h-9 rounded-md border border-[#cbd7e5] pl-9 pr-9 text-[11px] outline-none text-slate-700 placeholder:text-[#9aabc0] focus:border-red-500 focus:ring-2 focus:ring-red-100"
+                      placeholder="Repeat your password"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100"
                     />
-
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-500"
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                     >
                       {showConfirmPassword ? (
                         <EyeOff size={15} />
@@ -487,13 +397,27 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                       )}
                     </button>
                   </div>
+                  {form.confirmPassword && (
+                    <p
+                      className={`mt-1.5 text-[11px] font-semibold ${
+                        form.password === form.confirmPassword
+                          ? 'text-emerald-600'
+                          : 'text-red-600'
+                      }`}
+                    >
+                      {form.password === form.confirmPassword
+                        ? 'Passwords match'
+                        : 'Passwords do not match'}
+                    </p>
+                  )}
                 </div>
               </div>
 
               {/* Error */}
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-[11px] text-red-600">
-                  {error}
+                <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3.5 py-2.5 text-xs font-medium text-red-700">
+                  <CircleAlert size={15} className="mt-0.5 shrink-0" />
+                  <span>{error}</span>
                 </div>
               )}
 
@@ -501,39 +425,33 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full h-9 rounded-md bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-semibold text-[13px] flex items-center justify-center gap-2 transition shadow-md shadow-red-100"
+                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-sm font-bold text-white shadow-lg shadow-red-600/25 transition hover:shadow-xl hover:shadow-red-600/30 hover:brightness-105 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {loading ? (
-                  'Registering...'
+                  <>
+                    <LoaderCircle size={17} className="animate-spin" />
+                    Creating account…
+                  </>
                 ) : (
                   <>
-                    Register
+                    Create Account
                     <ArrowRight size={16} />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Divider */}
-            <div className="flex items-center gap-4 my-4">
-              <div className="flex-1 h-px bg-slate-200" />
-
-              <span className="text-[10px] text-slate-500">OR</span>
-
-              <div className="flex-1 h-px bg-slate-200" />
-            </div>
-
             {/* Login */}
-            <p className="text-center text-[11px] text-[#526b87]">
+            <div className="mt-5 rounded-xl bg-slate-50 px-4 py-3 text-center text-[13px] text-slate-600">
               Already have an account?{' '}
-
               <button
                 onClick={onLogin}
-                className="font-semibold text-red-600 hover:underline"
+                className="font-bold text-red-600 transition hover:text-red-700 hover:underline"
               >
-                Login
+                Sign in
               </button>
-            </p>
+            </div>
+            </div>
           </div>
         </div>
       </div>
