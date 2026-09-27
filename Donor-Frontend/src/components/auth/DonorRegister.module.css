@@ -1,0 +1,323 @@
+/* ============ RIGHT ============ */
+
+.register-section {
+  width: 52%;
+  min-height: 100vh;
+  padding: 35px 50px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f8fafc;
+}
+
+:global(.dark) .register-section {
+  background: #0f172a;
+}
+
+.register-card {
+  width: 100%;
+  max-width: 760px;
+  padding: 35px 45px;
+  border: 1px solid #e5e9f0;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+}
+
+:global(.dark) .register-card {
+  border-color: #1e293b;
+  background: #111a2e;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+.register-icon {
+  width: 62px;
+  height: 62px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ef4444, #b91c1c);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 15px;
+  box-shadow: 0 10px 24px rgba(217, 35, 35, 0.35);
+}
+
+.register-card > h2 {
+  text-align: center;
+  color: #0f172a;
+  font-size: 29px;
+  margin: 0;
+}
+
+:global(.dark) .register-card > h2 {
+  color: #f1f5f9;
+}
+
+.register-subtitle {
+  text-align: center;
+  color: #64748b;
+  margin: 8px 0 28px;
+}
+
+:global(.dark) .register-subtitle {
+  color: #94a3b8;
+}
+
+/* ============ FORM ============ */
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.register-field {
+  margin-bottom: 17px;
+}
+
+.register-field label {
+  display: block;
+  color: #34465d;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 7px;
+}
+
+:global(.dark) .register-field label {
+  color: #cbd5e1;
+}
+
+.register-field input,
+.register-field select,
+.register-field textarea {
+  width: 100%;
+  border: 1px solid #d8e0ea;
+  border-radius: 9px;
+  padding: 13px 14px;
+  outline: none;
+  font-size: 14px;
+  color: #0f172a;
+  background: #ffffff;
+  transition: 0.2s;
+  font-family: inherit;
+}
+
+:global(.dark) .register-field input,
+:global(.dark) .register-field select,
+:global(.dark) .register-field textarea {
+  border-color: #334155;
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+:global(.dark) .register-field select option {
+  background: #0f172a;
+  color: #e2e8f0;
+}
+
+.register-field input,
+.register-field select {
+  height: 48px;
+}
+
+.register-field textarea {
+  resize: vertical;
+  min-height: 75px;
+}
+
+.register-field input:focus,
+.register-field select:focus,
+.register-field textarea:focus {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+}
+
+.register-field input::placeholder,
+.register-field textarea::placeholder {
+  color: #94a3b8;
+}
+
+/* ============ PASSWORD ============ */
+
+.password-box {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d8e0ea;
+  border-radius: 9px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+:global(.dark) .password-box {
+  border-color: #334155;
+  background: #0f172a;
+}
+
+.password-box:focus-within {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+}
+
+.password-box input {
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+}
+
+.password-box input:focus {
+  box-shadow: none;
+}
+
+.password-box button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0 13px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s ease;
+}
+
+.password-box button:hover {
+  color: #dc2626;
+}
+
+.password-box button svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ============ PASSWORD STRENGTH ============ */
+
+.password-strength {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.password-strength.weak {
+  color: #dc2626;
+}
+
+.password-strength.medium {
+  color: #c47a00;
+}
+
+.password-strength.strong {
+  color: #218838;
+}
+
+/* ============ MESSAGES ============ */
+
+.register-error,
+.register-success {
+  padding: 11px 13px;
+  border-radius: 8px;
+  margin: 8px 0 15px;
+  font-size: 13px;
+}
+
+.register-error {
+  color: #b91c1c;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+:global(.dark) .register-error {
+  background: rgba(127, 29, 29, 0.35);
+  color: #fca5a5;
+  border-color: rgba(153, 27, 27, 0.6);
+}
+
+.register-success {
+  color: #15803d;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+}
+
+:global(.dark) .register-success {
+  background: rgba(6, 78, 59, 0.35);
+  color: #6ee7b7;
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+/* ============ BUTTON ============ */
+
+.register-button {
+  width: 100%;
+  height: 53px;
+  border: none;
+  border-radius: 9px;
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 10px 24px rgba(217, 35, 35, 0.28);
+}
+
+.register-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(217, 35, 35, 0.35);
+}
+
+.register-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ============ LOGIN LINK ============ */
+
+.already-account {
+  text-align: center;
+  color: #64748b;
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+:global(.dark) .already-account {
+  color: #94a3b8;
+}
+
+.already-account button {
+  border: none;
+  background: transparent;
+  color: #dc2626;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 5px;
+  font-size: 14px;
+}
+
+.already-account button:hover {
+  text-decoration: underline;
+}
+
+/* ============ RESPONSIVE ============ */
+
+@media (max-width: 900px) {
+  .register-section {
+    width: 100%;
+    min-height: auto;
+    padding: 30px 20px;
+  }
+}
+
+@media (max-width: 650px) {
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .register-card {
+    padding: 30px 22px;
+  }
+}

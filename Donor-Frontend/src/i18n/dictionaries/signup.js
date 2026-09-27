@@ -1,0 +1,165 @@
+export default {
+  "signup.info.heading": {
+    en: "Become a Life Saver",
+    ta: "ஒரு உயிர்காப்பாளராகுங்கள்",
+  },
+  "signup.info.description": {
+    en: "Register as a blood donor and help people in need. Your small contribution can make a meaningful difference.",
+    ta: "இரத்ததானராக பதிவு செய்து தேவையில் உள்ளவர்களுக்கு உதவுங்கள். உங்கள் சிறிய பங்களிப்பு பெரிய மாற்றத்தை ஏற்படுத்தும்.",
+  },
+  "signup.highlight.donate.title": {
+    en: "Donate Blood",
+    ta: "இரத்தம் வழங்குங்கள்",
+  },
+  "signup.highlight.donate.text": {
+    en: "Help patients who need blood.",
+    ta: "இரத்தம் தேவைப்படும் நோயாளிகளுக்கு உதவுங்கள்.",
+  },
+  "signup.highlight.save.title": {
+    en: "Save Lives",
+    ta: "உயிர்களைக் காக்குங்கள்",
+  },
+  "signup.highlight.save.text": {
+    en: "Your donation can make a difference.",
+    ta: "உங்கள் தானம் ஒரு மாற்றத்தை உருவாக்கும்.",
+  },
+  "signup.highlight.secure.title": {
+    en: "Secure Account",
+    ta: "பாதுகாப்பான கணக்கு",
+  },
+  "signup.highlight.secure.text": {
+    en: "Your donor information stays protected.",
+    ta: "உங்கள் இரத்ததானர் தகவல் பாதுகாப்பாக வைக்கப்படும்.",
+  },
+  "signup.title": {
+    en: "Create Donor Account",
+    ta: "இரத்ததானர் கணக்கை உருவாக்கவும்",
+  },
+  "signup.subtitle": {
+    en: "Register to become a blood donor",
+    ta: "இரத்ததானராக பதிவு செய்யவும்",
+  },
+  "signup.field.name": { en: "Full Name", ta: "முழுப்பெயர்" },
+  "signup.field.email": { en: "Email Address", ta: "மின்னஞ்சல் முகவரி" },
+  "signup.field.phone": { en: "Phone Number", ta: "கைபேசி எண்" },
+  "signup.field.dob": { en: "Date of Birth", ta: "பிறந்த தேதி" },
+  "signup.field.gender": { en: "Gender", ta: "பாலினம்" },
+  "signup.field.bloodGroup": { en: "Blood Group", ta: "இரத்தக் குழு" },
+  "signup.field.district": { en: "District", ta: "மாவட்டம்" },
+  "signup.field.password": { en: "Password", ta: "கடவுச்சொல்" },
+  "signup.field.confirmPassword": {
+    en: "Confirm Password",
+    ta: "கடவுச்சொல்லை உறுதிப்படுத்தவும்",
+  },
+  "signup.placeholder.name": {
+    en: "Enter your full name",
+    ta: "உங்கள் முழுப்பெயரை உள்ளிடவும்",
+  },
+  "signup.placeholder.email": {
+    en: "Enter your email",
+    ta: "உங்கள் மின்னஞ்சலை உள்ளிடவும்",
+  },
+  "signup.placeholder.phone": {
+    en: "10-digit phone number",
+    ta: "10 இலக்கக் கைபேசி எண்",
+  },
+  "signup.placeholder.gender": { en: "Select Gender", ta: "பாலினத்தைத் தேர்ந்தெடுக்கவும்" },
+  "signup.placeholder.bloodGroup": {
+    en: "Select Blood Group",
+    ta: "இரத்தக் குழுவைத் தேர்ந்தெடுக்கவும்",
+  },
+  "signup.placeholder.district": {
+    en: "Select your district",
+    ta: "உங்கள் மாவட்டத்தைத் தேர்ந்தெடுக்கவும்",
+  },
+  "signup.placeholder.password": { en: "Create password", ta: "கடவுச்சொல் உருவாக்கவும்" },
+  "signup.placeholder.confirmPassword": {
+    en: "Confirm password",
+    ta: "கடவுச்சொல்லை உறுதிப்படுத்தவும்",
+  },
+  "signup.option.male": { en: "Male", ta: "ஆண்" },
+  "signup.option.female": { en: "Female", ta: "பெண்" },
+  "signup.option.other": { en: "Other", ta: "மற்றவை" },
+  "signup.strength.label": { en: "Password Strength", ta: "கடவுச்சொல் வலிமை" },
+  "password.generate": {
+    en: "Suggest a strong password",
+    ta: "வலுவான கடவுச்சொல்லைப் பரிந்துரைக்கவும்",
+  },
+  "signup.strength.weak": { en: "Weak", ta: "பலவீனம்" },
+  "signup.strength.medium": { en: "Medium", ta: "நடுத்தரம்" },
+  "signup.strength.strong": { en: "Strong", ta: "வலுவானது" },
+  "signup.error.allRequired": {
+    en: "Please fill in all required fields.",
+    ta: "தேவையான அனைத்து புலங்களையும் நிரப்பவும்.",
+  },
+  "signup.error.emailInvalid": {
+    en: "Please enter a valid email address.",
+    ta: "சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்.",
+  },
+  "signup.error.phoneInvalid": {
+    en: "Please enter a valid 10-digit phone number.",
+    ta: "சரியான 10 இலக்கக் கைபேசி எண்ணை உள்ளிடவும்.",
+  },
+  "signup.error.passwordLength": {
+    en: "Password must contain at least 8 characters.",
+    ta: "கடவுச்சொல் குறைந்தது 8 எழுத்துகள் இருக்க வேண்டும்.",
+  },
+  "signup.error.passwordUpper": {
+    en: "Password must contain an uppercase letter.",
+    ta: "கடவுச்சொல்லில் பெரிய எழுத்து இருக்க வேண்டும்.",
+  },
+  "signup.error.passwordLower": {
+    en: "Password must contain a lowercase letter.",
+    ta: "கடவுச்சொல்லில் சிறிய எழுத்து இருக்க வேண்டும்.",
+  },
+  "signup.error.passwordNumber": {
+    en: "Password must contain a number.",
+    ta: "கடவுச்சொல்லில் எண் இருக்க வேண்டும்.",
+  },
+  "signup.error.passwordSpecial": {
+    en: "Password must contain a special character.",
+    ta: "கடவுச்சொல்லில் சிறப்புக் குறியீடு இருக்க வேண்டும்.",
+  },
+  "signup.error.passwordMismatch": {
+    en: "Passwords do not match.",
+    ta: "கடவுச்சொல்கள் ஒத்துப்போகவில்லை.",
+  },
+  "signup.success": {
+    en: "Registration successful! Please login with your email and password.",
+    ta: "பதிவு வெற்றிகரமாக! உங்கள் மின்னஞ்சல் மற்றும் கடவுச்சொல்லுடன் உள்நுழையவும்.",
+  },
+  "signup.submit": { en: "Create Account", ta: "கணக்கை உருவாக்கவும்" },
+  "signup.submitting": { en: "Creating Account...", ta: "கணக்கை உருவாக்குகிறது..." },
+  "signup.already": {
+    en: "Already have an account?",
+    ta: "ஏற்கனவே கணக்கு உள்ளதா?",
+  },
+  "signup.login": { en: "Login", ta: "உள்நுழைய" },
+  "signup.badge": {
+    en: "New Donor Registration",
+    ta: "புதிய இரத்ததானர் பதிவு",
+  },
+  "signup.stats.donors.value": { en: "12,500+", ta: "12,500+" },
+  "signup.stats.donors.label": {
+    en: "Registered donors",
+    ta: "பதிவு செய்த இரத்ததானர்கள்",
+  },
+  "signup.stats.districts.value": { en: "38", ta: "38" },
+  "signup.stats.districts.label": {
+    en: "Districts covered",
+    ta: "மாவட்டங்கள் கவரப்பட்டவை",
+  },
+  "signup.stats.lives.value": { en: "48,000+", ta: "48,000+" },
+  "signup.stats.lives.label": {
+    en: "Lives impacted",
+    ta: "காக்கப்பட்ட உயிர்கள்",
+  },
+  "signup.quote.text": {
+    en: "Registering took two minutes. When our town needed blood, we were ready.",
+    ta: "பதிவு செய்ய இரண்டு நிமிடங்கள் போதும். எங்கள் ஊருக்கு இரத்தம் தேவைப்பட்டபோது நாங்கள் தயாராக இருந்தோம்.",
+  },
+  "signup.quote.name": {
+    en: "Priya S. · Donor since 2023",
+    ta: "பிரியா ச. · 2023 முதல் இரத்ததானர்",
+  },
+};

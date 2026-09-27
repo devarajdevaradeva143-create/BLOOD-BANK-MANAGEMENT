@@ -1,0 +1,39 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply font-sans antialiased;
+  background-color: theme("colors.gray.50");
+  color: theme("colors.gray.900");
+}
+
+.dark body {
+  background-color: theme("colors.slate.950");
+  color: theme("colors.slate.100");
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .certificate-print,
+  .certificate-print * {
+    visibility: visible;
+  }
+
+  .certificate-print {
+    position: fixed;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    box-shadow: none;
+  }
+}
