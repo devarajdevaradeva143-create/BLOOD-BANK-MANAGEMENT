@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const otpSchema = new mongoose.Schema(
   {
-    purpose: { type: String, required: true, enum: ['donor', 'request', 'reset'] },
+    purpose: { type: String, required: true, enum: ['donor', 'request', 'reset', 'donation'] },
     targetHash: { type: String, required: true },
     codeHash: { type: String, required: true },
     attempts: { type: Number, default: 0 },

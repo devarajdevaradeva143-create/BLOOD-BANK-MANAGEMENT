@@ -48,13 +48,60 @@ export interface BloodUnit {
   history: HistoryEvent[];
 }
 
-export type UserRole = 'Doctor' | 'Staff' | 'SuperAdmin';
+export type UserRole = 'DistrictAdmin' | 'SuperAdmin';
 
 export interface AuthUser {
   id: string;
   name: string;
   role: UserRole;
   designation: string;
+  email?: string;
+  phone?: string;
+  districtId?: string;
+}
+
+export type RequestStatus = 'submitted' | 'approved' | 'fulfilled' | 'cancelled';
+
+export interface BloodRequest {
+  requestId: string;
+  patientName: string;
+  bloodGroup: string;
+  units: number;
+  districtId: string;
+  hospitalName: string;
+  hospitalAddress?: string;
+  contact?: string;
+  requiredDate?: string;
+  requestType: 'emergency' | 'normal';
+  priority?: string;
+  status: RequestStatus;
+  createdAt?: string;
+  groupId?: string;
+}
+
+export interface DonorRow {
+  id: string;
+  name: string;
+  bloodGroup: string;
+  district: string;
+  mobile?: string;
+  status: string;
+}
+
+export type DonationStatus = 'pending' | 'approved' | 'completed' | 'cancelled';
+
+export interface Donation {
+  donationId: string;
+  donorName: string;
+  bloodGroup: string;
+  mobile: string;
+  districtId: string;
+  district?: string;
+  availableDate?: string;
+  preferredTime?: string;
+  notes?: string;
+  status: DonationStatus;
+  createdAt?: string;
 }
 
 export type NewUnitInput = Omit<
@@ -69,3 +116,16 @@ export type TestResultInput = {
   testDate?: string;
   remarks?: string;
 };
+
+export type MessageStatus = 'unread' | 'read' | 'replied';
+
+export interface Message {
+  messageId: string;
+  subject: string;
+  body: string;
+  reply?: string;
+  status: MessageStatus;
+  createdAt?: string;
+  fromName?: string;
+  fromDistrictId?: string;
+}

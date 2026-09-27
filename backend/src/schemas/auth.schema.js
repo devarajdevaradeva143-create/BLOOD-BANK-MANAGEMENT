@@ -5,7 +5,7 @@ export const loginSchema = z.object({
   pin: z.string().min(4, 'pin must be at least 4 chars').max(10, 'pin must be at most 10 chars'),
 });
 
-// Staff/Doctor PIN reset — identifier is staffId (no email on User model).
+// DistrictAdmin/SuperAdmin PIN reset — identifier is staffId (no email on User model).
 export const forgotPasswordSchema = z.object({
   staffId: z.string().min(1, 'staffId is required'),
 });

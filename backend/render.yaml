@@ -27,11 +27,15 @@ services:
         value: log
       - key: OTP_PROVIDER_KEY
         sync: false
-      - key: SEED_DOCTOR_ID
+      - key: SEED_DISTRICT_ADMIN_ID
         sync: false
-      - key: SEED_DOCTOR_PIN
+      - key: SEED_DISTRICT_ADMIN_PIN
         sync: false
-      - key: SEED_STAFF_ID
+      - key: SEED_DISTRICT_ADMIN_DISTRICT
         sync: false
-      - key: SEED_STAFF_PIN
+      - key: SEED_SUPER_ADMIN_ID
+        sync: false
+      - key: SEED_SUPER_ADMIN_PIN
+        sync: false
+      - key: SEED_SUPER_ADMIN_DISTRICT
         sync: false

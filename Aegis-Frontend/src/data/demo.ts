@@ -3,11 +3,11 @@ import type { AuthUser, BloodUnit } from './types';
 // Frontend-only demo mode: no backend / DB needed.
 // Demo logins succeed offline and are persisted in localStorage.
 
-export const DEMO_STORAGE_KEY = 'doctor-demo-user';
-export const DEMO_UNITS_KEY = 'doctor-demo-units';
+export const DEMO_STORAGE_KEY = 'aegis-demo-user';
+export const DEMO_UNITS_KEY = 'aegis-demo-units';
 
 export interface DemoCredential {
-  role: 'Doctor' | 'Staff' | 'SuperAdmin';
+  role: 'DistrictAdmin' | 'SuperAdmin';
   staffId: string;
   pin: string;
   user: AuthUser;
@@ -15,16 +15,10 @@ export interface DemoCredential {
 
 export const DEMO_CREDENTIALS: DemoCredential[] = [
   {
-    role: 'Doctor',
-    staffId: 'DOC-001',
+    role: 'DistrictAdmin',
+    staffId: 'DIST-001',
     pin: '1234',
-    user: { id: 'DOC-001', name: 'Demo Doctor', role: 'Doctor', designation: 'Medical Officer' },
-  },
-  {
-    role: 'Staff',
-    staffId: 'STAFF-001',
-    pin: '1234',
-    user: { id: 'STAFF-001', name: 'Demo Staff', role: 'Staff', designation: 'Lab Technician' },
+    user: { id: 'DIST-001', name: 'District Admin', role: 'DistrictAdmin', designation: 'District Coordinator', districtId: 'chennai' },
   },
   {
     role: 'SuperAdmin',
@@ -49,9 +43,35 @@ export function getStoredDemoUser(): AuthUser | null {
   try {
     const raw = localStorage.getItem(DEMO_STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as AuthUser | null;
+    const parsed = JSON.parse(raw) as AuthUser & { role?: string } | null;
     if (!parsed || typeof parsed.id !== 'string') return null;
-    return parsed;
+    const role = (parsed as { role?: string }).role;
+    if (role === 'Doctor' || role === 'Staff' || (role !== 'DistrictAdmin' && role !== 'SuperAdmin')) {
+      try {
+        localStorage.removeItem(DEMO_STORAGE_KEY);
+        const staleKeys: string[] = [];
+        for (let i = 0; i < localStorage.length; i += 1) {
+          const key = localStorage.key(i);
+          if (key && key.startsWith('aegis-demo-') && key !== DEMO_STORAGE_KEY && key !== DEMO_UNITS_KEY) {
+            staleKeys.push(key);
+          }
+        }
+        staleKeys.forEach((key) => localStorage.removeItem(key));
+      } catch {
+        /* ignore storage errors */
+      }
+      const migrated = DEMO_CREDENTIALS[0].user;
+      try {
+        localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(migrated));
+      } catch {
+        /* ignore storage errors */
+      }
+      return migrated;
+    }
+    if (parsed.role === 'DistrictAdmin' && !parsed.districtId) {
+      return { ...parsed, districtId: 'chennai' };
+    }
+    return parsed as AuthUser;
   } catch {
     return null;
   }
@@ -106,11 +126,11 @@ export const MOCK_UNITS: BloodUnit[] = [
     expiryDate: daysFromNow(29),
     storageLocation: 'Rack A-01',
     quantity: 1,
-    collectionStaff: 'Demo Staff',
+    collectionStaff: 'District Admin',
     testStatus: 'Passed',
     status: 'Available',
     screeningResult: 'Non-reactive — all markers negative',
-    testedBy: 'Demo Doctor',
+    testedBy: 'District Admin',
     testDate: daysFromNow(-5),
     updatedAt: hoursAgo(5),
     history: [
@@ -127,7 +147,7 @@ export const MOCK_UNITS: BloodUnit[] = [
     expiryDate: daysFromNow(32),
     storageLocation: 'Rack A-02',
     quantity: 1,
-    collectionStaff: 'Demo Staff',
+    collectionStaff: 'District Admin',
     testStatus: 'Pending',
     status: 'UnderTesting',
     updatedAt: hoursAgo(9),
@@ -145,11 +165,11 @@ export const MOCK_UNITS: BloodUnit[] = [
     expiryDate: daysFromNow(3),
     storageLocation: 'Rack B-01',
     quantity: 1,
-    collectionStaff: 'Demo Staff',
+    collectionStaff: 'District Admin',
     testStatus: 'Passed',
     status: 'Available',
     screeningResult: 'Non-reactive',
-    testedBy: 'Demo Doctor',
+    testedBy: 'District Admin',
     testDate: daysFromNow(-1),
     updatedAt: hoursAgo(12),
     history: [
@@ -166,11 +186,11 @@ export const MOCK_UNITS: BloodUnit[] = [
     expiryDate: daysFromNow(-2),
     storageLocation: 'Rack C-01',
     quantity: 1,
-    collectionStaff: 'Demo Staff',
+    collectionStaff: 'District Admin',
     testStatus: 'Passed',
     status: 'Expired',
     screeningResult: 'Non-reactive',
-    testedBy: 'Demo Doctor',
+    testedBy: 'District Admin',
     testDate: daysFromNow(-19),
     remarks: 'Auto-expired',
     updatedAt: hoursAgo(30),
@@ -189,11 +209,11 @@ export const MOCK_UNITS: BloodUnit[] = [
     expiryDate: daysFromNow(25),
     storageLocation: 'Rack B-02',
     quantity: 1,
-    collectionStaff: 'Demo Staff',
+    collectionStaff: 'District Admin',
     testStatus: 'Passed',
     status: 'Reserved',
     screeningResult: 'Non-reactive',
-    testedBy: 'Demo Doctor',
+    testedBy: 'District Admin',
     testDate: daysFromNow(-9),
     updatedAt: hoursAgo(3),
     history: [
@@ -211,11 +231,11 @@ export const MOCK_UNITS: BloodUnit[] = [
     expiryDate: daysFromNow(20),
     storageLocation: 'Rack D-01',
     quantity: 2,
-    collectionStaff: 'Demo Staff',
+    collectionStaff: 'District Admin',
     testStatus: 'Failed',
     status: 'Discarded',
     screeningResult: 'Reactive — HBsAg',
-    testedBy: 'Demo Doctor',
+    testedBy: 'District Admin',
     testDate: daysFromNow(-14),
     updatedAt: hoursAgo(50),
     history: [

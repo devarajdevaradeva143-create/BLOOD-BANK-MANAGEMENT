@@ -13,8 +13,7 @@ import type { TranslationKey } from '../i18n/translations';
 import toast from 'react-hot-toast';
 
 function demoLabel(role: DemoAccount['role'], t: (key: TranslationKey) => string): string {
-  if (role === 'Doctor') return t('login.demoDoctor');
-  if (role === 'Staff') return t('login.demoStaff');
+  if (role === 'DistrictAdmin') return t('login.demoDistrictAdmin');
   return t('login.demoSuperAdmin');
 }
 
@@ -85,7 +84,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
       <AuthSidePanel
-        eyebrow="Doctor & Staff Portal"
+        eyebrow="District Admin Portal"
         orgName={t('app.name')}
         orgSub={t('app.sub')}
         headline={t('app.tagline')}
@@ -99,7 +98,7 @@ export default function LoginPage() {
         features={[
           'NABH & Drugs Licence certified blood banks',
           '100% screened units • –80°C cold-chain FFP storage',
-          'Tamil + English support for doctors & staff',
+          'Tamil + English support for district admins',
         ]}
         helplineLabel="Emergency Helpline"
         helplineValue="104 • Toll Free"

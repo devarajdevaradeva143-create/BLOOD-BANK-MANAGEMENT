@@ -9,6 +9,29 @@ import {
 } from "../../services/reminderApi";
 import { useLanguage } from "../../i18n/LanguageContext";
 
+function StatusBadge({ status, pendingLabel }) {
+  const norm = String(status || "approved").toLowerCase();
+  if (norm === "pending") {
+    return (
+      <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-950 dark:text-amber-400">
+        {pendingLabel}
+      </span>
+    );
+  }
+  if (norm === "cancelled") {
+    return (
+      <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700 dark:bg-red-950 dark:text-red-400">
+        Cancelled
+      </span>
+    );
+  }
+  return (
+    <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
+      Approved
+    </span>
+  );
+}
+
 function DetailRow({ label, children }) {
   return (
     <div className="flex items-center justify-between gap-4 py-3.5">
@@ -66,12 +89,28 @@ export default function Confirmation({ data, onNewRequest }) {
         {t("donate.confirm.subtitle")}
       </p>
 
+      {data.offline && (
+        <p
+          role="status"
+          className="mx-auto mt-4 max-w-2xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300"
+        >
+          Saved on this device only — the server was unreachable (offline mode).
+        </p>
+      )}
+
       <div className="mt-8 divide-y divide-gray-200 border-t border-gray-200 text-left dark:divide-slate-700 dark:border-slate-700">
         <DetailRow label={t("donate.confirm.requestId")}>
           <span className="font-mono font-semibold text-brand-600 dark:text-brand-400">
             {data.requestId}
           </span>
         </DetailRow>
+        {data.donationId && data.donationId !== data.requestId && (
+          <DetailRow label="Server Donation ID">
+            <span className="font-mono font-semibold text-brand-600 dark:text-brand-400">
+              {data.donationId}
+            </span>
+          </DetailRow>
+        )}
         <DetailRow label={t("donate.confirm.donorName")}>
           {data.donorName}
         </DetailRow>
@@ -88,9 +127,10 @@ export default function Confirmation({ data, onNewRequest }) {
           {`${data.date} · ${data.time}`}
         </DetailRow>
         <DetailRow label={t("donate.confirm.status")}>
-          <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-            Approved
-          </span>
+          <StatusBadge
+            status={data.status}
+            pendingLabel={t("donate.confirm.statusPending")}
+          />
         </DetailRow>
       </div>
 

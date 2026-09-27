@@ -12,7 +12,7 @@ const bloodRequestSchema = new mongoose.Schema(
     units: { type: Number, required: true, min: 1, max: 50 },
     requiredDate: { type: Date },
     reason: { type: String, trim: true },
-    districtId: { type: String, trim: true },
+    districtId: { type: String, trim: true, lowercase: true },
     hospitalName: { type: String, trim: true },
     hospitalAddress: { type: String, trim: true },
     contact: {

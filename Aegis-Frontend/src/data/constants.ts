@@ -70,16 +70,15 @@ export const UNIT_STATUSES = [
 export const EXPIRY_STATUSES = ['Safe', 'ExpiringSoon', 'Expired'] as const;
 
 export interface DemoAccount {
-  role: 'Doctor' | 'Staff' | 'SuperAdmin';
+  role: 'DistrictAdmin' | 'SuperAdmin';
   staffId: string;
   pin: string;
 }
 
 // Seeded via backend/seed.js (`node seed.js`):
-// DOC-001 / 1234 (Doctor), STAFF-001 / 1234 (Staff).
+// DIST-001 / 1234 (DistrictAdmin).
 // SUPER001 / Admin@123 (SuperAdmin, frontend demo only).
 export const DEMO_ACCOUNTS: DemoAccount[] = [
-  { role: 'Doctor', staffId: 'DOC-001', pin: '1234' },
-  { role: 'Staff', staffId: 'STAFF-001', pin: '1234' },
+  { role: 'DistrictAdmin', staffId: 'DIST-001', pin: '1234' },
   { role: 'SuperAdmin', staffId: 'SUPER001', pin: 'Admin@123' },
 ];

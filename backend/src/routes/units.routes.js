@@ -20,7 +20,7 @@ router.get('/', requireAuth, listUnits);
 router.post(
   '/',
   requireAuth,
-  requireRole('Doctor', 'Staff'),
+  requireRole('DistrictAdmin', 'SuperAdmin'),
   validate(unitCreateSchema),
   createUnit
 );
@@ -33,7 +33,7 @@ router.patch(
 router.post(
   '/:id/test',
   requireAuth,
-  requireRole('Doctor'),
+  requireRole('DistrictAdmin', 'SuperAdmin'),
   validate(testResultSchema),
   recordTestResult
 );

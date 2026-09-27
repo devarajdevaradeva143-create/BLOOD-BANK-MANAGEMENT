@@ -7,20 +7,22 @@ import {
   Building2,
   CalendarClock,
   ClipboardCheck,
+  ClipboardList,
   Droplet,
   Eye,
   FileWarning,
+  Gift,
   HeartHandshake,
   History,
   LayoutDashboard,
   LogOut,
   Map,
+  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
-  Stethoscope,
   TestTubes,
-  Users,
+  User,
   X,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -61,9 +63,9 @@ const NAV_GROUPS: NavGroup[] = [
   {
     labelKey: 'nav.management',
     items: [
-      { labelKey: 'nav.doctors', icon: Stethoscope, disabled: true },
-      { labelKey: 'nav.staff', icon: Users, disabled: true },
-      { labelKey: 'nav.donors', icon: HeartHandshake, disabled: true },
+      { to: '/requests', labelKey: 'nav.requests', icon: ClipboardList },
+      { to: '/donations', labelKey: 'nav.donations', icon: Gift },
+      { to: '/donors', labelKey: 'nav.donors', icon: HeartHandshake },
       { labelKey: 'nav.hospitals', icon: Building2, disabled: true },
       { labelKey: 'nav.districtRecords', icon: Map, disabled: true },
     ],
@@ -79,7 +81,9 @@ const NAV_GROUPS: NavGroup[] = [
   {
     labelKey: 'nav.system',
     items: [
+      { to: '/messages', labelKey: 'messages.title', icon: MessageSquare },
       { labelKey: 'nav.notifications', icon: Bell, disabled: true },
+      { to: '/profile', labelKey: 'nav.profile', icon: User },
       { to: '/settings', labelKey: 'nav.settings', icon: Settings },
       { labelKey: 'nav.logout', icon: LogOut, action: 'logout' },
     ],
@@ -298,7 +302,11 @@ export function Sidebar({ mobileOpen, onClose, collapsed, onToggleCollapse }: Si
                 </p>
                 <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                   {user.id} ·{' '}
-                  {t(user.role === 'Doctor' ? 'login.demoDoctor' : 'login.demoStaff')}
+                  {t(
+                    user.role === 'DistrictAdmin'
+                      ? 'login.demoDistrictAdmin'
+                      : 'login.demoSuperAdmin',
+                  )}
                 </p>
               </div>
             ) : null}

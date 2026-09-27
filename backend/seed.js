@@ -1,5 +1,6 @@
 // backend/seed.js — ESM. Run with workdir backend/: `node seed.js`
-// Upserts one Doctor + one Staff user from env, hashing PINs via utils/passwords.
+// Upserts one DistrictAdmin + one SuperAdmin user from env, hashing PINs via utils/passwords.
+// Legacy SEED_DOCTOR_ID / SEED_STAFF_ID (+ PIN/DISTRICT) are ignored — new SEED_DISTRICT_ADMIN_* / SEED_SUPER_ADMIN_* take precedence.
 // Real modules live under ./src/* (see backend/package.json, main src/index.js);
 // the `config/db` / `utils/passwords` substrings below satisfy the layout contract.
 
@@ -12,19 +13,19 @@ import User from './src/models/User.js';
 import Hospital from './src/models/Hospital.js';
 import BloodUnit from './src/models/BloodUnit.js';
 
-const doctorId = process.env.SEED_DOCTOR_ID || 'DOC-001';
-const doctorPin = process.env.SEED_DOCTOR_PIN || '1234';
-const doctorDistrict = (process.env.SEED_DOCTOR_DISTRICT || '').trim().toLowerCase();
-const staffId = process.env.SEED_STAFF_ID || 'STAFF-001';
-const staffPin = process.env.SEED_STAFF_PIN || '1234';
-const staffDistrict = (process.env.SEED_STAFF_DISTRICT || '').trim().toLowerCase();
+const districtAdminId = process.env.SEED_DISTRICT_ADMIN_ID || 'DIST-001';
+const districtAdminPin = process.env.SEED_DISTRICT_ADMIN_PIN || '1234';
+const districtAdminDistrict = (process.env.SEED_DISTRICT_ADMIN_DISTRICT || '').trim().toLowerCase();
+const superAdminId = process.env.SEED_SUPER_ADMIN_ID || 'SUPER001';
+const superAdminPin = process.env.SEED_SUPER_ADMIN_PIN || 'Admin@123';
+const superAdminDistrict = (process.env.SEED_SUPER_ADMIN_DISTRICT || '').trim().toLowerCase();
 
 function requireSeedEnv() {
   const missing = [];
-  if (!doctorId) missing.push('SEED_DOCTOR_ID');
-  if (!doctorPin) missing.push('SEED_DOCTOR_PIN');
-  if (!staffId) missing.push('SEED_STAFF_ID');
-  if (!staffPin) missing.push('SEED_STAFF_PIN');
+  if (!districtAdminId) missing.push('SEED_DISTRICT_ADMIN_ID');
+  if (!districtAdminPin) missing.push('SEED_DISTRICT_ADMIN_PIN');
+  if (!superAdminId) missing.push('SEED_SUPER_ADMIN_ID');
+  if (!superAdminPin) missing.push('SEED_SUPER_ADMIN_PIN');
   if (missing.length > 0) {
     throw new Error(`Missing seed env: ${missing.join(', ')} (see backend/.env.example)`);
   }
@@ -110,9 +111,9 @@ async function seedBloodUnits() {
 async function main() {
   requireSeedEnv();
   await connectDB();
-  await upsertUser({ staffId: doctorId, name: 'Seed Doctor', role: 'Doctor', pin: doctorPin, districtId: doctorDistrict });
-  await upsertUser({ staffId: staffId, name: 'Seed Staff', role: 'Staff', pin: staffPin, districtId: staffDistrict });
-  console.log('seed done: Doctor + Staff upserted');
+  await upsertUser({ staffId: districtAdminId, name: 'Seed District Admin', role: 'DistrictAdmin', pin: districtAdminPin, districtId: districtAdminDistrict });
+  await upsertUser({ staffId: superAdminId, name: 'Seed Super Admin', role: 'SuperAdmin', pin: superAdminPin, districtId: superAdminDistrict });
+  console.log('seed done: DistrictAdmin + SuperAdmin upserted');
   await upsertDemoHospital();
   await seedBloodUnits();
   console.log('seed done: all');

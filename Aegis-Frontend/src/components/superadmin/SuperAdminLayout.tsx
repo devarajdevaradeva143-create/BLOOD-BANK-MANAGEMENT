@@ -19,6 +19,7 @@ const TITLE_KEYS: Record<string, TranslationKey> = {
   '/superadmin/requests': 'admin.requests.title',
   '/superadmin/inventory': 'admin.inventory.title',
   '/superadmin/districts': 'admin.districts.title',
+  '/superadmin/messages': 'admin.messages.title',
   '/superadmin/reports': 'admin.reports.title',
   '/superadmin/profile': 'admin.profile.title',
   '/superadmin/settings': 'admin.settings.title',

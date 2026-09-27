@@ -12,6 +12,7 @@ import {
   LayoutDashboard,
   LogOut,
   Map,
+  MessageSquare,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -54,6 +55,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/superadmin/requests', labelKey: 'admin.nav.requests', icon: ClipboardList },
       { to: '/superadmin/inventory', labelKey: 'admin.nav.inventory', icon: Database },
       { to: '/superadmin/districts', labelKey: 'admin.nav.districts', icon: Map },
+      { to: '/superadmin/messages', labelKey: 'admin.messages.title', icon: MessageSquare },
     ],
   },
   {
@@ -262,7 +264,11 @@ export function SuperAdminSidebar({
                 </p>
                 <p className="truncate text-[11px] text-slate-500 dark:text-slate-400">
                   {user.id} ·{' '}
-                  {t(user.role === 'Doctor' ? 'login.demoDoctor' : 'login.demoStaff')}
+                  {t(
+                    user.role === 'DistrictAdmin'
+                      ? 'login.demoDistrictAdmin'
+                      : 'login.demoSuperAdmin',
+                  )}
                 </p>
               </div>
             ) : null}

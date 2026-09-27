@@ -1,5 +1,5 @@
 /**
- * Role gate. Usage: router.get('/x', authRequired, requireRole('doctor', 'staff'), handler)
+ * Role gate. Usage: router.get('/x', authRequired, requireRole('DistrictAdmin', 'SuperAdmin'), handler)
  */
 export function requireRole(...roles) {
   const allowed = roles.flat();

@@ -24,7 +24,7 @@ function otpError(message, statusCode) {
  *
  * @param {string} mobile  plain identifier (mobile / email / staffId-derived target)
  * @param {string} code    plain 6-digit code
- * @param {'donor'|'request'|'reset'} purpose
+ * @param {'donor'|'request'|'reset'|'donation'} purpose
  * @returns {Promise<import('mongoose').Document>} the consumed Otp doc
   */
 export async function verifyOtpInternal(mobile, code, purpose) {
@@ -33,7 +33,7 @@ export async function verifyOtpInternal(mobile, code, purpose) {
   if (!target || !plainCode) {
     throw otpError('Identifier and OTP code are required', 400);
   }
-  if (!['donor', 'request', 'reset'].includes(purpose)) {
+  if (!['donor', 'request', 'reset', 'donation'].includes(purpose)) {
     throw otpError('Invalid OTP purpose', 400);
   }
 

@@ -19,6 +19,7 @@ import BloodRequestsPage from './pages/superadmin/RequestsPage';
 import InventoryPage from './pages/superadmin/InventoryPage';
 import DistrictsPage from './pages/superadmin/DistrictsPage';
 import ReportsPage from './pages/superadmin/ReportsPage';
+import SuperAdminMessagesPage from './pages/superadmin/MessagesPage';
 import SuperAdminProfilePage from './pages/superadmin/ProfilePage';
 import SuperAdminSettingsPage from './pages/superadmin/SettingsPage';
 import DashboardPage from './pages/DashboardPage';
@@ -27,6 +28,11 @@ import AddUnitPage from './pages/AddUnitPage';
 import TestingPage from './pages/TestingPage';
 import ExpiryPage from './pages/ExpiryPage';
 import HistoryPage from './pages/HistoryPage';
+import DistrictRequestsPage from './pages/RequestsPage';
+import DistrictDonorsPage from './pages/DonorsPage';
+import DistrictDonationsPage from './pages/DonationsPage';
+import MessagesPage from './pages/MessagesPage';
+import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
@@ -50,6 +56,7 @@ export default function App() {
                     <Route path="/superadmin/requests" element={<BloodRequestsPage />} />
                     <Route path="/superadmin/inventory" element={<InventoryPage />} />
                     <Route path="/superadmin/districts" element={<DistrictsPage />} />
+                    <Route path="/superadmin/messages" element={<SuperAdminMessagesPage />} />
                     <Route path="/superadmin/reports" element={<ReportsPage />} />
                     <Route path="/superadmin/profile" element={<SuperAdminProfilePage />} />
                     <Route path="/superadmin/settings" element={<SuperAdminSettingsPage />} />
@@ -64,6 +71,11 @@ export default function App() {
                     <Route path="/testing" element={<TestingPage />} />
                     <Route path="/expiry" element={<ExpiryPage />} />
                     <Route path="/history" element={<HistoryPage />} />
+                    <Route path="/requests" element={<DistrictRequestsPage />} />
+                    <Route path="/donations" element={<DistrictDonationsPage />} />
+                    <Route path="/donors" element={<DistrictDonorsPage />} />
+                    <Route path="/messages" element={<MessagesPage />} />
+                    <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                   </Route>
                 </Route>

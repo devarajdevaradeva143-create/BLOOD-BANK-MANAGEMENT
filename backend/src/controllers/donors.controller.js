@@ -1,5 +1,6 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import Donor from '../models/Donor.js';
+import User from '../models/User.js';
 import Otp from '../models/Otp.js';
 import { genDonorId } from '../utils/ids.js';
 import { logAudit } from '../middleware/audit.js';
@@ -28,6 +29,10 @@ function parsePagination(query) {
     Math.max(1, Number.parseInt(query.limit, 10) || 20)
   );
   return { page, limit, skip: (page - 1) * limit };
+}
+
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -64,14 +69,38 @@ export const createDonor = asyncHandler(async (req, res) => {
 /**
  * GET /api/donors  (auth required at route level)
  * Query: ?bloodGroup=&district=&search=&page=&limit=
+ * DistrictAdmin-ku avanga district donor mattum (query-va override panni
+ * force pannuvom) — JWT-first + DB fallback via User.findById.
+ * NOTE / LIMITATION: Donor.district is free text (no slug column), so the
+ * forced filter is an exact case-insensitive match on the admin's district
+ * slug. Display names that differ from the slug (e.g. "Chennai District" vs
+ * slug "chennai") will NOT match — public behavior otherwise unchanged.
  */
 export const listDonors = asyncHandler(async (req, res) => {
-  const { bloodGroup, district, search } = req.query;
+  const { bloodGroup, district, districtId, search } = req.query;
   const { page, limit, skip } = parsePagination(req.query);
 
   const filter = {};
   if (bloodGroup) filter.bloodGroup = bloodGroup;
-  if (district) filter.district = new RegExp(`^${String(district).trim()}$`, 'i');
+
+  let adminDistrict = String(req.user?.districtId || '').trim().toLowerCase();
+  if (!adminDistrict && req.user?.id && req.user?.role !== 'Hospital') {
+    try {
+      const me = await User.findById(req.user.id).select('districtId').lean();
+      adminDistrict = String(me?.districtId || '').trim().toLowerCase();
+    } catch {
+      adminDistrict = '';
+    }
+  }
+  // DistrictAdmin-ku district illana fail-closed — ella district-um kaata koodadhu.
+  if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
+    return res.status(403).json({ message: 'Forbidden: district not assigned' });
+  }
+  if (req.user?.role === 'DistrictAdmin' && adminDistrict) {
+    filter.district = new RegExp(`^${escapeRegex(adminDistrict)}$`, 'i');
+  } else if (districtId || district) {
+    filter.district = new RegExp(`^${escapeRegex(String(districtId || district).trim())}$`, 'i');
+  }
   if (search) {
     const q = String(search).trim();
     filter.$or = [

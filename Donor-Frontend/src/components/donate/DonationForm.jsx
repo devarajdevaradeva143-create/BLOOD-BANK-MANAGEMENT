@@ -5,11 +5,15 @@ import Input from "../ui/Input";
 import Select from "../ui/Select";
 import Checkbox from "../ui/Checkbox";
 import Button from "../ui/Button";
+import DonationOtpDialog from "./DonationOtpDialog";
 import { useLanguage } from "../../i18n/LanguageContext";
+import { requestDonationOtp } from "../../lib/api";
+import { submitDonationServer } from "../../services/donationStore";
 import {
   TN_DISTRICTS,
   BLOOD_GROUPS,
   DONATION_CENTERS,
+  toDistrictId,
 } from "../../data/constants";
 
 const INITIAL_FORM = {
@@ -35,6 +39,42 @@ function localToday() {
   ).padStart(2, "0")}`;
 }
 
+function isNetworkError(err) {
+  const msg = String((err && err.message) || err || "");
+  return (
+    msg.includes("Unable to reach server") ||
+    msg.includes("Failed to fetch") ||
+    msg.includes("NetworkError") ||
+    msg.includes("Load failed") ||
+    msg.includes("Network request failed")
+  );
+}
+
+function buildDonationPayload(formValues, code) {
+  const district = formValues.district || "";
+  const date = formValues.date || "";
+  const time = formValues.time || "";
+  return {
+    // Contract fields for POST /api/donations.
+    donorName: String(formValues.donorName || "").trim(),
+    bloodGroup: formValues.bloodGroup || "",
+    mobile: String(formValues.mobile || "").trim(),
+    districtId: toDistrictId(district),
+    district,
+    availableDate: date,
+    preferredTime: time,
+    notes: String(formValues.notes || "").trim(),
+    code: String(code || "").trim(),
+    // Backend schema aliases (date/time) + optional display fields kept for
+    // compatibility and local offline cache / Confirmation display.
+    date,
+    time,
+    donorId: String(formValues.donorId || "").trim(),
+    email: String(formValues.email || "").trim(),
+    center: formValues.center || "",
+  };
+}
+
 function SectionCard({ icon, title, children }) {
   return (
     <Card className="p-6">
@@ -58,6 +98,11 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
   const [eligibility, setEligibility] = useState(false);
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpError, setOtpError] = useState("");
+  const [resending, setResending] = useState(false);
 
   const today = localToday();
 
@@ -107,18 +152,70 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
     return newErrors;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     const newErrors = validate();
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
+    setFormError("");
     setSubmitting(true);
-    setTimeout(() => {
-      onSubmit({ ...form, eligibility });
+    try {
+      await requestDonationOtp(form.mobile);
+      setOtpError("");
+      setOtpOpen(true);
+    } catch (err) {
+      if (isNetworkError(err)) {
+        // Backend unreachable — fall back to the existing local-only save.
+        onSubmit({ ...form, eligibility, _offline: true });
+      } else {
+        setFormError(
+          err && err.message ? err.message : "Could not send OTP. Please try again."
+        );
+      }
+    } finally {
       setSubmitting(false);
-    }, 600);
+    }
+  };
+
+  const handleVerifyOtp = async (code) => {
+    setOtpError("");
+    setOtpVerifying(true);
+    try {
+      const serverRes = await submitDonationServer(
+        buildDonationPayload(form, code)
+      );
+      setOtpOpen(false);
+      // OTP verified server-side — never keep the code in local state.
+      onSubmit({ ...form, eligibility, _server: serverRes || {} });
+    } catch (err) {
+      if (isNetworkError(err)) {
+        // Submit failed only because the backend is unreachable.
+        setOtpOpen(false);
+        onSubmit({ ...form, eligibility, _offline: true });
+      } else {
+        setOtpError(
+          err && err.message ? err.message : "Invalid OTP. Please try again."
+        );
+      }
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setOtpError("");
+    setResending(true);
+    try {
+      await requestDonationOtp(form.mobile);
+    } catch (err) {
+      setOtpError(
+        err && err.message ? err.message : "Could not resend OTP. Please try again."
+      );
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
@@ -330,6 +427,15 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
         </div>
       </SectionCard>
 
+      {formError && (
+        <p
+          role="alert"
+          className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/40 dark:text-red-400"
+        >
+          {formError}
+        </p>
+      )}
+
       <div className="flex flex-wrap gap-3">
         <Button type="submit" variant="primary" disabled={submitting}>
           {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
@@ -339,6 +445,19 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
           {t("donate.cancel")}
         </Button>
       </div>
+
+      <DonationOtpDialog
+        open={otpOpen}
+        mobile={form.mobile}
+        verifying={otpVerifying}
+        resending={resending}
+        error={otpError}
+        onVerify={handleVerifyOtp}
+        onResend={handleResendOtp}
+        onClose={() => {
+          if (!otpVerifying) setOtpOpen(false);
+        }}
+      />
     </form>
   );
 }

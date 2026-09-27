@@ -1,4 +1,23 @@
+import { submitDonation } from "../lib/api";
+
 const STORAGE_KEY = "donorDonations";
+
+// Server sync is optional — the backend may not exist yet, so the caller
+// decides whether to fall back to the local-only save below.
+export async function submitDonationServer(payload) {
+  return submitDonation(payload);
+}
+
+// Backend district ids are lowercase slugs with two legacy spellings fixed.
+const DISTRICT_SLUG_FIXES = {
+  kanniyakumari: "kanyakumari",
+  tirupattur: "tirupathur",
+};
+
+export function slugifyDistrict(district) {
+  const norm = String(district ?? "").trim().toLowerCase();
+  return DISTRICT_SLUG_FIXES[norm] ?? norm;
+}
 
 function readAll() {
   try {
@@ -98,4 +117,6 @@ export default {
   getDonationById,
   saveDonation,
   updateDonationStatus,
+  submitDonationServer,
+  slugifyDistrict,
 };

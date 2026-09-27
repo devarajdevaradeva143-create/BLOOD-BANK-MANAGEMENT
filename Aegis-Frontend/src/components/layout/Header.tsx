@@ -12,6 +12,11 @@ const TITLE_KEYS: Record<string, TranslationKey> = {
   '/testing': 'test.title',
   '/expiry': 'expiry.title',
   '/history': 'history.title',
+  '/requests': 'requests.title',
+  '/donations': 'donations.title',
+  '/donors': 'donors.title',
+  '/messages': 'messages.title',
+  '/profile': 'profile.title',
   '/settings': 'settings.title',
 };
 
@@ -106,17 +111,24 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         {user ? (
           <div className="flex items-center gap-2 border-l border-slate-200 pl-2 sm:pl-3 dark:border-slate-700">
-            <div className="hidden text-right sm:block">
-              <p className="text-xs font-semibold text-slate-800 dark:text-slate-200">{user.name}</p>
+            <Link to="/profile" className="hidden text-right sm:block" aria-label={t('nav.profile')}>
+              <p className="text-xs font-semibold text-slate-800 hover:text-red-600 dark:text-slate-200 dark:hover:text-red-400">
+                {user.name}
+              </p>
               <p className="text-[10px] text-slate-400 dark:text-slate-500">{user.id}</p>
-            </div>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-xs font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">
+            </Link>
+            <Link
+              to="/profile"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-red-100 text-xs font-semibold text-red-700 transition-colors hover:bg-red-200 dark:bg-red-950 dark:text-red-300 dark:hover:bg-red-900"
+              aria-label={t('nav.profile')}
+              title={t('nav.profile')}
+            >
               {user.name
                 .split(' ')
                 .map((p) => p[0])
                 .join('')
                 .slice(0, 2)}
-            </div>
+            </Link>
             <button
               type="button"
               onClick={handleLogout}

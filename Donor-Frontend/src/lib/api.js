@@ -58,6 +58,21 @@ export function registerDonor(payload, code) {
   });
 }
 
+export function requestDonationOtp(mobile) {
+  return req("/api/otp/request", {
+    method: "POST",
+    body: { mobile: String(mobile).trim(), purpose: "donation" },
+  });
+}
+
+export function submitDonation(payload) {
+  const { code, ...rest } = payload || {};
+  return req("/api/donations", {
+    method: "POST",
+    body: { ...rest, code: String(code ?? "").trim() },
+  });
+}
+
 export function fetchStats() {
   return req("/api/stats");
 }

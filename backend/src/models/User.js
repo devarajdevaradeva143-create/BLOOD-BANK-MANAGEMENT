@@ -18,10 +18,10 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     name: { type: String, required: true, trim: true },
-    role: { type: String, required: true, enum: ['Doctor', 'Staff'] },
+    role: { type: String, required: true, enum: ['DistrictAdmin', 'SuperAdmin'] },
     designation: { type: String, trim: true },
-    // Admin district — indha district request mattum dhaan indha admin-ku theriyum.
-    // Empty-na all districts (superadmin madhiri).
+    // DistrictAdmin district — indha district request mattum dhaan indha admin-ku theriyum.
+    // Empty-na all districts (SuperAdmin madhiri).
     districtId: { type: String, trim: true, lowercase: true, default: '' },
     pinHash: { type: String, required: true },
     refreshTokens: { type: [refreshTokenSchema], default: [] },

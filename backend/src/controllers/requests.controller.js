@@ -54,6 +54,7 @@ export const createRequest = asyncHandler(async (req, res) => {
 
   const doc = await BloodRequest.create({
     ...requestData,
+    districtId: String(requestData.districtId || '').trim().toLowerCase(),
     contact: String(contact).trim(),
     requestId: genRequestId(),
     contactVerified: true,
@@ -171,6 +172,11 @@ export const listRequests = asyncHandler(async (req, res) => {
     }
   }
 
+  // DistrictAdmin-ku district illana fail-closed — ella district-um kaata koodadhu.
+  if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
+    return res.status(403).json({ message: 'Forbidden: district not assigned' });
+  }
+
   const filter = {};
   if (bloodGroup) filter.bloodGroup = bloodGroup;
   if (requestType) filter.requestType = requestType;
@@ -182,7 +188,7 @@ export const listRequests = asyncHandler(async (req, res) => {
     // District admin-ku avanga district mattum — vera district patha mudiyadhu.
     filter.districtId = adminDistrict;
   } else if (districtId || district) {
-    filter.districtId = districtId || district;
+    filter.districtId = String(districtId || district).trim().toLowerCase();
   }
   if (status) filter.status = status;
   if (search) {
@@ -211,7 +217,7 @@ export const listRequests = asyncHandler(async (req, res) => {
 
 /**
  * PATCH /api/requests/:id/status
- * Doctor: full transitions (route level) + cross-district block.
+ * DistrictAdmin/SuperAdmin: full transitions (route level) + cross-district block.
  * Hospital: sodha hospital-oda submitted request-ah cancel panna mattum.
  * Body: { status } — validated by requestStatusSchema.
  */
@@ -252,6 +258,9 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
     } catch {
       adminDistrict = '';
     }
+  }
+  if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
+    return res.status(403).json({ message: 'Forbidden: district not assigned' });
   }
   if (
     adminDistrict &&

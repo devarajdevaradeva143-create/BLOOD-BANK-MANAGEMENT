@@ -48,10 +48,10 @@ export const config = {
   },
 
   seed: {
-    doctorId: process.env.SEED_DOCTOR_ID || 'DOC-001',
-    doctorPin: process.env.SEED_DOCTOR_PIN || '1234',
-    staffId: process.env.SEED_STAFF_ID || 'STAFF-001',
-    staffPin: process.env.SEED_STAFF_PIN || '1234',
+    districtAdminId: process.env.SEED_DISTRICT_ADMIN_ID || 'DIST-001',
+    districtAdminPin: process.env.SEED_DISTRICT_ADMIN_PIN || '1234',
+    superAdminId: process.env.SEED_SUPER_ADMIN_ID || 'SUPER001',
+    superAdminPin: process.env.SEED_SUPER_ADMIN_PIN || 'Admin@123',
   },
 };
 

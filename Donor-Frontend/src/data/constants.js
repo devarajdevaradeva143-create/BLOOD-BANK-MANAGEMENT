@@ -40,6 +40,20 @@ export const TN_DISTRICTS = [
 
 export const BLOOD_GROUPS = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 
+// Backend district id = lowercase slug of the display name with two legacy
+// spelling fixes. Used for POST /api/donations { districtId, district }.
+const DISTRICT_SLUG_ALIASES = {
+  kanniyakumari: "kanyakumari",
+  tirupattur: "tirupathur",
+};
+
+export function toDistrictId(display) {
+  const norm = String(display ?? "")
+    .trim()
+    .toLowerCase();
+  return DISTRICT_SLUG_ALIASES[norm] ?? norm;
+}
+
 export const GENDERS = ["Male", "Female", "Transgender"];
 
 export const ELIGIBILITY_QUESTIONS = [

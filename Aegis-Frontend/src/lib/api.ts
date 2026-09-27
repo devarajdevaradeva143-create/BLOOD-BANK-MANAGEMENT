@@ -2,8 +2,14 @@ import type {
   AuthUser,
   BloodComponent,
   BloodGroup,
+  BloodRequest,
   BloodUnit,
+  Donation,
+  DonationStatus,
   HistoryEvent,
+  Message,
+  MessageStatus,
+  RequestStatus,
   TestResultInput,
   UnitStatus,
 } from '../data/types';
@@ -95,8 +101,9 @@ interface ServerUser {
   id: string;
   staffId?: string;
   name: string;
-  role: 'Doctor' | 'Staff';
+  role: 'DistrictAdmin' | 'SuperAdmin';
   designation?: string | null;
+  districtId?: string | null;
 }
 
 function mapServerUser(user: ServerUser): AuthUser {
@@ -105,6 +112,7 @@ function mapServerUser(user: ServerUser): AuthUser {
     name: user.name,
     role: user.role,
     designation: user.designation ?? '',
+    districtId: user.districtId ?? undefined,
   };
 }
 
@@ -314,16 +322,66 @@ export interface ListRequestsParams {
   district?: string;
   status?: string;
   search?: string;
+  requestType?: string;
+  groupId?: string;
   page?: number;
   limit?: number;
 }
 
 export interface ListRequestsResult {
-  data: unknown[];
+  data: BloodRequest[];
   total: number;
   page?: number;
   limit?: number;
   totalPages?: number;
+}
+
+export function mapServerRequest(raw: any): BloodRequest {
+  const requestId =
+    (typeof raw?.requestId === 'string' && raw.requestId) ||
+    (typeof raw?._id === 'string' && raw._id) ||
+    String(raw?.id ?? '');
+  const statusRaw = String(raw?.status ?? 'submitted');
+  const status: RequestStatus =
+    statusRaw === 'approved' ||
+    statusRaw === 'fulfilled' ||
+    statusRaw === 'cancelled'
+      ? statusRaw
+      : 'submitted';
+  const requestType = raw?.requestType === 'emergency' ? 'emergency' : 'normal';
+  return {
+    requestId,
+    patientName: String(raw?.patientName ?? ''),
+    bloodGroup: String(raw?.bloodGroup ?? ''),
+    units: Number(raw?.units ?? 0),
+    districtId: String(raw?.districtId ?? raw?.district ?? ''),
+    hospitalName: String(raw?.hospitalName ?? ''),
+    hospitalAddress:
+      raw?.hospitalAddress !== undefined && raw?.hospitalAddress !== null
+        ? String(raw.hospitalAddress)
+        : undefined,
+    contact:
+      raw?.contact !== undefined && raw?.contact !== null
+        ? String(raw.contact)
+        : undefined,
+    requiredDate: raw?.requiredDate ? toDateOnly(raw.requiredDate) : undefined,
+    requestType,
+    priority:
+      raw?.priority !== undefined && raw?.priority !== null
+        ? String(raw.priority)
+        : undefined,
+    status,
+    createdAt:
+      typeof raw?.createdAt === 'string'
+        ? raw.createdAt
+        : raw?.createdAt
+          ? toIsoString(raw.createdAt, new Date().toISOString())
+          : undefined,
+    groupId:
+      raw?.groupId !== undefined && raw?.groupId !== null
+        ? String(raw.groupId)
+        : undefined,
+  };
 }
 
 export async function listRequests(params: ListRequestsParams = {}): Promise<ListRequestsResult> {
@@ -332,11 +390,27 @@ export async function listRequests(params: ListRequestsParams = {}): Promise<Lis
     if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
   }
   const query = qs.toString() ? `?${qs.toString()}` : '';
-  return apiFetch<ListRequestsResult>(`/api/requests${query}`, { auth: true });
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }>(`/api/requests${query}`, { auth: true });
+  return {
+    data: (data.data ?? []).map(mapServerRequest),
+    total: data.total ?? 0,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
 }
 
-export async function updateRequestStatusApi(id: string, status: string): Promise<unknown> {
-  const data = await apiFetch<{ request: unknown }>(
+export async function updateRequestStatusApi(
+  id: string,
+  status: RequestStatus,
+): Promise<BloodRequest> {
+  const data = await apiFetch<{ request: any }>(
     `/api/requests/${encodeURIComponent(id)}/status`,
     {
       method: 'PATCH',
@@ -344,5 +418,217 @@ export async function updateRequestStatusApi(id: string, status: string): Promis
       auth: true,
     },
   );
-  return data.request;
+  return mapServerRequest(data.request);
+}
+
+export interface ListDonorsParams {
+  bloodGroup?: string;
+  district?: string;
+  districtId?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListDonorsResult {
+  data: any[];
+  total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export async function listDonors(params: ListDonorsParams = {}): Promise<ListDonorsResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }>(`/api/donors${query}`, { auth: true });
+  return {
+    data: data.data ?? [],
+    total: data.total ?? 0,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
+}
+
+export interface ListDonationsParams {
+  bloodGroup?: string;
+  districtId?: string;
+  district?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListDonationsResult {
+  data: Donation[];
+  total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export function mapServerDonation(raw: any): Donation {
+  const donationId =
+    (typeof raw?.donationId === 'string' && raw.donationId) ||
+    (typeof raw?._id === 'string' && raw._id) ||
+    String(raw?.id ?? '');
+  const statusRaw = String(raw?.status ?? 'pending');
+  const status: DonationStatus =
+    statusRaw === 'approved' || statusRaw === 'completed' || statusRaw === 'cancelled'
+      ? statusRaw
+      : 'pending';
+  return {
+    donationId,
+    donorName: String(raw?.donorName ?? raw?.donor ?? ''),
+    bloodGroup: String(raw?.bloodGroup ?? ''),
+    mobile: String(raw?.mobile ?? raw?.contact ?? ''),
+    districtId: String(raw?.districtId ?? raw?.district ?? ''),
+    district:
+      raw?.district !== undefined && raw?.district !== null
+        ? String(raw.district)
+        : undefined,
+    availableDate: raw?.availableDate ? toDateOnly(raw.availableDate) : undefined,
+    preferredTime:
+      raw?.preferredTime !== undefined && raw?.preferredTime !== null
+        ? String(raw.preferredTime)
+        : undefined,
+    notes:
+      raw?.notes !== undefined && raw?.notes !== null ? String(raw.notes) : undefined,
+    status,
+    createdAt:
+      typeof raw?.createdAt === 'string'
+        ? raw.createdAt
+        : raw?.createdAt
+          ? toIsoString(raw.createdAt, new Date().toISOString())
+          : undefined,
+  };
+}
+
+export async function listDonations(
+  params: ListDonationsParams = {},
+): Promise<ListDonationsResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }>(`/api/donations${query}`, { auth: true });
+  return {
+    data: (data.data ?? []).map(mapServerDonation),
+    total: data.total ?? 0,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
+}
+
+export async function updateDonationStatusApi(
+  id: string,
+  status: DonationStatus,
+): Promise<Donation> {
+  const data = await apiFetch<{ donation: any }>(
+    `/api/donations/${encodeURIComponent(id)}/status`,
+    {
+      method: 'PATCH',
+      body: { status },
+      auth: true,
+    },
+  );
+  return mapServerDonation(data.donation);
+}
+
+export function mapServerMessage(raw: any): Message {
+  const messageId =
+    (typeof raw?.messageId === 'string' && raw.messageId) ||
+    (typeof raw?._id === 'string' && raw._id) ||
+    String(raw?.id ?? '');
+  const statusRaw = String(raw?.status ?? 'unread');
+  const status: MessageStatus =
+    statusRaw === 'read' || statusRaw === 'replied' ? statusRaw : 'unread';
+  return {
+    messageId,
+    subject: String(raw?.subject ?? ''),
+    body: String(raw?.body ?? ''),
+    reply:
+      raw?.reply !== undefined && raw?.reply !== null && String(raw.reply) !== ''
+        ? String(raw.reply)
+        : undefined,
+    status,
+    createdAt:
+      typeof raw?.createdAt === 'string'
+        ? raw.createdAt
+        : raw?.createdAt
+          ? toIsoString(raw.createdAt, new Date().toISOString())
+          : undefined,
+    fromName:
+      raw?.fromName !== undefined && raw?.fromName !== null
+        ? String(raw.fromName)
+        : undefined,
+    fromDistrictId:
+      raw?.fromDistrictId !== undefined && raw?.fromDistrictId !== null
+        ? String(raw.fromDistrictId)
+        : undefined,
+  };
+}
+
+export interface ListMessagesParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListMessagesResult {
+  data: Message[];
+  total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export async function listMessages(params: ListMessagesParams = {}): Promise<ListMessagesResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }>(`/api/messages${query}`, { auth: true });
+  return {
+    data: (data.data ?? []).map(mapServerMessage),
+    total: data.total ?? 0,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
+}
+
+export async function sendMessage(input: { subject: string; body: string }): Promise<Message> {
+  const data = await apiFetch<{ message: string; data: any }>('/api/messages', {
+    method: 'POST',
+    body: input,
+    auth: true,
+  });
+  return mapServerMessage(data.data);
 }

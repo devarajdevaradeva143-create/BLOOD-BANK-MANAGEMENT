@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 const mobileRegex = /^\d{10}$/;
-const purposeEnum = z.enum(['donor', 'request']);
+const purposeEnum = z.enum(['donor', 'request', 'donation']);
 
 export const otpRequestSchema = z.object({
   mobile: z.string().regex(mobileRegex, 'Invalid Indian mobile number'),

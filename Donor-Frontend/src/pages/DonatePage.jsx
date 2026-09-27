@@ -30,15 +30,41 @@ export default function DonatePage() {
     const dateNow = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(
       now.getDate()
     ).padStart(2, "0")}`;
-    const requestId = `REQ-${dateNow}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const localRequestId = `REQ-${dateNow}-${Math.floor(1000 + Math.random() * 9000)}`;
     const donationDate = payload.date || now.toISOString().slice(0, 10);
 
-    // Admin illa — donate panna udane approved + total+1.
+    const server =
+      payload._server && typeof payload._server === "object"
+        ? payload._server
+        : null;
+    const offline = Boolean(payload._offline);
+
+    // Server statuses: pending | approved | cancelled. Anything else (or no
+    // server at all in offline mode) keeps the previous local behaviour.
+    const VALID_STATUSES = ["pending", "approved", "cancelled"];
+    const rawServerStatus = server
+      ? String(server.status ?? server.donationStatus ?? "pending").toLowerCase()
+      : "";
+    const serverStatus = VALID_STATUSES.includes(rawServerStatus)
+      ? rawServerStatus
+      : "pending";
+    const status = offline ? "approved" : serverStatus;
+
+    const donationId = server
+      ? server.donationId ?? server.id ?? server._id ?? null
+      : null;
+    const requestId =
+      (server && (server.requestId || server.donationId || server.id)) ||
+      localRequestId;
+
+    // Always keep a local copy (offline fallback + local history).
     let saved = null;
     try {
       saved = saveDonation({
         requestId,
+        donationId: donationId || undefined,
         donorName: payload.donorName || "",
+        donorId: payload.donorId || "",
         bloodGroup: payload.bloodGroup || "",
         mobile: payload.mobile || "",
         email: payload.email || "",
@@ -46,9 +72,15 @@ export default function DonatePage() {
         center: payload.center || "",
         date: donationDate,
         time: payload.time || "",
-        status: "pending",
+        notes: payload.notes || "",
+        offline: offline || undefined,
       });
-      if (saved) updateDonationStatus(saved.requestId || requestId, "approved", "system");
+      if (saved)
+        updateDonationStatus(
+          saved.requestId || requestId,
+          status,
+          offline ? "offline-fallback" : "server"
+        );
     } catch {
       // ignore storage errors
     }
@@ -80,6 +112,7 @@ export default function DonatePage() {
 
     const record = saved || {
       requestId,
+      donationId: donationId || undefined,
       donorName: payload.donorName,
       bloodGroup: payload.bloodGroup,
       mobile: payload.mobile,
@@ -88,11 +121,12 @@ export default function DonatePage() {
       center: payload.center,
       date: donationDate,
       time: payload.time,
-      status: "approved",
+      status,
     };
-    record.status = "approved";
+    record.status = status;
     setSubmitted({
       requestId: record.requestId,
+      donationId: record.donationId || donationId || undefined,
       donorName: record.donorName,
       bloodGroup: record.bloodGroup,
       mobile: record.mobile,
@@ -101,9 +135,14 @@ export default function DonatePage() {
       center: record.center,
       date: record.date,
       time: record.time,
-      status: "approved",
+      status,
+      offline: offline || undefined,
     });
-    toast.success(t("donate.toast.success"));
+    if (offline) {
+      toast.info("Server unreachable — request saved on this device (offline).");
+    } else {
+      toast.success(t("donate.toast.success"));
+    }
   };
 
   return (

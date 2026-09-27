@@ -66,7 +66,7 @@ export const listUnits = asyncHandler(async (req, res) => {
 });
 
 /**
- * POST /api/units (auth Staff+ at route level)
+ * POST /api/units (auth DistrictAdmin/SuperAdmin at route level)
  * Defaults: status UnderTesting, testStatus Pending, history `registered`.
  */
 export const createUnit = asyncHandler(async (req, res) => {
@@ -127,7 +127,7 @@ export const updateUnitStatus = asyncHandler(async (req, res) => {
 });
 
 /**
- * POST /api/units/:id/test (Doctor only at route level)
+ * POST /api/units/:id/test (DistrictAdmin/SuperAdmin at route level)
  * Body: { testStatus, screeningResult, testedBy, testDate, remarks }
  * Auto status: Passed -> Available, Failed -> Discarded.
  */

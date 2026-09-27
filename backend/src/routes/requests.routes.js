@@ -33,7 +33,7 @@ router.get('/', requireAuth, listRequests);
 router.patch(
   '/:id/status',
   requireAuth,
-  requireRole('Doctor', 'Hospital'),
+  requireRole('DistrictAdmin', 'SuperAdmin', 'Hospital'),
   validate(requestStatusSchema),
   updateRequestStatus
 );
