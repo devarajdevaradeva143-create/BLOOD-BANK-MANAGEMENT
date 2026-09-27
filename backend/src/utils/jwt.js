@@ -5,7 +5,11 @@ const ACCESS_TTL = config.jwt.accessExpires;
 const REFRESH_TTL = config.jwt.refreshExpires;
 
 function basePayload(user) {
-  return { id: String(user._id || user.id), role: user.role };
+  return {
+    id: String(user._id || user.id),
+    role: user.role,
+    districtId: String(user.districtId || '').trim().toLowerCase(),
+  };
 }
 
 export function signAccess(user) {

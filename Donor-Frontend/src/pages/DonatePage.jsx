@@ -7,6 +7,7 @@ import Confirmation from "../components/donate/Confirmation";
 import EligibilityChecker from "../components/eligibility/EligibilityChecker";
 import { useToast } from "../context/ToastContext";
 import { useLanguage } from "../i18n/LanguageContext";
+import { saveDonation } from "../services/donationStore";
 
 export default function DonatePage() {
   const { t } = useLanguage();
@@ -30,15 +31,68 @@ export default function DonatePage() {
       now.getDate()
     ).padStart(2, "0")}`;
     const requestId = `REQ-${dateNow}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const donationDate = payload.date || now.toISOString().slice(0, 10);
 
-    setSubmitted({
+    // Persist via the shared store — status forced to 'pending'.
+    let saved = null;
+    try {
+      saved = saveDonation({
+        requestId,
+        donorName: payload.donorName || "",
+        bloodGroup: payload.bloodGroup || "",
+        mobile: payload.mobile || "",
+        email: payload.email || "",
+        district: payload.district || "",
+        center: payload.center || "",
+        date: donationDate,
+        time: payload.time || "",
+        status: "pending",
+      });
+    } catch {
+      // ignore storage errors
+    }
+
+    // Only sync basic contact info into registeredDonor if missing.
+    // Do NOT increment totalDonations here (count happens on admin approval).
+    try {
+      const raw = localStorage.getItem("registeredDonor");
+      const reg = raw ? JSON.parse(raw) : {};
+      const updated = {
+        ...reg,
+        name: reg.name || payload.donorName || "",
+        email: reg.email || payload.email || "",
+        phone: reg.phone || payload.mobile || "",
+        bloodGroup: reg.bloodGroup || payload.bloodGroup || "",
+        district: reg.district || payload.district || "",
+      };
+      localStorage.setItem("registeredDonor", JSON.stringify(updated));
+    } catch {
+      // ignore storage errors
+    }
+
+    const record = saved || {
       requestId,
       donorName: payload.donorName,
       bloodGroup: payload.bloodGroup,
       mobile: payload.mobile,
+      email: payload.email,
+      district: payload.district,
       center: payload.center,
-      date: payload.date,
+      date: donationDate,
       time: payload.time,
+      status: "pending",
+    };
+    setSubmitted({
+      requestId: record.requestId,
+      donorName: record.donorName,
+      bloodGroup: record.bloodGroup,
+      mobile: record.mobile,
+      email: record.email,
+      district: record.district,
+      center: record.center,
+      date: record.date,
+      time: record.time,
+      status: "pending",
     });
     toast.success(t("donate.toast.success"));
   };

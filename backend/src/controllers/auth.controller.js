@@ -38,6 +38,7 @@ function toSafeUser(user) {
     name: user.name,
     role: user.role,
     designation: user.designation || null,
+    districtId: user.districtId || '',
     active: user.active,
   };
 }

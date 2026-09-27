@@ -27,19 +27,40 @@ export default function Certificate({ data, onClose }) {
     year: "numeric",
   });
 
+  const safeData = {
+    donorName: data?.donorName || "Donor",
+    bloodGroup: data?.bloodGroup || "—",
+    date: data?.date || new Date().toISOString().slice(0, 10),
+    time: data?.time || "",
+    center: data?.center || "Life Saver Blood Bank",
+    requestId: data?.requestId || `CERT-${Date.now()}`,
+  };
+
   const handleDownload = async () => {
     if (!certRef.current || downloading) return;
     setDownloading(true);
     try {
-      const dataUrl = await toPng(certRef.current, {
-        cacheBust: true,
-        pixelRatio: 2,
-        backgroundColor: "#ffffff",
-      });
+      // pixelRatio 2 fail aana 1-la retry — html-to-image memory issue-kaga.
+      let dataUrl = null;
+      try {
+        dataUrl = await toPng(certRef.current, {
+          cacheBust: true,
+          pixelRatio: 2,
+          backgroundColor: "#ffffff",
+        });
+      } catch {
+        dataUrl = await toPng(certRef.current, {
+          cacheBust: true,
+          pixelRatio: 1,
+          backgroundColor: "#ffffff",
+        });
+      }
       const link = document.createElement("a");
-      link.download = `donation-certificate-${data.requestId}.png`;
+      link.download = `donation-certificate-${safeData.requestId}.png`;
       link.href = dataUrl;
+      document.body.appendChild(link);
       link.click();
+      link.remove();
       toast.success(t("donate.certificate.toast"));
     } catch {
       toast.error(t("donate.certificate.toastError"));
@@ -135,7 +156,7 @@ export default function Certificate({ data, onClose }) {
                   {t("donate.certificate.presented")}
                 </p>
                 <p className="mt-2 font-serif text-3xl font-bold italic text-red-800 sm:text-4xl">
-                  {data.donorName}
+                  {safeData.donorName}
                 </p>
                 <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-gray-600">
                   {t("donate.certificate.for")}
@@ -145,19 +166,23 @@ export default function Certificate({ data, onClose }) {
                 <div className="mx-auto mt-8 grid max-w-2xl grid-cols-2 gap-5 border-y border-gray-200 py-5 sm:grid-cols-4">
                   <InfoBlock
                     label={t("donate.confirm.bloodGroup")}
-                    value={data.bloodGroup}
+                    value={safeData.bloodGroup}
                   />
                   <InfoBlock
                     label={t("donate.certificate.date")}
-                    value={`${data.date} · ${data.time}`}
+                    value={
+                      safeData.time
+                        ? `${safeData.date} · ${safeData.time}`
+                        : safeData.date
+                    }
                   />
                   <InfoBlock
                     label={t("donate.confirm.center")}
-                    value={data.center}
+                    value={safeData.center}
                   />
                   <InfoBlock
                     label={t("donate.certificate.certNo")}
-                    value={data.requestId}
+                    value={safeData.requestId}
                   />
                 </div>
 

@@ -338,6 +338,7 @@ export const MOCK_DONOR = {
   address: "123, Anna Salai, Chennai",
   district: "Chennai",
   donorId: "DB-2026001",
+  photo: "",
   registrationDate: "2024-01-15",
   lastDonationDate: "2025-09-20",
   totalDonations: 12,

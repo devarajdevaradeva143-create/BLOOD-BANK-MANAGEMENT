@@ -1,57 +1,72 @@
-import { useState } from "react";
-import { User, Mail, Phone, Calendar, ArrowLeftRight, MapPin, Building } from "lucide-react";
+import { User } from "lucide-react";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
-import Button from "../ui/Button";
 import { BLOOD_GROUPS, GENDERS, TN_DISTRICTS } from "../../data/constants";
 
-export default function PersonalInfoSection({ donor, editing, onChange, errors }) {
-  const handleChange = (field) => (e) => onChange(field, e.target.value);
-  const handleSelectChange = (field) => (e) => onChange(field, e.target.value);
+function toValue(v) {
+  // Input/Select components value string-ah tharanga, native event illa.
+  if (v && typeof v === "object" && "target" in v) return v.target.value;
+  return v ?? "";
+}
+
+export default function PersonalInfoSection({
+  donor,
+  editing,
+  onChange,
+  errors,
+}) {
+  const handleChange = (field) => (v) => onChange(field, toValue(v));
+
+  const safe = (v) => v ?? "";
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-      <h3 className="mb-6 text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+      <h3 className="mb-1 text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
         <User className="h-5 w-5 text-brand-600" />
         Personal Information
       </h3>
+      <p className="mb-6 text-xs text-gray-500 dark:text-slate-400">
+        Email, Mobile, District, Address mattum edit panna mudiyum.
+      </p>
       <div className="grid gap-5 sm:grid-cols-2">
         <Input
           label="Full Name"
           id="name"
-          value={donor.name}
+          value={safe(donor.name)}
           onChange={handleChange("name")}
           error={errors.name}
-          disabled={!editing}
+          disabled
           required
           placeholder="Enter your full name"
         />
         <Select
           label="Blood Group"
           id="bloodGroup"
-          value={donor.bloodGroup}
-          onChange={handleSelectChange("bloodGroup")}
+          value={safe(donor.bloodGroup)}
+          onChange={handleChange("bloodGroup")}
           options={BLOOD_GROUPS}
           error={errors.bloodGroup}
-          disabled={!editing}
+          disabled
           required
         />
+        {/* Email — user edit pannalam */}
         <Input
           label="Email Address"
           id="email"
           type="email"
-          value={donor.email}
+          value={safe(donor.email)}
           onChange={handleChange("email")}
           error={errors.email}
           disabled={!editing}
           required
           placeholder="you@example.com"
         />
+        {/* Contact No — user edit pannalam */}
         <Input
           label="Mobile Number"
           id="phone"
           type="tel"
-          value={donor.phone}
+          value={safe(donor.phone)}
           onChange={handleChange("phone")}
           error={errors.phone}
           disabled={!editing}
@@ -63,37 +78,38 @@ export default function PersonalInfoSection({ donor, editing, onChange, errors }
           label="Date of Birth"
           id="dob"
           type="date"
-          value={donor.dob}
+          value={safe(donor.dob)}
           onChange={handleChange("dob")}
           error={errors.dob}
-          disabled={!editing}
+          disabled
           required
         />
         <Select
           label="Gender"
           id="gender"
-          value={donor.gender}
-          onChange={handleSelectChange("gender")}
+          value={safe(donor.gender)}
+          onChange={handleChange("gender")}
           options={GENDERS}
           error={errors.gender}
-          disabled={!editing}
+          disabled
           required
         />
         <Input
           label="Address"
           id="address"
-          value={donor.address}
+          value={safe(donor.address)}
           onChange={handleChange("address")}
           error={errors.address}
           disabled={!editing}
           required
           placeholder="Enter your address"
         />
+        {/* District — user edit pannalam */}
         <Select
           label="District"
           id="district"
-          value={donor.district}
-          onChange={handleSelectChange("district")}
+          value={safe(donor.district)}
+          onChange={handleChange("district")}
           options={TN_DISTRICTS}
           error={errors.district}
           disabled={!editing}

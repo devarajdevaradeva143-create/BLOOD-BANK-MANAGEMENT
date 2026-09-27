@@ -7,6 +7,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  ShieldCheck,
   Sun,
   X,
   User,
@@ -80,6 +81,12 @@ export default function Navbar() {
               {link.label}
             </NavLink>
           ))}
+          <NavLink to="/admin/approvals" className={linkClass}>
+            <span className="inline-flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+              Admin
+            </span>
+          </NavLink>
         </nav>
 
         <div className="flex items-center gap-2">
@@ -170,6 +177,16 @@ export default function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+            <NavLink
+              to="/admin/approvals"
+              className={linkClass}
+              onClick={closeMenu}
+            >
+              <span className="inline-flex items-center gap-1.5">
+                <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                Admin
+              </span>
+            </NavLink>
             {isAuthenticated ? (
               <>
                 <Link

@@ -1,10 +1,15 @@
 import { Calendar, CalendarDays, Award, CheckCircle2 } from "lucide-react";
 
 export default function DonationInfoSection({ donor, t }) {
+  const safeDonor = donor || {};
+  const status = String(safeDonor.eligibilityStatus || "").trim();
   const statusColor =
-    donor.eligibilityStatus === "Eligible"
+    status === "Eligible"
       ? "text-emerald-600 dark:text-emerald-400"
-      : "text-red-600 dark:text-red-400";
+      : status === "Not Eligible"
+        ? "text-red-600 dark:text-red-400"
+        : "text-slate-500 dark:text-slate-400";
+  const orDash = (v) => (String(v || "").trim() ? String(v).trim() : "—");
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -19,7 +24,7 @@ export default function DonationInfoSection({ donor, t }) {
             {t("profile.lastDonation")}
           </div>
           <p className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
-            {donor.lastDonationDate}
+            {orDash(safeDonor.lastDonationDate)}
           </p>
         </div>
         <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950">
@@ -28,7 +33,7 @@ export default function DonationInfoSection({ donor, t }) {
             {t("profile.totalDonations")}
           </div>
           <p className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
-            {donor.totalDonations}
+            {Number(safeDonor.totalDonations ?? 0) || 0}
           </p>
         </div>
         <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950">
@@ -37,7 +42,7 @@ export default function DonationInfoSection({ donor, t }) {
             {t("profile.eligibility")}
           </div>
           <p className={`mt-1 text-base font-semibold ${statusColor}`}>
-            {donor.eligibilityStatus}
+            {status || "—"}
           </p>
         </div>
         <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950">
@@ -46,7 +51,7 @@ export default function DonationInfoSection({ donor, t }) {
             {t("profile.nextEligible")}
           </div>
           <p className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
-            {donor.nextEligibleDate}
+            {orDash(safeDonor.nextEligibleDate)}
           </p>
         </div>
         <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950">
@@ -55,7 +60,7 @@ export default function DonationInfoSection({ donor, t }) {
             {t("profile.registered")}
           </div>
           <p className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
-            {donor.registrationDate}
+            {orDash(safeDonor.registrationDate)}
           </p>
         </div>
         <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950">
@@ -64,7 +69,7 @@ export default function DonationInfoSection({ donor, t }) {
             {t("profile.eligibility")}
           </div>
           <p className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
-            {donor.isActive ? "Active Donor" : "Inactive"}
+            {safeDonor.isActive ? "Active Donor" : "Inactive"}
           </p>
         </div>
       </div>

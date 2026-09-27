@@ -15,7 +15,8 @@ import {
   Users,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { getRequests, updateRequestStatus } from '../lib/requests'
+import { getDistrictsInRequests, getRequests, updateRequestStatus } from '../lib/requests'
+import { getDistrictName } from '../data/districts'
 
 function fb(value) {
   if (value === undefined || value === null || value === '') return '—'
@@ -50,6 +51,12 @@ function requiredLabel(request) {
 
 function statusOf(request) {
   return request.status === 'approved' ? 'approved' : 'pending'
+}
+
+function districtLabel(request) {
+  if (request.districtName) return String(request.districtName)
+  if (request.districtId) return getDistrictName(request.districtId) || String(request.districtId)
+  return '—'
 }
 
 function StatusPill({ status }) {
@@ -171,6 +178,8 @@ export default function RequestHistoryPage() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [districtFilter, setDistrictFilter] = useState('all')
+  const districtOptions = useMemo(() => getDistrictsInRequests(), [requests])
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase()
@@ -183,9 +192,15 @@ export default function RequestHistoryPage() {
         String(request.requestType ?? '').toLowerCase() !== typeFilter
       )
         return false
+      // Select panna district request mattum kaamikkum.
+      if (
+        districtFilter !== 'all' &&
+        String(request.districtId ?? '').toLowerCase() !== districtFilter.toLowerCase()
+      )
+        return false
       return true
     })
-  }, [requests, search, statusFilter, typeFilter])
+  }, [requests, search, statusFilter, typeFilter, districtFilter])
 
   const stats = useMemo(
     () => ({
@@ -249,7 +264,7 @@ export default function RequestHistoryPage() {
             subtitle="Search by request id, status or type"
           />
         </div>
-        <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto]">
+        <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto]">
           <div className="relative">
             <Search
               className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
@@ -262,6 +277,25 @@ export default function RequestHistoryPage() {
               placeholder="Search by request id..."
               className="input-base !pl-10"
               aria-label="Search by request id"
+            />
+          </div>
+          <div className="relative">
+            <select
+              value={districtFilter}
+              onChange={(event) => setDistrictFilter(event.target.value)}
+              className="input-base appearance-none pr-9"
+              aria-label="Filter by district admin"
+            >
+              <option value="all">All Districts</option>
+              {districtOptions.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown
+              className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"
+              aria-hidden="true"
             />
           </div>
           <div className="relative">
@@ -347,6 +381,7 @@ export default function RequestHistoryPage() {
                 <tr className="text-left text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                   <th className="pb-3 font-semibold">Request ID</th>
                   <th className="pb-3 font-semibold">Date</th>
+                  <th className="pb-3 font-semibold">District Admin</th>
                   <th className="pb-3 font-semibold">Type</th>
                   <th className="pb-3 font-semibold">Priority</th>
                   <th className="pb-3 font-semibold">Patients</th>
@@ -375,6 +410,11 @@ export default function RequestHistoryPage() {
                       <p className="text-[11px] text-slate-400 dark:text-slate-500">
                         {formatTime(request.createdAt)}
                       </p>
+                    </td>
+                    <td className="py-3">
+                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        {districtLabel(request)}
+                      </span>
                     </td>
                     <td className="py-3">
                       <TypeBadge type={request.requestType} />
@@ -435,6 +475,9 @@ export default function RequestHistoryPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <TypeBadge type={request.requestType} />
                   <PriorityPill priority={request.priority} />
+                  <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                    {districtLabel(request)}
+                  </span>
                 </div>
 
                 <dl className="mt-3 grid grid-cols-2 gap-2">

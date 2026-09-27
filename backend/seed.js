@@ -11,8 +11,10 @@ import User from './src/models/User.js';
 
 const doctorId = process.env.SEED_DOCTOR_ID || 'DOC-001';
 const doctorPin = process.env.SEED_DOCTOR_PIN || '1234';
+const doctorDistrict = (process.env.SEED_DOCTOR_DISTRICT || '').trim().toLowerCase();
 const staffId = process.env.SEED_STAFF_ID || 'STAFF-001';
 const staffPin = process.env.SEED_STAFF_PIN || '1234';
+const staffDistrict = (process.env.SEED_STAFF_DISTRICT || '').trim().toLowerCase();
 
 function requireSeedEnv() {
   const missing = [];
@@ -25,23 +27,23 @@ function requireSeedEnv() {
   }
 }
 
-async function upsertUser({ staffId: sid, name, role, pin }) {
+async function upsertUser({ staffId: sid, name, role, pin, districtId }) {
   const pinHash = await hashPin(pin);
   const res = await User.updateOne(
     { staffId: sid },
-    { $set: { staffId: sid, name, role, pinHash, active: true } },
+    { $set: { staffId: sid, name, role, pinHash, districtId: districtId || '', active: true } },
     { upsert: true }
   );
   const created = res.upsertedCount > 0 || res.upsertedId != null;
-  console.log(`${created ? 'created' : 'updated'} ${role} ${sid}`);
+  console.log(`${created ? 'created' : 'updated'} ${role} ${sid} district=${districtId || 'all'}`);
   return res;
 }
 
 async function main() {
   requireSeedEnv();
   await connectDB();
-  await upsertUser({ staffId: doctorId, name: 'Seed Doctor', role: 'Doctor', pin: doctorPin });
-  await upsertUser({ staffId: staffId, name: 'Seed Staff', role: 'Staff', pin: staffPin });
+  await upsertUser({ staffId: doctorId, name: 'Seed Doctor', role: 'Doctor', pin: doctorPin, districtId: doctorDistrict });
+  await upsertUser({ staffId: staffId, name: 'Seed Staff', role: 'Staff', pin: staffPin, districtId: staffDistrict });
   console.log('seed done: Doctor + Staff upserted');
 }
 

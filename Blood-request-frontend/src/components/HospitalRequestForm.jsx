@@ -166,16 +166,20 @@ export default function HospitalRequestForm() {
   const seqRef = useRef(draft?.patients?.length || 1)
 
   const hospital = useMemo(() => getRegisteredHospital(), [])
-  const district = useMemo(() => {
+  // Hospital address-la irundhu default district-ah kandupidi — aana user
+  // select panna district dhaan final (andha district admin-ku tha pogum).
+  const hospitalDistrict = useMemo(() => {
     const addr = (hospital?.address || '').toLowerCase()
     const hit = districts.find((d) => addr.includes(d.en.toLowerCase()))
-    return hit?.en || 'Not specified'
+    return hit || null
   }, [hospital])
+  const district = hospitalDistrict?.en || 'Not specified'
 
   const [now, setNow] = useState(() => new Date())
   const [form, setForm] = useState(() => ({
     requestType: draft?.form?.requestType || 'emergency',
     priority: draft?.form?.priority || 'critical',
+    districtId: draft?.form?.districtId || '',
     requiredDate: draft?.form?.requiredDate || new Date().toISOString().slice(0, 10),
     requiredTime: draft?.form?.requiredTime || '',
   }))
@@ -284,6 +288,8 @@ export default function HospitalRequestForm() {
   function validate() {
     const next = {}
 
+    // District select pannalum — select panna district admin-ku tha pogum.
+    if (!form.districtId) next.districtId = 'District is required'
     if (!form.requiredDate) next.requiredDate = 'Required date is required'
     if (!form.requiredTime) next.requiredTime = 'Required time is required'
 
@@ -339,12 +345,16 @@ export default function HospitalRequestForm() {
 
     setSubmitting(true)
     setTimeout(() => {
+      const districtHit = districts.find((d) => d.id === form.districtId)
+      const districtName = districtHit?.en || form.districtId
       setSubmitted({
         requestId,
         patients: patients.length,
         totalUnits,
         requestType: form.requestType,
         priority: form.priority,
+        districtId: form.districtId,
+        districtName,
         requiredDate: form.requiredDate,
         requiredTime: form.requiredTime,
         summary,
@@ -354,6 +364,8 @@ export default function HospitalRequestForm() {
           requestId,
           requestType: form.requestType,
           priority: form.priority,
+          districtId: form.districtId,
+          districtName,
           requiredDate: form.requiredDate,
           requiredTime: form.requiredTime,
           patients: patients.length,
@@ -381,6 +393,7 @@ export default function HospitalRequestForm() {
     setForm({
       requestType: 'emergency',
       priority: 'critical',
+      districtId: hospitalDistrict?.id || '',
       requiredDate: new Date().toISOString().slice(0, 10),
       requiredTime: '',
     })
@@ -425,6 +438,7 @@ export default function HospitalRequestForm() {
           <div className="grid gap-4 px-6 py-6 sm:grid-cols-2">
             <InfoTile icon={Users} label="Patients" value={`${submitted.patients} patient(s)`} />
             <InfoTile icon={Droplets} label="Total Units" value={`${submitted.totalUnits} unit(s)`} />
+            <InfoTile icon={Table2} label="District Admin" value={submitted.districtName || submitted.districtId || '—'} />
             <InfoTile icon={Siren} label="Priority" value={submitted.priority.toUpperCase()} />
             <InfoTile
               icon={CalendarDays}
@@ -598,6 +612,34 @@ export default function HospitalRequestForm() {
                 )
               })}
             </div>
+          </div>
+
+          <div>
+            <FormField
+              label="District — indha district admin-ku tha request pogum"
+              htmlFor="req-district"
+              required
+              error={errors.districtId}
+            >
+              <select
+                id="req-district"
+                value={form.districtId}
+                onChange={(e) => setFormField('districtId', e.target.value)}
+                className={`input-base ${errors.districtId ? 'input-error' : ''}`}
+              >
+                <option value="">Select district</option>
+                {districts.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.en}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            {hospitalDistrict && !form.districtId && (
+              <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
+                Hospital address prakaram: {hospitalDistrict.en} — confirm panni select pannunga.
+              </p>
+            )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">

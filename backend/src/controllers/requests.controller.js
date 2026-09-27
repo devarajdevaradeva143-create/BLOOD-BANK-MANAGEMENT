@@ -1,5 +1,6 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import BloodRequest from '../models/BloodRequest.js';
+import User from '../models/User.js';
 import { genRequestId } from '../utils/ids.js';
 import { logAudit } from '../middleware/audit.js';
 import { verifyOtpInternal } from './otp.controller.js';
@@ -68,14 +69,32 @@ export const createRequest = asyncHandler(async (req, res) => {
 /**
  * GET /api/requests  (auth required at route level)
  * Query: ?bloodGroup=&districtId=&status=&search=&page=&limit=
+ * District scope: admin-ku districtId irundha andha district request mattum
+ * dhaan theriyum (query-va override panni force pannuvom).
  */
 export const listRequests = asyncHandler(async (req, res) => {
   const { bloodGroup, districtId, district, status, search } = req.query;
   const { page, limit, skip } = parsePagination(req.query);
 
+  // Admin district-ah DB-la irundhu resolve pannu (JWT-ah namba vendaam).
+  let adminDistrict = String(req.user?.districtId || '').trim().toLowerCase();
+  if (!adminDistrict && req.user?.id) {
+    try {
+      const me = await User.findById(req.user.id).select('districtId').lean();
+      adminDistrict = String(me?.districtId || '').trim().toLowerCase();
+    } catch {
+      adminDistrict = '';
+    }
+  }
+
   const filter = {};
   if (bloodGroup) filter.bloodGroup = bloodGroup;
-  if (districtId || district) filter.districtId = districtId || district;
+  if (adminDistrict) {
+    // District admin-ku avanga district mattum — vera district patha mudiyadhu.
+    filter.districtId = adminDistrict;
+  } else if (districtId || district) {
+    filter.districtId = districtId || district;
+  }
   if (status) filter.status = status;
   if (search) {
     const q = String(search).trim();
@@ -112,6 +131,25 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
   const doc = await findRequestByIdOrRequestId(id);
   if (!doc) {
     return res.status(404).json({ message: 'Request not found' });
+  }
+
+  // Vera district request-ah approve panna mudiyadhu.
+  let adminDistrict = String(req.user?.districtId || '').trim().toLowerCase();
+  if (!adminDistrict && req.user?.id) {
+    try {
+      const me = await User.findById(req.user.id).select('districtId').lean();
+      adminDistrict = String(me?.districtId || '').trim().toLowerCase();
+    } catch {
+      adminDistrict = '';
+    }
+  }
+  if (
+    adminDistrict &&
+    String(doc.districtId || '').trim().toLowerCase() !== adminDistrict
+  ) {
+    return res
+      .status(403)
+      .json({ message: 'Forbidden: request belongs to another district' });
   }
 
   const from = doc.status;

@@ -1,23 +1,135 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Award, Download } from "lucide-react";
 import { useDonorAuth } from "../context/DonorAuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
-import { MOCK_DONOR } from "../data/constants";
-import ProfileAvatar from "../components/profile/ProfileAvatar";
 import ProfileSummaryCard from "../components/profile/ProfileSummaryCard";
 import PersonalInfoSection from "../components/profile/PersonalInfoSection";
 import DonationInfoSection from "../components/profile/DonationInfoSection";
+import Certificate from "../components/donate/Certificate";
 import Button from "../components/ui/Button";
 
+function loadDonationHistory() {
+  try {
+    const hRaw = localStorage.getItem("donorDonations");
+    const hist = hRaw ? JSON.parse(hRaw) : [];
+    return Array.isArray(hist) ? hist : [];
+  } catch {
+    return [];
+  }
+}
+
+const EMPTY_DONOR = {
+  name: "",
+  email: "",
+  phone: "",
+  password: "",
+  dob: "",
+  gender: "",
+  bloodGroup: "",
+  address: "",
+  district: "",
+  donorId: "",
+  photo: "",
+  registrationDate: "",
+  lastDonationDate: "",
+  totalDonations: 0,
+  eligibilityStatus: "",
+  nextEligibleDate: "",
+  isActive: true,
+};
+
+function genDonorId() {
+  const year = new Date().getFullYear();
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `DB-${year}${rand}`;
+}
+
+function loadRealDonor(fallbackEmail = "") {
+  // Fake data vendaam — registeredDonor + donorDonations history mattum source.
+  try {
+    const raw = localStorage.getItem("registeredDonor");
+    const reg =
+      raw && JSON.parse(raw) && typeof JSON.parse(raw) === "object"
+        ? JSON.parse(raw)
+        : null;
+    let histTotal = 0;
+    let histLast = "";
+    try {
+      const hRaw = localStorage.getItem("donorDonations");
+      const hist = hRaw ? JSON.parse(hRaw) : [];
+      if (Array.isArray(hist) && hist.length > 0) {
+        // Approve aana donations mattum count — pending/rejected count agadhu.
+        // status illadha pazhaya entries approved madhiri.
+        const approved = hist.filter((h) => (h?.status || "approved") === "approved");
+        histTotal = approved.length;
+        histLast = approved.length > 0 ? approved[approved.length - 1]?.date || "" : "";
+      }
+    } catch {
+      // ignore
+    }
+    if (!reg) {
+      return {
+        ...EMPTY_DONOR,
+        email: fallbackEmail || "",
+        totalDonations: histTotal,
+        lastDonationDate: histLast,
+      };
+    }
+    const storedTotal = Number(reg.totalDonations ?? 0) || 0;
+    return {
+      ...EMPTY_DONOR,
+      ...reg,
+      name: reg.name || "",
+      email: reg.email || fallbackEmail || "",
+      phone: reg.phone || reg.mobile || "",
+      password: reg.password || "",
+      dob: reg.dob || "",
+      gender: reg.gender || "",
+      bloodGroup: reg.bloodGroup || "",
+      address: reg.address || "",
+      district: reg.district || "",
+      donorId: reg.donorId || "",
+      photo: reg.photo || reg.photoUrl || reg.avatar || "",
+      registrationDate: reg.registrationDate || "",
+      lastDonationDate: reg.lastDonationDate || histLast || "",
+      // History irundha adhuvum count pannu — 0 issue varadhu.
+      totalDonations: Math.max(storedTotal, histTotal),
+      eligibilityStatus: reg.eligibilityStatus || "",
+      nextEligibleDate: reg.nextEligibleDate || "",
+      isActive: reg.isActive ?? true,
+    };
+  } catch {
+    return { ...EMPTY_DONOR, email: fallbackEmail || "" };
+  }
+}
+
+function isProfileIncomplete(donor) {
+  return (
+    !String(donor.name || "").trim() ||
+    !String(donor.email || "").trim() ||
+    !String(donor.phone || "").trim() ||
+    !donor.gender ||
+    !donor.bloodGroup ||
+    !String(donor.address || "").trim() ||
+    !donor.district
+  );
+}
+
 export default function ProfilePage() {
-  const { logout } = useDonorAuth();
+  const { logout, donorEmail, login } = useDonorAuth();
   const { t } = useLanguage();
   const navigate = useNavigate();
 
-  const [donor, setDonor] = useState(MOCK_DONOR);
-  const [editing, setEditing] = useState(false);
+  const [donor, setDonor] = useState(() => loadRealDonor(donorEmail));
+  const [snapshot, setSnapshot] = useState(() => loadRealDonor(donorEmail));
+  // Profile incomplete-ah irundha direct-ah edit mode-la open pannu.
+  const [editing, setEditing] = useState(() =>
+    isProfileIncomplete(loadRealDonor(donorEmail))
+  );
   const [errors, setErrors] = useState({});
   const [saved, setSaved] = useState(false);
+  const showEmptyHint = !String(donor.name || "").trim() && !editing;
 
   const handleChange = (field, value) => {
     setDonor((prev) => ({ ...prev, [field]: value }));
@@ -25,17 +137,38 @@ export default function ProfilePage() {
     setSaved(false);
   };
 
+  // Profile photo set panna udane state + localStorage-la save aagum.
+  const handlePhotoChange = (dataUrl) => {
+    setDonor((prev) => ({ ...prev, photo: dataUrl }));
+    setSaved(false);
+    try {
+      const raw = localStorage.getItem("registeredDonor");
+      const reg = raw ? JSON.parse(raw) : {};
+      localStorage.setItem(
+        "registeredDonor",
+        JSON.stringify({ ...reg, photo: dataUrl })
+      );
+    } catch {
+      // ignore storage errors
+    }
+  };
+
   const validate = () => {
+    // Editable 4 fields mattum validate pannu — read-only fields block panna koodadhu.
     const newErrors = {};
-    if (!donor.name.trim()) newErrors.name = t("profile.validation.name");
-    if (!donor.email.trim() || !/\S+@\S+\.\S+/.test(donor.email))
+    if (
+      !String(donor.email || "").trim() ||
+      !/\S+@\S+\.\S+/.test(String(donor.email || ""))
+    )
       newErrors.email = t("profile.validation.email");
-    if (!donor.phone.trim() || !/^[0-9]{10}$/.test(donor.phone))
+    if (
+      !String(donor.phone || "").trim() ||
+      !/^[0-9]{10}$/.test(String(donor.phone || ""))
+    )
       newErrors.phone = t("profile.validation.phone");
-    if (!donor.gender) newErrors.gender = t("profile.validation.gender");
-    if (!donor.bloodGroup) newErrors.bloodGroup = t("profile.validation.bloodGroup");
-    if (!donor.address.trim()) newErrors.address = t("profile.validation.address");
     if (!donor.district) newErrors.district = t("profile.validation.district");
+    if (!String(donor.address || "").trim())
+      newErrors.address = t("profile.validation.address");
     return newErrors;
   };
 
@@ -45,19 +178,104 @@ export default function ProfilePage() {
       setErrors(newErrors);
       return;
     }
+    // donorId + registrationDate illana ippo generate panni real-ah save pannu.
+    const toSave = {
+      ...donor,
+      donorId: donor.donorId || genDonorId(),
+      registrationDate:
+        donor.registrationDate || new Date().toISOString().slice(0, 10),
+      totalDonations: Number(donor.totalDonations ?? 0) || 0,
+    };
     try {
-      localStorage.setItem("registeredDonor", JSON.stringify(donor));
+      localStorage.setItem("registeredDonor", JSON.stringify(toSave));
     } catch {
       // ignore
     }
+    // Email maathuna auth context-um sync pannu.
+    try {
+      if (
+        String(toSave.email || "").trim().toLowerCase() !==
+        String(donorEmail || "").trim().toLowerCase()
+      ) {
+        login(String(toSave.email || "").trim().toLowerCase());
+      }
+    } catch {
+      // ignore
+    }
+    setDonor(toSave);
+    setSnapshot(toSave);
     setEditing(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
 
+  const handleCancel = () => {
+    // Edit cancel panna last saved data-ku revert aagum.
+    setDonor(snapshot);
+    setEditing(false);
+    setErrors({});
+    setSaved(false);
+  };
+
+  const [history, setHistory] = useState(loadDonationHistory);
+  const [certData, setCertData] = useState(null);
+
+  useEffect(() => {
+    const refresh = () => {
+      setHistory(loadDonationHistory());
+    };
+    window.addEventListener("storage", refresh);
+    window.addEventListener("focus", refresh);
+    return () => {
+      window.removeEventListener("storage", refresh);
+      window.removeEventListener("focus", refresh);
+    };
+  }, []);
+
+  const openCertificate = (h) => {
+    // Certificate open panna munnadi fresh history-ah re-read pannu.
+    let fresh = h;
+    try {
+      const hRaw = localStorage.getItem("donorDonations");
+      const hist = hRaw ? JSON.parse(hRaw) : [];
+      if (Array.isArray(hist) && h && h.requestId) {
+        const found = hist.find((x) => x && x.requestId === h.requestId);
+        if (found) fresh = found;
+      }
+    } catch {
+      // ignore, fallback to passed entry
+    }
+    const status = fresh.status || "approved";
+    if (status !== "approved") return;
+    // History-la missing fields-irundha profile data-va merge pannu.
+    setCertData({
+      requestId: fresh.requestId || `CERT-${Date.now()}`,
+      donorName: fresh.donorName || donor.name || "Donor",
+      bloodGroup: fresh.bloodGroup || donor.bloodGroup || "—",
+      mobile: fresh.mobile || donor.phone || "",
+      center: fresh.center || "Life Saver Blood Bank",
+      date: fresh.date || new Date().toISOString().slice(0, 10),
+      time: fresh.time || "",
+    });
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
+  };
+
+  const badgeClass = (status) => {
+    if (status === "pending")
+      return "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300";
+    if (status === "rejected")
+      return "bg-rose-100 text-rose-800 dark:bg-rose-950/40 dark:text-rose-300";
+    return "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300";
+  };
+
+  const badgeLabel = (status) => {
+    if (status === "pending") return "Pending admin approval";
+    if (status === "rejected") return "Rejected";
+    return "Approved";
   };
 
   return (
@@ -77,13 +295,30 @@ export default function ProfilePage() {
         </div>
       )}
 
+      {showEmptyHint && (
+        <div className="mb-4 rounded-lg bg-amber-50 p-4 text-sm font-medium text-amber-800 dark:bg-amber-950/40 dark:text-amber-300" role="status">
+          Profile innum complete aagala — Edit Profile click panni unga real details-ah fill pannunga.
+        </div>
+      )}
+
       <div className="mb-8">
-        <ProfileSummaryCard donor={donor} t={t} />
+        <ProfileSummaryCard
+          donor={donor}
+          t={t}
+          editablePhoto
+          onPhotoChange={handlePhotoChange}
+        />
       </div>
 
       <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
         {!editing ? (
-          <Button onClick={() => setEditing(true)} variant="outline">
+          <Button
+            onClick={() => {
+              setSnapshot(donor);
+              setEditing(true);
+            }}
+            variant="outline"
+          >
             {t("profile.edit")}
           </Button>
         ) : (
@@ -91,14 +326,7 @@ export default function ProfilePage() {
             <Button onClick={handleSave} variant="primary">
               {t("profile.save")}
             </Button>
-            <Button
-              onClick={() => {
-                setEditing(false);
-                setErrors({});
-                setSaved(false);
-              }}
-              variant="outline"
-            >
+            <Button onClick={handleCancel} variant="outline">
               {t("profile.cancel")}
             </Button>
           </div>
@@ -120,6 +348,75 @@ export default function ProfilePage() {
       <div className="mb-8">
         <DonationInfoSection donor={donor} t={t} />
       </div>
+
+      {/* Donation history + certificate download */}
+      <div className="mb-8 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <h3 className="mb-4 flex items-center gap-2 text-lg font-bold text-gray-900 dark:text-white">
+          <Award className="h-5 w-5 text-brand-600" />
+          Donation Certificates
+        </h3>
+        {history.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            Innum donation illa — Donate panna piragu inga certificate download
+            panna mudiyum.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {history
+              .slice()
+              .reverse()
+              .map((h, i) => {
+                const status = h.status || "approved";
+                const district = h.district || "—";
+                const approved = status === "approved";
+                return (
+                  <div
+                    key={h.requestId || i}
+                    className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950"
+                  >
+                    <div>
+                      <p className="text-sm font-bold text-gray-900 dark:text-white">
+                        {h.date || "—"} {h.time ? `· ${h.time}` : ""} —{" "}
+                        {h.bloodGroup || donor.bloodGroup || ""}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                        {h.requestId || ""} · {h.center || ""}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-slate-400">
+                        District: {district} — indha district admin approval
+                      </p>
+                      <span
+                        className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${badgeClass(status)}`}
+                      >
+                        {badgeLabel(status)}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => approved && openCertificate(h)}
+                        disabled={!approved}
+                        className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white ${approved ? "bg-red-600 hover:bg-red-700" : "cursor-not-allowed bg-gray-300 dark:bg-slate-700"}`}
+                      >
+                        <Download className="h-4 w-4" />
+                        Certificate
+                      </button>
+                      {!approved && (
+                        <p className="text-xs text-gray-500 dark:text-slate-400">
+                          Admin approval-kaga wait pannunga
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        )}
+      </div>
+
+      {certData && (
+        <Certificate data={certData} onClose={() => setCertData(null)} />
+      )}
     </div>
   );
 }

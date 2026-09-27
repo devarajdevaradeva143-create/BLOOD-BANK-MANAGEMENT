@@ -23,6 +23,31 @@ export function getRequests() {
   return readAll().slice().reverse()
 }
 
+// Andha district admin-ku mattum request theriyanum-na indha helper-ah use pannu.
+export function getRequestsByDistrict(districtId) {
+  const id = String(districtId || '').trim().toLowerCase()
+  if (!id || id === 'all') return getRequests()
+  return readAll()
+    .filter((r) => String(r.districtId || '').trim().toLowerCase() === id)
+    .slice()
+    .reverse()
+}
+
+export function getDistrictsInRequests() {
+  const map = new Map()
+  for (const r of readAll()) {
+    const id = String(r.districtId || '').trim()
+    if (!id) continue
+    if (!map.has(id.toLowerCase())) {
+      map.set(id.toLowerCase(), {
+        id,
+        name: r.districtName || id,
+      })
+    }
+  }
+  return [...map.values()]
+}
+
 export function getRequestById(requestId) {
   return readAll().find((r) => r.requestId === requestId) || null
 }

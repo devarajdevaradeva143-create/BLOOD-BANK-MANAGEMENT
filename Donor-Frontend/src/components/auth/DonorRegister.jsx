@@ -119,7 +119,29 @@ export default function DonorRegister() {
     setLoading(true);
 
     setTimeout(() => {
-      const { confirmPassword: _confirmPassword, ...registeredDonor } = form;
+      const { confirmPassword: _confirmPassword, ...formFields } = form;
+      let prev = {};
+      try {
+        const raw = localStorage.getItem("registeredDonor");
+        const parsed = raw ? JSON.parse(raw) : {};
+        if (parsed && typeof parsed === "object") prev = parsed;
+      } catch {
+        prev = {};
+      }
+      const today = new Date().toISOString().slice(0, 10);
+      const year = new Date().getFullYear();
+      const donorId =
+        prev.donorId || `DB-${year}${Math.floor(1000 + Math.random() * 9000)}`;
+      const registeredDonor = {
+        ...prev,
+        ...formFields,
+        address: prev.address ?? "",
+        photo: prev.photo || prev.photoUrl || prev.avatar || "",
+        donorId,
+        registrationDate: prev.registrationDate || today,
+        totalDonations: Number(prev.totalDonations ?? 0) || 0,
+        isActive: prev.isActive ?? true,
+      };
       try {
         localStorage.setItem("registeredDonor", JSON.stringify(registeredDonor));
       } catch {
