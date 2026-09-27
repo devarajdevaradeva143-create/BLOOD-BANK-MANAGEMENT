@@ -1,6 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AuthUser } from '../data/types';
+import {
+  clearDemoUser,
+  findDemoAccount,
+  getStoredDemoUser,
+  storeDemoUser,
+} from '../data/demo';
 import { fetchMe, login as loginApi, logoutApi } from '../lib/api';
 
 interface AuthContextValue {
@@ -19,6 +25,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Frontend demo sessions work fully offline — restore first.
+      const demo = getStoredDemoUser();
+      if (demo) {
+        if (!cancelled) {
+          setUser(demo);
+          setLoading(false);
+        }
+        return;
+      }
       try {
         const me = await fetchMe();
         if (!cancelled) setUser(me);
@@ -34,6 +49,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (staffId: string, pin: string, _remember: boolean) => {
+    // Demo accounts always succeed locally (no backend needed).
+    const demo = findDemoAccount(staffId, pin);
+    if (demo) {
+      storeDemoUser(demo);
+      setUser(demo);
+      return true;
+    }
     try {
       const account = await loginApi(staffId.trim(), pin.trim());
       setUser(account);
@@ -44,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
+    clearDemoUser();
     try {
       await logoutApi();
     } catch {
