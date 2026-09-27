@@ -14,29 +14,22 @@ import {
 } from 'lucide-react'
 import AuthSidePanel from '../components/AuthSidePanel'
 import ForgotPassword from '../components/ForgotPassword'
-import { demoLogin, loginUser } from '../lib/auth'
-
-function readRememberedEmail() {
-  try {
-    return localStorage.getItem('hospitalRememberedEmail') || ''
-  } catch {
-    return ''
-  }
-}
+import { demoLogin, getRememberedEmail, loginUser, setRememberedEmail } from '../lib/auth'
 
 const HospitalLogin = ({ onLogin, onRegister }) => {
   const [view, setView] = useState('login')
-  const [email, setEmail] = useState(readRememberedEmail)
+  const [email, setEmail] = useState(getRememberedEmail)
   const [password, setPassword] = useState('')
-  const [remember, setRemember] = useState(() => readRememberedEmail() !== '')
+  const [remember, setRemember] = useState(() => getRememberedEmail() !== '')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
+    setNotice('')
 
     if (!email || !password) {
       setError('Please enter your email and password.')
@@ -44,48 +37,35 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
     }
 
     setLoading(true)
-
-    setTimeout(() => {
-      try {
-        loginUser({ email, password })
-        try {
-          if (remember) {
-            localStorage.setItem('hospitalRememberedEmail', email)
-          } else {
-            localStorage.removeItem('hospitalRememberedEmail')
-          }
-        } catch {
-          /* ignore */
-        }
-        toast.success('Logged in successfully!')
-        if (onLogin) {
-          onLogin()
-        }
-      } catch (err) {
-        setError(err.message || 'Invalid email or password.')
-      } finally {
-        setLoading(false)
+    try {
+      await loginUser({ email, password })
+      setRememberedEmail(email, remember)
+      toast.success('Logged in successfully!')
+      if (onLogin) {
+        onLogin()
       }
-    }, 700)
+    } catch (err) {
+      setError(err.message || 'Invalid email or password.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const handleDemoLogin = () => {
+  const handleDemoLogin = async () => {
     setError('')
+    setNotice('')
     setLoading(true)
-
-    setTimeout(() => {
-      try {
-        demoLogin()
-        toast.success('Logged in with demo account!')
-        if (onLogin) {
-          onLogin()
-        }
-      } catch (err) {
-        setError(err.message || 'Demo login failed.')
-      } finally {
-        setLoading(false)
+    try {
+      await demoLogin()
+      toast.success('Logged in with demo account!')
+      if (onLogin) {
+        onLogin()
       }
-    }, 700)
+    } catch (err) {
+      setError(err.message || 'Demo login failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   const handleForgotBack = (returnedEmail, successMessage) => {

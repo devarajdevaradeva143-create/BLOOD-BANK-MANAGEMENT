@@ -16,6 +16,11 @@ export function genRequestId() {
   return `REQ-${randomFrom(ALPHA_NUM, 6)}`;
 }
 
+/** Bulk group id shared by all patients of one hospital submission, e.g. BR-2026-X7K9PQ */
+export function genGroupId(date = new Date()) {
+  return `BR-${date.getFullYear()}-${randomFrom(ALPHA_NUM, 6)}`;
+}
+
 /** e.g. BBMS-DNR-20260923-A1B2 */
 export function genDonorId(date = new Date()) {
   const y = date.getFullYear();
@@ -29,4 +34,4 @@ export function genUnitCode() {
   return `BU-${crypto.randomBytes(3).toString('hex')}`;
 }
 
-export default { genRequestId, genDonorId, genUnitCode };
+export default { genRequestId, genGroupId, genDonorId, genUnitCode };

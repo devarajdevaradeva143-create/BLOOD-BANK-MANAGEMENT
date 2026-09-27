@@ -40,8 +40,7 @@ function HospitalHomeRoute() {
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    logoutUser()
-    navigate('/hospital/login')
+    logoutUser().finally(() => navigate('/hospital/login'))
   }
 
   return <HospitalHome onLogout={handleLogout} />

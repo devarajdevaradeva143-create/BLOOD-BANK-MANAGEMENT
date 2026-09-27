@@ -29,8 +29,9 @@ import {
   Users,
 } from 'lucide-react'
 import FormField from './FormField'
+import OtpDialog from './OtpDialog'
 import { getRegisteredHospital } from '../lib/auth'
-import { saveRequest } from '../lib/requests'
+import { requestOtp, submitBulkRequest, toUserMessage } from '../lib/api'
 import { BLOOD_GROUPS, GENDERS, MAX_AGE, MAX_UNITS, MIN_UNITS } from '../data/constants'
 import { districts } from '../data/districts'
 
@@ -80,12 +81,6 @@ const DOCUMENTS = [
   { key: 'labReport', label: 'Lab Report', hint: 'CBC / grouping report', icon: FileCheck2 },
   { key: 'crossMatch', label: 'Cross Match Report', hint: 'Cross match compatibility report', icon: Droplets },
 ]
-
-function genRequestId() {
-  const year = new Date().getFullYear()
-  const rand = Math.random().toString(36).slice(2, 8).toUpperCase()
-  return `BR-${year}-${rand}`
-}
 
 function makePatient(seq) {
   return {
@@ -200,7 +195,10 @@ export default function HospitalRequestForm() {
   const [submitting, setSubmitting] = useState(false)
   const [attempted, setAttempted] = useState(false)
   const [submitted, setSubmitted] = useState(null)
-  const [requestId, setRequestId] = useState(genRequestId)
+  const [otpOpen, setOtpOpen] = useState(false)
+  const [otpError, setOtpError] = useState('')
+  const [serverError, setServerError] = useState('')
+  const [pendingPayload, setPendingPayload] = useState(null)
 
   useEffect(() => {
     const timer = setInterval(() => setNow(new Date()), 1000)
@@ -332,51 +330,86 @@ export default function HospitalRequestForm() {
     }
   }
 
-  function handleSubmit(e) {
+  function buildPayload() {
+    const districtHit = districts.find((d) => d.id === form.districtId)
+    return {
+      requestType: form.requestType,
+      priority: form.priority,
+      districtId: form.districtId,
+      districtName: districtHit?.en || form.districtId,
+      requiredDate: form.requiredDate,
+      requiredTime: form.requiredTime,
+      hospitalName: hospital?.hospitalName || '',
+      hospitalAddress: hospital?.address || '',
+      contact: doctor.contact.trim(),
+      doctor: {
+        name: doctor.name.trim(),
+        id: doctor.id.trim(),
+        department: doctor.department,
+        contact: doctor.contact.trim(),
+      },
+      patients: patients.map((p) => ({
+        name: p.name.trim(),
+        age: Number(p.age),
+        gender: p.gender,
+        bloodGroup: p.bloodGroup,
+        component: p.component,
+        units: Number(p.units),
+        ward: p.ward,
+        diagnosis: p.diagnosis.trim(),
+      })),
+    }
+  }
+
+  async function handleSubmit(e) {
     e.preventDefault()
     const next = validate()
     setErrors(next)
     setAttempted(true)
+    setServerError('')
 
     if (Object.keys(next).length) {
       toast.error(`Please fix ${Object.keys(next).length} highlighted field(s)`)
       return
     }
 
+    // Step 1: send OTP to the doctor contact, then verify in the dialog.
     setSubmitting(true)
-    setTimeout(() => {
-      const districtHit = districts.find((d) => d.id === form.districtId)
-      const districtName = districtHit?.en || form.districtId
+    try {
+      await requestOtp(doctor.contact.trim())
+      setPendingPayload(buildPayload())
+      setOtpError('')
+      setOtpOpen(true)
+    } catch (err) {
+      setServerError(toUserMessage(err, 'Could not send OTP. Is the backend running?'))
+      toast.error('Could not send OTP. Please try again.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleOtpConfirm(code) {
+    if (!pendingPayload) return
+    setSubmitting(true)
+    setOtpError('')
+    try {
+      const data = await submitBulkRequest({ ...pendingPayload, code })
+      const created = Array.isArray(data?.requests) ? data.requests : []
       setSubmitted({
-        requestId,
-        patients: patients.length,
+        groupId: data?.groupId || created[0]?.groupId || '—',
+        requestIds: created.map((r) => r.requestId),
+        patients: pendingPayload.patients.length,
         totalUnits,
         requestType: form.requestType,
         priority: form.priority,
         districtId: form.districtId,
-        districtName,
+        districtName: pendingPayload.districtName,
         requiredDate: form.requiredDate,
         requiredTime: form.requiredTime,
         summary,
       })
-      try {
-        saveRequest({
-          requestId,
-          requestType: form.requestType,
-          priority: form.priority,
-          districtId: form.districtId,
-          districtName,
-          requiredDate: form.requiredDate,
-          requiredTime: form.requiredTime,
-          patients: patients.length,
-          totalUnits,
-          summary,
-          doctor,
-        })
-      } catch {
-        toast.error('Could not save the request')
-      }
-      setSubmitting(false)
+      setOtpOpen(false)
+      setPendingPayload(null)
       setConfirmed(false)
       try {
         localStorage.removeItem(DRAFT_KEY)
@@ -385,7 +418,21 @@ export default function HospitalRequestForm() {
       }
       toast.success('Blood request submitted successfully')
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    }, 900)
+    } catch (err) {
+      setOtpError(toUserMessage(err, 'Submission failed. Check the OTP and try again.'))
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  async function handleOtpResend() {
+    setOtpError('')
+    try {
+      await requestOtp(doctor.contact.trim())
+      toast.success('OTP resent')
+    } catch (err) {
+      setOtpError(toUserMessage(err, 'Could not resend OTP.'))
+    }
   }
 
   function handleNewRequest() {
@@ -393,7 +440,7 @@ export default function HospitalRequestForm() {
     setForm({
       requestType: 'emergency',
       priority: 'critical',
-      districtId: hospitalDistrict?.id || '',
+      districtId: '',
       requiredDate: new Date().toISOString().slice(0, 10),
       requiredTime: '',
     })
@@ -402,14 +449,14 @@ export default function HospitalRequestForm() {
     setDocs({ prescription: null, labReport: null, crossMatch: null })
     setErrors({})
     setAttempted(false)
-    setRequestId(genRequestId())
     setSubmitted(null)
+    setPendingPayload(null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function copyId() {
-    navigator.clipboard?.writeText(submitted.requestId)
-    toast.success('Request ID copied')
+    navigator.clipboard?.writeText(submitted.groupId)
+    toast.success('Group ID copied')
   }
 
   if (submitted) {
@@ -430,7 +477,7 @@ export default function HospitalRequestForm() {
               className="mt-5 inline-flex items-center gap-2 rounded-xl bg-white/15 px-4 py-2 text-sm font-semibold ring-1 ring-white/30 transition hover:bg-white/25"
             >
               <Hash className="h-4 w-4" aria-hidden="true" />
-              {submitted.requestId}
+              {submitted.groupId}
               <ClipboardCopy className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
@@ -498,7 +545,7 @@ export default function HospitalRequestForm() {
             <div className="flex flex-col items-start gap-2 sm:items-end">
               <span className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold ring-1 ring-white/25">
                 <Hash className="h-3.5 w-3.5" aria-hidden="true" />
-                {requestId}
+                New Request
               </span>
               <span className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold ring-1 ring-white/25">
                 <Clock className="h-3.5 w-3.5" aria-hidden="true" />
@@ -967,7 +1014,7 @@ export default function HospitalRequestForm() {
         step="6"
         icon={FileUp}
         title="Supporting Documents"
-        description="Attach reports to speed up verification (frontend demo)"
+        description="Attach reports to speed up verification"
       >
         <div className="grid gap-4 sm:grid-cols-3">
           {DOCUMENTS.map((doc) => {
@@ -1038,7 +1085,7 @@ export default function HospitalRequestForm() {
           })}
         </div>
         <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
-          Supported: PDF, JPG, PNG, WEBP • Max 5 MB per file • Demo only — files are not uploaded to a server.
+          Supported: PDF, JPG, PNG, WEBP • Max 5 MB per file.
         </p>
       </Section>
 
@@ -1081,6 +1128,13 @@ export default function HospitalRequestForm() {
             </p>
           )}
 
+          {serverError && (
+            <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-medium text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+              <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+              <span>{serverError}</span>
+            </div>
+          )}
+
           <div className="flex flex-col gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-slate-700 dark:bg-slate-900/60">
             <div className="flex items-center gap-3">
               <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-red-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
@@ -1119,9 +1173,19 @@ export default function HospitalRequestForm() {
 
       <p className="pb-4 text-center text-xs text-slate-400 dark:text-slate-500">
         <UserRound className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-        Requested by {doctor.name || '—'} • {hospital?.hospitalName || 'Hospital'} • Demo workflow, no backend
-        submission.
+        Requested by {doctor.name || '—'} • {hospital?.hospitalName || 'Hospital'}
       </p>
+
+      {otpOpen && (
+        <OtpDialog
+          contact={pendingPayload?.contact || doctor.contact}
+          sending={submitting}
+          error={otpError}
+          onConfirm={handleOtpConfirm}
+          onResend={handleOtpResend}
+          onClose={() => setOtpOpen(false)}
+        />
+      )}
     </form>
   )
 }

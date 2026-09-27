@@ -5,10 +5,12 @@ import { requireRole } from '../middleware/roles.js';
 import { validate } from '../middleware/validate.js';
 import {
   requestCreateSchema,
+  bulkRequestSchema,
   requestStatusSchema,
 } from '../schemas/request.schema.js';
 import {
   createRequest,
+  createBulkRequests,
   listRequests,
   updateRequestStatus,
 } from '../controllers/requests.controller.js';
@@ -20,11 +22,18 @@ const requestCreateWithOtpSchema = requestCreateSchema.extend({
 const router = Router();
 
 router.post('/', validate(requestCreateWithOtpSchema), createRequest);
+router.post(
+  '/bulk',
+  requireAuth,
+  requireRole('Hospital'),
+  validate(bulkRequestSchema),
+  createBulkRequests
+);
 router.get('/', requireAuth, listRequests);
 router.patch(
   '/:id/status',
   requireAuth,
-  requireRole('Doctor'),
+  requireRole('Doctor', 'Hospital'),
   validate(requestStatusSchema),
   updateRequestStatus
 );

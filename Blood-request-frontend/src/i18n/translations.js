@@ -1,8 +1,10 @@
 export const translations = {
   en: {
-    'app.name': 'Life Saver Blood Bank Management',
+    'app.name': 'Life Saver Blood Bank',
     'app.tagline': 'Blood Request Management System',
     'app.langLabel': 'Language',
+    'app.switchToTamil': 'Switch to Tamil',
+    'app.switchToEnglish': 'Switch to English',
     'theme.switchToDark': 'Switch to dark mode',
     'theme.switchToLight': 'Switch to light mode',
 
@@ -121,8 +123,8 @@ export const translations = {
     'conf.summary': 'Request Summary',
 
     'footer.note':
-      'Frontend demo with sample/mock data only — no backend or database connection.',
-    'footer.rights': '© 2026 Life Saver Blood Bank Management',
+      'Connecting hospitals with district blood banks across Tamil Nadu.',
+    'footer.rights': '© 2026 Life Saver Blood Bank',
 
     'nav.home': 'Home',
     'nav.request': 'Request Blood',
@@ -211,7 +213,7 @@ export const translations = {
     'faq.pageSub': 'Quick answers about requesting blood on this portal.',
     'faq.q1': 'How do I request blood?',
     'faq.a1':
-      'Open the Request Blood page, fill in the patient, hospital and blood requirement details, review the summary and submit. You will instantly receive a demo request ID.',
+      'Open the Request Blood page, fill in the patient, hospital and blood requirement details, review the summary and submit. You will instantly receive a request ID for follow-up.',
     'faq.q2': 'What information is required?',
     'faq.a2':
       'Patient name, age and gender; blood group and required units; hospital name, address and district; a 10-digit contact number; the required date; and the reason for the requirement.',
@@ -223,12 +225,12 @@ export const translations = {
       'Yes. Enter the patient’s details in the form and provide your own contact number so the blood bank can reach you for updates.',
     'faq.q5': 'How do I check blood availability?',
     'faq.a5':
-      'Open Check Availability, select the district, blood group and required units, then click Check Availability. The result shows live demo stock for that district.',
+      'Open Check Availability, select the district, blood group and required units, then click Check Availability. The result shows the live stock for that district.',
     'faq.q6': 'Is this a real blood bank service?',
     'faq.a6':
-      'No. This is a frontend demo with sample data only. For real emergencies, call 108 and contact your hospital blood bank directly.',
+      'Yes. This portal connects hospitals with district blood banks for requesting and tracking blood. For real emergencies, call 108 and contact your hospital blood bank directly.',
     'faq.ctaTitle': 'Still need help?',
-    'faq.ctaDesc': 'Send us a message and our demo support team will get back to you.',
+    'faq.ctaDesc': 'Send us a message and our support team will get back to you.',
     'faq.ctaBtn': 'Contact Us',
 
     'contact.pageTitle': 'Contact Us',
@@ -251,7 +253,7 @@ export const translations = {
     'contact.addressValue':
       'Life Saver Blood Bank, Govt. Hospital Campus, Poonamallee High Road, Chennai – 600 003',
     'contact.mapTitle': 'Find Us',
-    'contact.mapNote': 'Interactive map placeholder — demo only.',
+    'contact.mapNote': 'Find us at the address above.',
 
     'err.emailInvalid': 'Enter a valid email address',
     'err.messageShort': 'Message must be at least 10 characters',
@@ -297,9 +299,11 @@ export const translations = {
   },
 
   ta: {
-    'app.name': 'லைஃப் சேவர் இரத்த வங்கி மேலாண்மை',
+    'app.name': 'லைஃப் சேவர் இரத்த வங்கி',
     'app.tagline': 'இரத்த கோரிக்கை மேலாண்மை அமைப்பு',
     'app.langLabel': 'மொழி',
+    'app.switchToTamil': 'தமிழுக்கு மாற்று',
+    'app.switchToEnglish': 'ஆங்கிலத்திற்கு மாற்று',
     'theme.switchToDark': 'இருண்ட பயன்முறைக்கு மாற்று',
     'theme.switchToLight': 'வெளிச்ச பயன்முறைக்கு மாற்று',
 
@@ -415,8 +419,8 @@ export const translations = {
     'conf.summary': 'கோரிக்கை சுருக்கம்',
 
     'footer.note':
-      'மாதிரி/போலி தரவு கொண்ட முன்பக்க டெமோ மட்டும் — பின்புலம் அல்லது தரவுத்தள இணைப்பு இல்லை.',
-    'footer.rights': '© 2026 லைஃப் சேவர் இரத்த வங்கி மேலாண்மை',
+      'தமிழ்நாடு முழுவதும் மருத்துவமனைகளை மாவட்ட இரத்த வங்கிகளுடன் இணைக்கிறது.',
+    'footer.rights': '© 2026 லைஃப் சேவர் இரத்த வங்கி',
 
     'nav.home': 'முகப்பு',
     'nav.request': 'இரத்தம் கோருக',
@@ -505,7 +509,7 @@ export const translations = {
     'faq.pageSub': 'இந்த இணையதளத்தில் இரத்தம் கோருவது பற்றிய விரைவு பதில்கள்.',
     'faq.q1': 'இரத்தம் எவ்வாறு கோருவது?',
     'faq.a1':
-      'இரத்தம் கோருக பக்கத்தைத் திறந்து, நோயாளி, மருத்துவமனை, இரத்தத் தேவை விவரங்களை நிரப்பி, சுருக்கத்தை மதிப்பாய்வு செய்து சமர்ப்பிக்கவும். உடனடியாக மாதிரி கோரிக்கை எண் கிடைக்கும்.',
+      'இரத்தம் கோருக பக்கத்தைத் திறந்து, நோயாளி, மருத்துவமனை, இரத்தத் தேவை விவரங்களை நிரப்பி, சுருக்கத்தை மதிப்பாய்வு செய்து சமர்ப்பிக்கவும். தொடர் கண்காணிப்புக்கு உடனடியாக கோரிக்கை எண் கிடைக்கும்.',
     'faq.q2': 'என்ன தகவல்கள் தேவை?',
     'faq.a2':
       'நோயாளியின் பெயர், வயது, பாலினம்; இரத்தக் குழு, தேவையான அலகுகள்; மருத்துவமனை பெயர், முகவரி, மாவட்டம்; 10 இலக்க தொடர்பு எண்; தேவையான தேதி; தேவைக்கான காரணம்.',
@@ -517,10 +521,10 @@ export const translations = {
       'ஆம். படிவத்தில் நோயாளியின் விவரங்களை உள்ளிட்டு, தகவல்களுக்கு உங்கள் தொடர்பு எண்ணைக் கொடுங்கள்.',
     'faq.q5': 'இரத்த இருப்பை எவ்வாறு சரிபார்ப்பது?',
     'faq.a5':
-      'இருப்பைச் சரிபார் பக்கத்தைத் திறந்து, மாவட்டம், இரத்தக் குழு, தேவையான அலகுகளைத் தேர்ந்து, சரிபார் பொத்தானை அழுத்தவும். அந்த மாவட்டத்தின் மாதிரி இருப்பு காட்டப்படும்.',
+      'இருப்பைச் சரிபார் பக்கத்தைத் திறந்து, மாவட்டம், இரத்தக் குழு, தேவையான அலகுகளைத் தேர்ந்து, சரிபார் பொத்தானை அழுத்தவும். அந்த மாவட்டத்தின் நேரடி இருப்பு காட்டப்படும்.',
     'faq.q6': 'இது உண்மையான இரத்த வங்கி சேவையா?',
     'faq.a6':
-      'இல்லை. இது மாதிரி தரவு கொண்ட முன்பக்க டெமோ மட்டும். உண்மையான அவசரங்களுக்கு 108-ஐ அழைத்து உங்கள் மருத்துவமனை இரத்த வங்கியை நேரடியாகத் தொடர்பு கொள்ளுங்கள்.',
+      'ஆம். இந்த இணையதளம் மருத்துவமனைகளை மாவட்ட இரத்த வங்கிகளுடன் இணைத்து இரத்தம் கோரவும் கண்காணிக்கவும் உதவுகிறது. உண்மையான அவசரங்களுக்கு 108-ஐ அழைத்து உங்கள் மருத்துவமனை இரத்த வங்கியை நேரடியாகத் தொடர்பு கொள்ளுங்கள்.',
     'faq.ctaTitle': 'இன்னும் உதவி தேவையா?',
     'faq.ctaDesc': 'எங்களுக்கு செய்தி அனுப்புங்கள், எங்கள் குழு விரைவில் பதிலளிக்கும்.',
     'faq.ctaBtn': 'தொடர்பு கொள்க',
@@ -545,7 +549,7 @@ export const translations = {
     'contact.addressValue':
       'லைஃப் சேவர் இரத்த வங்கி, அரசு மருத்துவமனை வளாகம், பூந்தமல்லி நெடுஞ்சாலை, சென்னை – 600 003',
     'contact.mapTitle': 'எங்களைக் கண்டறிக',
-    'contact.mapNote': 'ஊடாடும் வரைபட இடம் — டெமோ மட்டும்.',
+    'contact.mapNote': 'மேலே உள்ள முகவரியில் எங்களைக் காணலாம்.',
 
     'err.emailInvalid': 'சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்',
     'err.messageShort': 'செய்தி குறைந்தது 10 எழுத்துகள் இருக்க வேண்டும்',

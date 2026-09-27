@@ -15,7 +15,6 @@ export default function AvailabilityChecker() {
   const [result, setResult] = useState(null)
   const [errors, setErrors] = useState({})
   const [checking, setChecking] = useState(false)
-  const [suggestions, setSuggestions] = useState([])
 
   const clearError = (field) =>
     setErrors((prev) => {
@@ -69,46 +68,25 @@ export default function AvailabilityChecker() {
     const requiredUnits = Number(unitsStr)
     setChecking(true)
     setResult(null)
-    setSuggestions([])
     try {
+      // Single call per check — matches GET /api/availability?districtId=&bloodGroup=&units=
+      // which returns { districtId, bloodGroup, available, required, isAvailable }.
       const r = await fetchAvailability(districtId, bloodGroup, requiredUnits)
       setResult({
-        districtId,
-        bloodGroup,
-        units: requiredUnits,
-        available: r.available,
-        isAvailable: r.isAvailable,
+        districtId: r.districtId ?? districtId,
+        bloodGroup: r.bloodGroup ?? bloodGroup,
+        units: r.required ?? requiredUnits,
+        available: r.available ?? 0,
+        isAvailable: Boolean(r.isAvailable),
       })
       if (!r.isAvailable) {
         toast.error(t('toast.notAvailable'))
-        const candidates = districts.filter((d) => d.id !== districtId)
-        const settled = await Promise.all(
-          candidates.map(async (d) => {
-            try {
-              const alt = await fetchAvailability(d.id, bloodGroup, requiredUnits)
-              return { id: d.id, units: alt.available }
-            } catch {
-              return null
-            }
-          }),
-        )
-        const alts = settled
-          .filter((x) => x && x.units >= requiredUnits)
-          .slice(0, 3)
-        setSuggestions(alts)
       }
     } catch (err) {
       toast.error(err?.message || 'Failed to check availability')
     } finally {
       setChecking(false)
     }
-  }
-
-  const applySuggestion = (id) => {
-    setDistrictId(id)
-    clearError('districtId')
-    setResult(null)
-    setSuggestions([])
   }
 
   const statusBadge = (isAvailable) =>
@@ -234,7 +212,6 @@ export default function AvailabilityChecker() {
               <p className="text-sm text-slate-500 dark:text-slate-400">{t('avail.prompt')}</p>
             </div>
           ) : (
-            <>
               <div
               key={`${result.districtId}-${result.bloodGroup}-${result.units}-${result.available}`}
               className="animate-scale-in rounded-xl border border-slate-200 bg-white p-4 sm:p-5 dark:border-slate-800 dark:bg-slate-950/40"
@@ -310,27 +287,6 @@ export default function AvailabilityChecker() {
                     : t('avail.shortage')}
               </p>
               </div>
-              {result && !result.isAvailable && suggestions.length > 0 && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 dark:border-amber-900 dark:bg-amber-950/40">
-                  <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
-                    {t('avail.tryOther')}
-                  </p>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {suggestions.map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => applySuggestion(s.id)}
-                        aria-label={t('avail.useDistrict')}
-                        className="btn-secondary px-3 py-1.5 text-xs"
-                      >
-                        {getDistrictName(s.id, lang)} · {s.units} {t('units.label')}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
           )}
         </div>
       </div>

@@ -212,17 +212,17 @@ export default function ContactPage() {
               ))}
             </div>
           </section>
-          <div className="flex h-64 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-slate-300 bg-slate-100/60 p-6 text-center dark:border-slate-700 dark:bg-slate-900/40">
-            <MapPin
-              className="h-6 w-6 text-slate-400 dark:text-slate-500"
-              aria-hidden="true"
-            />
-            <p className="font-semibold text-slate-900 dark:text-white">
+          <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm dark:border-slate-700">
+            <p className="flex items-center gap-2 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 dark:bg-slate-900 dark:text-white">
+              <MapPin className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden="true" />
               {t('contact.mapTitle')}
             </p>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {t('contact.mapNote')}
-            </p>
+            <iframe
+              title={t('contact.mapTitle')}
+              src="https://www.openstreetmap.org/export/embed.html?bbox=80.24%2C13.06%2C80.30%2C13.10&layer=mapnik&marker=13.0810%2C80.2694"
+              className="h-64 w-full border-0"
+              loading="lazy"
+            />
           </div>
         </div>
       </div>

@@ -37,3 +37,47 @@ export const donorResetPasswordSchema = z.object({
   code: z.string().length(6, 'code must be 6 characters'),
   newPassword: strongPassword,
 });
+
+// Hospital auth — email + password model (Blood-request-frontend).
+export const hospitalRegisterSchema = z.object({
+  hospitalName: z.string().min(2, 'hospitalName must be at least 2 chars'),
+  registrationNumber: z.string().min(1, 'registrationNumber is required'),
+  hospitalId: z.string().optional().default(''),
+  hospitalType: z.enum(['Government', 'Private', 'Trust', 'Other']).optional().default('Private'),
+  email: z.string().email('Invalid email').toLowerCase(),
+  phone: z.string().regex(/^\d{10}$/, 'phone must be 10 digits'),
+  emergencyContact: z.string().regex(/^\d{10}$/, 'emergencyContact must be 10 digits').optional().or(z.literal('')),
+  district: z.string().optional().default(''),
+  districtId: z.string().optional().default(''),
+  address: z.string().min(5, 'hospitalAddress must be at least 5 chars'),
+  pincode: z.string().regex(/^\d{6}$/, 'pincode must be 6 digits').optional().or(z.literal('')),
+  website: z.string().optional().default(''),
+  officerName: z.string().optional().default(''),
+  officerDesignation: z.string().optional().default(''),
+  officerContact: z.string().optional().default(''),
+  password: strongPassword,
+});
+
+export const hospitalLoginSchema = z.object({
+  email: z.string().email('Invalid email').toLowerCase(),
+  password: z.string().min(1, 'password is required'),
+});
+
+// PATCH /api/hospitals/me — identity fields (email/registrationNumber)
+// are immutable; everything else is optional.
+export const hospitalUpdateSchema = z.object({
+  hospitalName: z.string().min(2).optional(),
+  hospitalId: z.string().optional(),
+  hospitalType: z.enum(['Government', 'Private', 'Trust', 'Other']).optional(),
+  phone: z.string().regex(/^\d{10}$/, 'phone must be 10 digits').optional().or(z.literal('')),
+  emergencyContact: z.string().regex(/^\d{10}$/, 'emergencyContact must be 10 digits').optional().or(z.literal('')),
+  district: z.string().optional(),
+  districtId: z.string().optional(),
+  address: z.string().min(5).optional(),
+  pincode: z.string().regex(/^\d{6}$/, 'pincode must be 6 digits').optional().or(z.literal('')),
+  website: z.string().optional(),
+  officerName: z.string().optional(),
+  officerDesignation: z.string().optional(),
+  officerContact: z.string().optional(),
+  logo: z.string().max(500000, 'logo is too large').optional(),
+});

@@ -14,7 +14,7 @@ import {
   Phone,
 } from 'lucide-react'
 import AuthSidePanel from '../components/AuthSidePanel'
-import { loginUser, registerHospital } from '../lib/auth'
+import { registerHospital } from '../lib/auth'
 
 const HospitalRegister = ({ onSuccess, onLogin }) => {
   const [form, setForm] = useState({
@@ -76,7 +76,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
   const labelCls = 'mb-1 block text-xs font-semibold text-[#17324d]'
   const iconCls = 'pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400'
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault()
 
     setError('')
@@ -136,16 +136,20 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
 
     setLoading(true)
 
-    setTimeout(() => {
-      registerHospital(form)
-      loginUser({ email: form.email, password: form.password })
-
-      setLoading(false)
+    try {
+      // Backend creates the account AND returns a session (auto-login).
+      const { confirmPassword, ...payload } = form
+      void confirmPassword
+      await registerHospital(payload)
       toast.success('Registration successful!')
       if (onSuccess) {
         onSuccess()
       }
-    }, 700)
+    } catch (err) {
+      setError(err.message || 'Registration failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

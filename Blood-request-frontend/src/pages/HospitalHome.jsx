@@ -13,6 +13,7 @@ import {
   Globe,
   Hash,
   Hospital,
+  House,
   Mail,
   MapPin,
   Phone,
@@ -27,8 +28,8 @@ import {
   X,
 } from 'lucide-react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router-dom'
-import { getHospitalProfile, isLoggedIn, updateHospitalProfile } from '../lib/auth'
-import { getRequests, getStats } from '../lib/requests'
+import { getHospitalProfile, isLoggedIn, updateHospitalProfile, fetchHospitalProfile } from '../lib/auth'
+import { computeStats, getRequests } from '../lib/requests'
 import { districts } from '../data/districts'
 import FormField from '../components/FormField'
 
@@ -253,12 +254,43 @@ export default function HospitalHome({ onLogout }) {
   const logged = isLoggedIn()
 
   const [profile, setProfile] = useState(() => getHospitalProfile())
-  const [stats] = useState(() => getStats())
-  const [recent] = useState(() => getRequests().slice(0, 4))
+  const [stats, setStats] = useState({ total: 0, approved: 0, pending: 0, fulfilled: 0, cancelled: 0, emergency: 0 })
+  const [recent, setRecent] = useState([])
+  const [loadingData, setLoadingData] = useState(true)
   const [editing, setEditing] = useState(() => searchParams.get('edit') === '1')
   const [form, setForm] = useState(() => ({ ...EMPTY_FORM, ...(getHospitalProfile() || {}) }))
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
+
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      setLoadingData(true)
+      try {
+        const fresh = await fetchHospitalProfile().catch(() => null)
+        if (!cancelled && fresh) {
+          setProfile(fresh)
+          setForm((prev) => ({ ...prev, ...fresh }))
+        }
+        const { requests } = await getRequests({ limit: 100 })
+        if (!cancelled) {
+          setRecent(requests.slice(0, 4))
+          setStats(computeStats(requests))
+        }
+      } catch (err) {
+        if (!cancelled && err?.status === 401) {
+          navigate('/hospital/login')
+        }
+      } finally {
+        if (!cancelled) setLoadingData(false)
+      }
+    }
+    if (logged) load()
+    else setLoadingData(false)
+    return () => {
+      cancelled = true
+    }
+  }, [logged, navigate])
 
   useEffect(() => {
     if (editing !== (searchParams.get('edit') === '1')) {
@@ -302,7 +334,7 @@ export default function HospitalHome({ onLogout }) {
     return next
   }
 
-  function handleSave(e) {
+  async function handleSave(e) {
     e.preventDefault()
     const next = validate()
     setErrors(next)
@@ -311,14 +343,17 @@ export default function HospitalHome({ onLogout }) {
       return
     }
     setSaving(true)
-    setTimeout(() => {
-      const saved = updateHospitalProfile(form)
+    try {
+      const saved = await updateHospitalProfile(form)
       setProfile(saved)
       setSaving(false)
       setEditing(false)
       toast.success('Profile updated successfully')
       window.scrollTo({ top: 0, behavior: 'smooth' })
-    }, 600)
+    } catch (err) {
+      setSaving(false)
+      toast.error(err.message || 'Could not save the profile')
+    }
   }
 
   const statsList = [
@@ -370,14 +405,23 @@ export default function HospitalHome({ onLogout }) {
                 })}
               </span>
               {!editing && (
-                <button
-                  type="button"
-                  onClick={startEdit}
-                  className="inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-xs font-bold text-red-700 shadow-sm transition hover:bg-red-50"
-                >
-                  <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
-                  Edit Profile
-                </button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    to="/"
+                    className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-3.5 py-2 text-xs font-bold text-white ring-1 ring-white/30 transition hover:bg-white/25"
+                  >
+                    <House className="h-3.5 w-3.5" aria-hidden="true" />
+                    Home
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={startEdit}
+                    className="inline-flex items-center gap-2 rounded-lg bg-white px-3.5 py-2 text-xs font-bold text-red-700 shadow-sm transition hover:bg-red-50"
+                  >
+                    <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+                    Edit Profile
+                  </button>
+                </div>
               )}
             </div>
           </div>
@@ -602,7 +646,7 @@ export default function HospitalHome({ onLogout }) {
                 key={s.key}
                 icon={s.icon}
                 label={s.label}
-                value={stats[s.key] ?? DEFAULT_STATS[s.key]}
+                value={loadingData ? '…' : (stats[s.key] ?? DEFAULT_STATS[s.key])}
                 tone={s.tone}
               />
             ))}
@@ -756,7 +800,12 @@ export default function HospitalHome({ onLogout }) {
               </Link>
             </div>
 
-            {recent.length ? (
+            {loadingData ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-sm text-slate-500 dark:text-slate-400">
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-red-200 border-t-red-600" />
+                Loading requests…
+              </div>
+            ) : recent.length ? (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[540px] text-sm">
                   <thead>
@@ -783,16 +832,20 @@ export default function HospitalHome({ onLogout }) {
                         <td className="py-3 capitalize text-slate-600 dark:text-slate-300">
                           {r.priority}
                         </td>
-                        <td className="py-3 text-slate-600 dark:text-slate-300">{r.totalUnits}</td>
+                        <td className="py-3 text-slate-600 dark:text-slate-300">{r.units}</td>
                         <td className="py-3 text-right">
                           <span
-                            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                            className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${
                               r.status === 'approved'
                                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
-                                : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                                : r.status === 'fulfilled'
+                                  ? 'bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                                  : r.status === 'cancelled'
+                                    ? 'bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+                                    : 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
                             }`}
                           >
-                            {r.status === 'approved' ? 'Approved' : 'Pending'}
+                            {r.status || 'submitted'}
                           </span>
                         </td>
                       </tr>

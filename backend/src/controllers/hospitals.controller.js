@@ -1,7 +1,16 @@
+import jwt from 'jsonwebtoken';
 import { asyncHandler } from '../middleware/asyncHandler.js';
+import Hospital from '../models/Hospital.js';
 import Otp from '../models/Otp.js';
 import { config } from '../config/env.js';
 import { logAudit } from '../middleware/audit.js';
+import { comparePassword, hashPassword } from '../utils/passwords.js';
+import {
+  signAccess,
+  signRefresh,
+  setRefreshCookie,
+  clearRefreshCookie,
+} from '../utils/jwt.js';
 import {
   genOtp,
   hashValue,
@@ -16,14 +25,214 @@ function hospitalResetTarget(email) {
 
 const GENERIC_HOSPITAL_FORGOT = 'If an account exists, an OTP has been sent';
 const MAX_RESET_ATTEMPTS = 5;
+const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
+
+function toSafeHospital(h) {
+  if (!h) return null;
+  return {
+    id: String(h._id),
+    hospitalName: h.hospitalName,
+    registrationNumber: h.registrationNumber,
+    hospitalId: h.hospitalId || '',
+    hospitalType: h.hospitalType || '',
+    email: h.email,
+    phone: h.phone || '',
+    emergencyContact: h.emergencyContact || '',
+    district: h.district || '',
+    districtId: h.districtId || '',
+    address: h.address,
+    pincode: h.pincode || '',
+    website: h.website || '',
+    officerName: h.officerName || '',
+    officerDesignation: h.officerDesignation || '',
+    officerContact: h.officerContact || '',
+    role: 'Hospital',
+    active: h.active,
+  };
+}
+
+function pruneExpiredTokens(hospital) {
+  const now = new Date();
+  hospital.refreshTokens = (hospital.refreshTokens || []).filter(
+    (t) => t && t.expiresAt && new Date(t.expiresAt) > now
+  );
+}
+
+async function issueSession(hospital, res, req, auditAction) {
+  const accessToken = signAccess({ _id: hospital._id, role: 'Hospital', districtId: hospital.districtId });
+  const refreshToken = signRefresh({ _id: hospital._id, role: 'Hospital', districtId: hospital.districtId });
+
+  pruneExpiredTokens(hospital);
+  hospital.refreshTokens.push({
+    tokenHash: hashValue(refreshToken),
+    expiresAt: new Date(Date.now() + REFRESH_EXPIRES_MS),
+  });
+  await hospital.save();
+
+  setRefreshCookie(res, refreshToken);
+  logAudit(String(hospital._id), auditAction, 'Hospital', String(hospital._id), req);
+  return { user: toSafeHospital(hospital), accessToken };
+}
+
+/**
+ * POST /api/hospitals/register
+ * Body: hospital fields + { password } (validated by hospitalRegisterSchema).
+ * Auto-logs the hospital in (same as donor-style onboarding).
+ */
+export const registerHospital = asyncHandler(async (req, res) => {
+  const { password, email, registrationNumber, ...rest } = req.body;
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+
+  const existing = await Hospital.findOne({
+    $or: [{ email: normalizedEmail }, { registrationNumber: String(registrationNumber || '').trim() }],
+  });
+  if (existing) {
+    return res.status(409).json({ message: 'A hospital with this email or registration number already exists' });
+  }
+
+  const hospital = await Hospital.create({
+    ...rest,
+    email: normalizedEmail,
+    registrationNumber: String(registrationNumber || '').trim(),
+    districtId: String(rest.districtId || '').trim().toLowerCase(),
+    passwordHash: await hashPassword(password),
+  });
+
+  const session = await issueSession(hospital, res, req, 'hospital.register');
+  return res.status(201).json({ message: 'Hospital registered', ...session });
+});
+
+/**
+ * POST /api/hospitals/login
+ * Body: { email, password }
+ */
+export const loginHospital = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+
+  const hospital = await Hospital.findOne({ email: normalizedEmail }).select('+passwordHash');
+  if (!hospital || hospital.active === false) {
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
+
+  const ok = await comparePassword(password, hospital.passwordHash);
+  if (!ok) {
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
+
+  const session = await issueSession(hospital, res, req, 'hospital.login');
+  return res.status(200).json(session);
+});
+
+/**
+ * POST /api/hospitals/refresh — rotates refresh cookie, returns access token.
+ */
+export const refreshHospital = asyncHandler(async (req, res) => {
+  const token = req.cookies?.refreshToken;
+  if (!token) {
+    return res.status(401).json({ message: 'Missing refresh token' });
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(token, config.jwt.refreshSecret);
+  } catch {
+    return res.status(401).json({ message: 'Invalid or expired refresh token' });
+  }
+  if (payload.role !== 'Hospital') {
+    return res.status(401).json({ message: 'Invalid refresh token' });
+  }
+
+  const tokenHash = hashValue(token);
+  const hospital = await Hospital.findOne({
+    _id: payload.id,
+    'refreshTokens.tokenHash': tokenHash,
+  });
+  if (!hospital || hospital.active === false) {
+    clearRefreshCookie(res);
+    return res.status(401).json({ message: 'Invalid refresh token' });
+  }
+
+  hospital.refreshTokens = (hospital.refreshTokens || []).filter(
+    (t) => t.tokenHash !== tokenHash && new Date(t.expiresAt) > new Date()
+  );
+
+  const session = await issueSession(hospital, res, req, 'hospital.refresh');
+  return res.status(200).json(session);
+});
+
+/**
+ * POST /api/hospitals/logout — clears cookie + pulls presented token.
+ */
+export const logoutHospital = asyncHandler(async (req, res) => {
+  const token = req.cookies?.refreshToken;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, config.jwt.refreshSecret);
+      await Hospital.updateOne(
+        { _id: payload.id },
+        { $pull: { refreshTokens: { tokenHash: hashValue(token) } } }
+      );
+    } catch {
+      try {
+        await Hospital.updateMany(
+          { 'refreshTokens.tokenHash': hashValue(token) },
+          { $pull: { refreshTokens: { tokenHash: hashValue(token) } } }
+        );
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  clearRefreshCookie(res);
+  return res.status(200).json({ message: 'Logged out' });
+});
+
+/**
+ * GET /api/hospitals/me — current hospital profile (auth required).
+ */
+export const meHospital = asyncHandler(async (req, res) => {
+  if (!req.user?.id) {
+    return res.status(200).json({ user: req.user || null });
+  }
+  if (req.user?.role !== 'Hospital') {
+    return res.status(403).json({ message: 'Hospital account required' });
+  }
+  const hospital = await Hospital.findById(req.user.id).select('-passwordHash -refreshTokens');
+  if (!hospital) {
+    return res.status(404).json({ message: 'Hospital not found' });
+  }
+  return res.status(200).json({ user: toSafeHospital(hospital) });
+});
+
+/**
+ * PATCH /api/hospitals/me — update own profile (auth required).
+ * Body: validated by hospitalUpdateSchema (identity fields immutable).
+ */
+export const updateHospitalProfile = asyncHandler(async (req, res) => {
+  if (req.user?.role !== 'Hospital') {
+    return res.status(403).json({ message: 'Hospital account required' });
+  }
+  const patch = { ...req.body };
+  if (patch.districtId !== undefined) {
+    patch.districtId = String(patch.districtId || '').trim().toLowerCase();
+  }
+  const hospital = await Hospital.findByIdAndUpdate(req.user.id, patch, {
+    new: true,
+    runValidators: true,
+  }).select('-passwordHash -refreshTokens');
+  if (!hospital) {
+    return res.status(404).json({ message: 'Hospital not found' });
+  }
+  logAudit(String(hospital._id), 'hospital.profile_update', 'Hospital', String(hospital._id), req);
+  return res.status(200).json({ message: 'Profile updated', user: toSafeHospital(hospital) });
+});
 
 /**
  * POST /api/hospitals/forgot-password
  * Body: { email } — generic response, hashed OTP, cooldown + TTL.
  * Real-time: code is logged server-side in non-production (OTP_PROVIDER=log).
- * NOTE: OTP is issued for any valid email (even local-only demo accounts)
- * so the Blood-request-frontend (localStorage auth) can verify server-side.
- * Response is always generic to avoid user enumeration.
  */
 export const forgotHospitalPassword = asyncHandler(async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
@@ -60,17 +269,21 @@ export const forgotHospitalPassword = asyncHandler(async (req, res) => {
     console.log(`[OTP:reset] ${target} -> ${code}`);
   }
 
-  logAudit(null, 'hospital.forgot_password', 'Hospital', email, req);
+  const hospital = await Hospital.findOne({ email });
+  logAudit(
+    hospital ? String(hospital._id) : null,
+    'hospital.forgot_password',
+    'Hospital',
+    hospital ? String(hospital._id) : email,
+    req
+  );
   return res.status(200).json({ message: GENERIC_HOSPITAL_FORGOT });
 });
 
 /**
  * POST /api/hospitals/reset-password
- * Body: { email, code, newPassword } — verifies OTP server-side.
- * Hospital accounts currently live in the frontend (localStorage), so there
- * is no backend password to update yet; the frontend syncs its local copy
- * after success. When a Hospital model lands, update its passwordHash here
- * (same pattern as donor.reset_password).
+ * Body: { email, code, newPassword } — verifies OTP, sets a new password
+ * hash and revokes all refresh sessions.
  */
 export const resetHospitalPassword = asyncHandler(async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
@@ -107,13 +320,29 @@ export const resetHospitalPassword = asyncHandler(async (req, res) => {
   doc.consumed = true;
   await doc.save();
 
-  logAudit(null, 'hospital.reset_password', 'Hospital', email, req);
+  const hospital = await Hospital.findOne({ email });
+  if (!hospital) {
+    return res.status(400).json({ message: 'Invalid or expired OTP' });
+  }
+
+  hospital.passwordHash = await hashPassword(newPassword);
+  // Revoke all sessions — a password change must log out other devices.
+  hospital.refreshTokens = [];
+  await hospital.save();
+
+  logAudit(String(hospital._id), 'hospital.reset_password', 'Hospital', String(hospital._id), req);
   return res
     .status(200)
     .json({ message: 'Password reset successful. Please login again.' });
 });
 
 export default {
+  registerHospital,
+  loginHospital,
+  refreshHospital,
+  logoutHospital,
+  meHospital,
+  updateHospitalProfile,
   forgotHospitalPassword,
   resetHospitalPassword,
 };
