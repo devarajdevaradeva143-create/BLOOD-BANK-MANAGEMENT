@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router';
+import { Link, Navigate, useNavigate } from 'react-router';
 import { Droplet, Eye, EyeOff, LockKeyhole, Moon, ShieldCheck, Sun, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
@@ -8,7 +8,15 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { DEMO_ACCOUNTS } from '../data/constants';
 import type { DemoAccount } from '../data/constants';
+import { findDemoAccount } from '../data/demo';
+import type { TranslationKey } from '../i18n/translations';
 import toast from 'react-hot-toast';
+
+function demoLabel(role: DemoAccount['role'], t: (key: TranslationKey) => string): string {
+  if (role === 'Doctor') return t('login.demoDoctor');
+  if (role === 'Staff') return t('login.demoStaff');
+  return t('login.demoSuperAdmin');
+}
 
 export default function LoginPage() {
   const { user, login } = useAuth();
@@ -24,13 +32,20 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<DemoAccount['role'] | null>(null);
 
+  if (user?.role === 'SuperAdmin') return <Navigate to="/superadmin/dashboard" replace />;
   if (user) return <Navigate to="/dashboard" replace />;
 
   const attemptLogin = async (id: string, pinCode: string) => {
     const ok = await login(id, pinCode, remember);
     if (ok) {
       toast.success(t('login.title'));
-      navigate('/dashboard', { replace: true });
+      // Same login page serves every role — route SuperAdmin to its dashboard.
+      const demoUser = findDemoAccount(id, pinCode);
+      if (demoUser?.role === 'SuperAdmin') {
+        navigate('/superadmin/dashboard', { replace: true });
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
       return true;
     }
     setError(t('login.errorInvalid'));
@@ -227,7 +242,7 @@ export default function LoginPage() {
                     >
                       <div className="min-w-0">
                         <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
-                          {t(account.role === 'Doctor' ? 'login.demoDoctor' : 'login.demoStaff')}
+                          {demoLabel(account.role, t)}
                         </p>
                         <p className="truncate font-mono text-[11px] text-slate-500 dark:text-slate-400">
                           {account.staffId} / {account.pin}
@@ -247,6 +262,14 @@ export default function LoginPage() {
                   );
                 })}
               </div>
+              <p className="mt-3 text-center text-[11px] text-slate-400 dark:text-slate-500">
+                <Link
+                  to="/superadmin/login"
+                  className="font-medium text-red-600 hover:underline dark:text-red-400"
+                >
+                  {t('login.superAdminLink')}
+                </Link>
+              </p>
             </div>
           </div>
 

@@ -48,10 +48,12 @@ export interface BloodUnit {
   history: HistoryEvent[];
 }
 
+export type UserRole = 'Doctor' | 'Staff' | 'SuperAdmin';
+
 export interface AuthUser {
   id: string;
   name: string;
-  role: 'Doctor' | 'Staff';
+  role: UserRole;
   designation: string;
 }
 

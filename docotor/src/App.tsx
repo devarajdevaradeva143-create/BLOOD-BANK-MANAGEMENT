@@ -5,8 +5,23 @@ import { AuthProvider } from './context/AuthContext';
 import { UnitProvider } from './context/UnitContext';
 import { AppToaster } from './components/AppToaster';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
+import { SuperAdminRoute } from './components/layout/SuperAdminRoute';
+import { SuperAdminLayout } from './components/superadmin/SuperAdminLayout';
 import { Layout } from './components/layout/Layout';
 import LoginPage from './pages/LoginPage';
+import SuperAdminLoginPage from './pages/superadmin/SuperAdminLoginPage';
+import SuperAdminDashboardPage from './pages/superadmin/DashboardPage';
+import ApprovalsPage from './pages/superadmin/ApprovalsPage';
+import ManageAdminsPage from './pages/superadmin/AdminsPage';
+import ManageHospitalsPage from './pages/superadmin/HospitalsPage';
+import BloodBanksPage from './pages/superadmin/BloodBanksPage';
+import DonorsPage from './pages/superadmin/DonorsPage';
+import BloodRequestsPage from './pages/superadmin/RequestsPage';
+import InventoryPage from './pages/superadmin/InventoryPage';
+import DistrictsPage from './pages/superadmin/DistrictsPage';
+import ReportsPage from './pages/superadmin/ReportsPage';
+import SuperAdminProfilePage from './pages/superadmin/ProfilePage';
+import SuperAdminSettingsPage from './pages/superadmin/SettingsPage';
 import DashboardPage from './pages/DashboardPage';
 import BloodUnitsPage from './pages/BloodUnitsPage';
 import AddUnitPage from './pages/AddUnitPage';
@@ -25,6 +40,23 @@ export default function App() {
               <AppToaster />
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
+                <Route path="/superadmin/login" element={<SuperAdminLoginPage />} />
+                <Route element={<SuperAdminRoute />}>
+                  <Route element={<SuperAdminLayout />}>
+                    <Route path="/superadmin/dashboard" element={<SuperAdminDashboardPage />} />
+                    <Route path="/superadmin/approvals" element={<ApprovalsPage />} />
+                    <Route path="/superadmin/admins" element={<ManageAdminsPage />} />
+                    <Route path="/superadmin/hospitals" element={<ManageHospitalsPage />} />
+                    <Route path="/superadmin/banks" element={<BloodBanksPage />} />
+                    <Route path="/superadmin/donors" element={<DonorsPage />} />
+                    <Route path="/superadmin/requests" element={<BloodRequestsPage />} />
+                    <Route path="/superadmin/inventory" element={<InventoryPage />} />
+                    <Route path="/superadmin/districts" element={<DistrictsPage />} />
+                    <Route path="/superadmin/reports" element={<ReportsPage />} />
+                    <Route path="/superadmin/profile" element={<SuperAdminProfilePage />} />
+                    <Route path="/superadmin/settings" element={<SuperAdminSettingsPage />} />
+                  </Route>
+                </Route>
                 <Route element={<ProtectedRoute />}>
                   <Route element={<Layout />}>
                     <Route index element={<Navigate to="/dashboard" replace />} />

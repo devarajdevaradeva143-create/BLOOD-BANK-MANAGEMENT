@@ -7,7 +7,7 @@ export const DEMO_STORAGE_KEY = 'doctor-demo-user';
 export const DEMO_UNITS_KEY = 'doctor-demo-units';
 
 export interface DemoCredential {
-  role: 'Doctor' | 'Staff';
+  role: 'Doctor' | 'Staff' | 'SuperAdmin';
   staffId: string;
   pin: string;
   user: AuthUser;
@@ -25,6 +25,12 @@ export const DEMO_CREDENTIALS: DemoCredential[] = [
     staffId: 'STAFF-001',
     pin: '1234',
     user: { id: 'STAFF-001', name: 'Demo Staff', role: 'Staff', designation: 'Lab Technician' },
+  },
+  {
+    role: 'SuperAdmin',
+    staffId: 'SUPER001',
+    pin: 'Admin@123',
+    user: { id: 'SUPER001', name: 'Super Admin', role: 'SuperAdmin', designation: 'System Administrator' },
   },
 ];
 
