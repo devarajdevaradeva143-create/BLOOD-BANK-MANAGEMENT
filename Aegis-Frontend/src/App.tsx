@@ -9,7 +9,6 @@ import { SuperAdminRoute } from './components/layout/SuperAdminRoute';
 import { SuperAdminLayout } from './components/superadmin/SuperAdminLayout';
 import { Layout } from './components/layout/Layout';
 import LoginPage from './pages/LoginPage';
-import SuperAdminLoginPage from './pages/superadmin/SuperAdminLoginPage';
 import SuperAdminDashboardPage from './pages/superadmin/DashboardPage';
 import ApprovalsPage from './pages/superadmin/ApprovalsPage';
 import ManageAdminsPage from './pages/superadmin/AdminsPage';
@@ -40,7 +39,6 @@ export default function App() {
               <AppToaster />
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
-                <Route path="/superadmin/login" element={<SuperAdminLoginPage />} />
                 <Route element={<SuperAdminRoute />}>
                   <Route element={<SuperAdminLayout />}>
                     <Route path="/superadmin/dashboard" element={<SuperAdminDashboardPage />} />

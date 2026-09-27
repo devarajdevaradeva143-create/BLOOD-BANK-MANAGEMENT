@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router';
-import { Droplet, Eye, EyeOff, LockKeyhole, Moon, ShieldCheck, Sun, User } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router';
+import { Building2, Clock, Droplet, Eye, EyeOff, LockKeyhole, MapPin, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
-import { useTheme } from '../context/ThemeContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import AuthSidePanel from '../components/layout/AuthSidePanel';
 import { DEMO_ACCOUNTS } from '../data/constants';
 import type { DemoAccount } from '../data/constants';
 import { findDemoAccount } from '../data/demo';
@@ -21,7 +21,6 @@ function demoLabel(role: DemoAccount['role'], t: (key: TranslationKey) => string
 export default function LoginPage() {
   const { user, login } = useAuth();
   const { t } = useI18n();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
 
   const [staffId, setStaffId] = useState('');
@@ -85,54 +84,32 @@ export default function LoginPage() {
 
   return (
     <div className="flex min-h-screen bg-slate-50 dark:bg-slate-950">
-      <div className="relative hidden w-full overflow-hidden bg-gradient-to-br from-red-700 via-red-600 to-rose-800 lg:flex lg:w-[46%] lg:flex-col lg:justify-between lg:p-12">
-        <div
-          className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/10 blur-3xl"
-          aria-hidden="true"
-        />
-        <div
-          className="absolute -bottom-32 -left-16 h-96 w-96 rounded-full bg-black/15 blur-3xl"
-          aria-hidden="true"
-        />
+      <AuthSidePanel
+        eyebrow="Doctor & Staff Portal"
+        orgName={t('app.name')}
+        orgSub={t('app.sub')}
+        headline={t('app.tagline')}
+        description={t('login.subtitle')}
+        stats={[
+          { icon: MapPin, value: '38', label: 'Districts Covered' },
+          { icon: Building2, value: '120+', label: 'Hospitals Network' },
+          { icon: Droplet, value: '50K+', label: 'Units Managed / Year' },
+          { icon: Clock, value: '24/7', label: 'Emergency Issue' },
+        ]}
+        features={[
+          'NABH & Drugs Licence certified blood banks',
+          '100% screened units • –80°C cold-chain FFP storage',
+          'Tamil + English support for doctors & staff',
+        ]}
+        helplineLabel="Emergency Helpline"
+        helplineValue="104 • Toll Free"
+        location="Chennai, TN"
+        secureNote={t('login.secure')}
+      />
 
-        <div className="relative flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/15 ring-1 ring-white/30 backdrop-blur">
-            <Droplet className="h-6 w-6 text-white" fill="currentColor" />
-          </div>
-          <div>
-            <p className="text-lg font-semibold text-white">{t('app.name')}</p>
-            <p className="text-xs text-red-100/90">{t('app.sub')}</p>
-          </div>
-        </div>
-
-        <div className="relative">
-          <h1 className="max-w-md text-3xl font-semibold leading-tight text-white xl:text-4xl">
-            {t('app.tagline')}
-          </h1>
-          <p className="mt-4 max-w-md text-sm leading-relaxed text-red-50/90">
-            {t('login.subtitle')}
-          </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            {['Rack A', '-80°C FFP', 'Screened', 'Tamil + English'].map((chip) => (
-              <span
-                key={chip}
-                className="rounded-full bg-white/10 px-3 py-1 text-xs font-medium text-white/90 ring-1 ring-white/20"
-              >
-                {chip}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <p className="relative flex items-center gap-2 text-xs text-red-100/80">
-          <ShieldCheck className="h-4 w-4" />
-          {t('login.secure')}
-        </p>
-      </div>
-
-      <div className="flex w-full flex-col items-center justify-center px-4 py-10 sm:px-8">
+      <div className="flex w-full flex-col items-center justify-center px-4 py-10 sm:px-8 lg:w-1/2">
         <div className="w-full max-w-md">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-8 flex items-center">
             <div className="flex items-center gap-3 lg:hidden">
               <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-600">
                 <Droplet className="h-5 w-5 text-white" fill="currentColor" />
@@ -142,14 +119,6 @@ export default function LoginPage() {
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">{t('app.sub')}</p>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="ml-auto rounded-lg border border-slate-200 bg-white p-2 text-slate-500 hover:text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400 dark:hover:text-white"
-              aria-label={theme === 'dark' ? t('settings.light') : t('settings.dark')}
-            >
-              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </button>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8 dark:border-slate-800 dark:bg-slate-900">
@@ -262,14 +231,6 @@ export default function LoginPage() {
                   );
                 })}
               </div>
-              <p className="mt-3 text-center text-[11px] text-slate-400 dark:text-slate-500">
-                <Link
-                  to="/superadmin/login"
-                  className="font-medium text-red-600 hover:underline dark:text-red-400"
-                >
-                  {t('login.superAdminLink')}
-                </Link>
-              </p>
             </div>
           </div>
 

@@ -57,7 +57,7 @@ export function SuperAdminLayout() {
 
   const handleLogout = () => {
     logout();
-    navigate('/superadmin/login', { replace: true });
+    navigate('/login', { replace: true });
   };
 
   return (

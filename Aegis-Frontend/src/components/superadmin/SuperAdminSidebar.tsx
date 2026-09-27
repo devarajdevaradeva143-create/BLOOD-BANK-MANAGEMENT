@@ -97,7 +97,7 @@ export function SuperAdminSidebar({
   const handleLogout = () => {
     logout();
     onClose();
-    navigate('/superadmin/login', { replace: true });
+    navigate('/login', { replace: true });
   };
 
   const isCollapsed = collapsed && !mobileOpen;

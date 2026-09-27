@@ -11,7 +11,7 @@ export function SuperAdminRoute() {
   }
 
   if (!user) {
-    return <Navigate to="/superadmin/login" replace state={{ from: location.pathname }} />;
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 
   if (user.role !== 'SuperAdmin') {
