@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import Layout from './components/Layout'
+import RequireAuth, { GuestOnly } from './components/RequireAuth'
 import ScrollToTop from './components/ScrollToTop'
 import ThemedToaster from './components/ThemedToaster'
 import { LanguageProvider } from './context/LanguageProvider'
@@ -12,14 +13,16 @@ import HomePage from './pages/HomePage'
 import HospitalHome from './pages/HospitalHome'
 import HospitalLogin from './pages/HospitalLogin'
 import HospitalRegister from './pages/HospitalRegister'
+import RequestHistoryPage from './pages/RequestHistoryPage'
 import RequestPage from './pages/RequestPage'
+import { logoutUser } from './lib/auth'
 
 function HospitalLoginRoute() {
   const navigate = useNavigate()
 
   return (
     <HospitalLogin
-      onLogin={() => navigate('/hospital/home')}
+      onLogin={() => navigate('/')}
       onRegister={() => navigate('/hospital/register')}
     />
   )
@@ -28,14 +31,16 @@ function HospitalLoginRoute() {
 function HospitalRegisterRoute() {
   const navigate = useNavigate()
 
-  return <HospitalRegister onLogin={() => navigate('/hospital/login')} />
+  return (
+    <HospitalRegister onSuccess={() => navigate('/')} onLogin={() => navigate('/hospital/login')} />
+  )
 }
 
 function HospitalHomeRoute() {
   const navigate = useNavigate()
 
   const handleLogout = () => {
-    localStorage.removeItem('hospitalLoggedIn')
+    logoutUser()
     navigate('/hospital/login')
   }
 
@@ -50,20 +55,25 @@ export default function App() {
           <ScrollToTop />
           <ThemedToaster />
           <Routes>
-            <Route element={<Layout />}>
-              <Route index element={<HomePage />} />
-              <Route path="request" element={<RequestPage />} />
-              <Route path="availability" element={<AvailabilityPage />} />
-              <Route path="emergency" element={<EmergencyPage />} />
-              <Route path="faq" element={<FaqPage />} />
-              <Route path="contact" element={<ContactPage />} />
+            <Route path="/hospital/login" element={<GuestOnly><HospitalLoginRoute /></GuestOnly>} />
+            <Route path="/hospital/register" element={<GuestOnly><HospitalRegisterRoute /></GuestOnly>} />
+
+            <Route element={<RequireAuth />}>
+              <Route element={<Layout />}>
+                <Route index element={<HomePage />} />
+                <Route path="request" element={<RequestPage />} />
+                <Route path="availability" element={<AvailabilityPage />} />
+                <Route path="emergency" element={<EmergencyPage />} />
+                <Route path="faq" element={<FaqPage />} />
+                <Route path="contact" element={<ContactPage />} />
+              </Route>
+
+              <Route path="/hospital" element={<Navigate to="/hospital/home" replace />} />
+              <Route path="/hospital/home" element={<HospitalHomeRoute />} />
+              <Route path="/hospital/history" element={<RequestHistoryPage />} />
+              <Route path="/hospital/profile" element={<Navigate to="/hospital/home" replace />} />
               <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
-
-            <Route path="/hospital" element={<Navigate to="/hospital/login" replace />} />
-            <Route path="/hospital/login" element={<HospitalLoginRoute />} />
-            <Route path="/hospital/register" element={<HospitalRegisterRoute />} />
-            <Route path="/hospital/home" element={<HospitalHomeRoute />} />
           </Routes>
         </BrowserRouter>
       </LanguageProvider>

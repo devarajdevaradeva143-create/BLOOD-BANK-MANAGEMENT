@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import {
   ArrowRight,
   Building2,
@@ -10,8 +11,9 @@ import {
   MapPin,
   Phone,
 } from 'lucide-react'
+import { loginUser, registerHospital } from '../lib/auth'
 
-const HospitalRegister = ({ onLogin }) => {
+const HospitalRegister = ({ onSuccess, onLogin }) => {
   const [form, setForm] = useState({
     hospitalName: '',
     registrationNumber: '',
@@ -26,7 +28,6 @@ const HospitalRegister = ({ onLogin }) => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
 
   const handleChange = (e) => {
@@ -60,7 +61,6 @@ const HospitalRegister = ({ onLogin }) => {
     e.preventDefault()
 
     setError('')
-    setSuccess('')
 
     if (
       !form.hospitalName ||
@@ -118,16 +118,14 @@ const HospitalRegister = ({ onLogin }) => {
     setLoading(true)
 
     setTimeout(() => {
-      localStorage.setItem('registeredHospital', JSON.stringify(form))
+      registerHospital(form)
+      loginUser({ email: form.email, password: form.password })
 
       setLoading(false)
-      setSuccess('Registration successful! Please login.')
-
-      setTimeout(() => {
-        if (onLogin) {
-          onLogin()
-        }
-      }, 1200)
+      toast.success('Registration successful!')
+      if (onSuccess) {
+        onSuccess()
+      }
     }, 700)
   }
 
@@ -496,13 +494,6 @@ const HospitalRegister = ({ onLogin }) => {
               {error && (
                 <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2 text-[11px] text-red-600">
                   {error}
-                </div>
-              )}
-
-              {/* Success */}
-              {success && (
-                <div className="bg-green-50 border border-green-200 rounded-md px-3 py-2 text-[11px] text-green-600">
-                  {success}
                 </div>
               )}
 

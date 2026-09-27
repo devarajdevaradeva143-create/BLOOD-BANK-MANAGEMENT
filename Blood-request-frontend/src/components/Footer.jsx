@@ -1,5 +1,4 @@
 import { Droplet } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { useLanguage } from '../context/useLanguage'
 
 export default function Footer() {
@@ -7,7 +6,7 @@ export default function Footer() {
 
   return (
     <footer className="mt-auto border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-3 lg:px-8">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-2 lg:px-8">
         <div>
           <div className="flex items-center gap-2">
             <Droplet className="h-5 w-5 text-red-600 dark:text-red-500" aria-hidden="true" />
@@ -18,64 +17,6 @@ export default function Footer() {
           <p className="mt-3 text-xs text-slate-500 dark:text-slate-400">
             {t('footer.note')}
           </p>
-        </div>
-
-        <div>
-          <h3 className="text-sm font-semibold text-slate-900 dark:text-white">
-            {t('footer.quickLinks')}
-          </h3>
-          <nav aria-label={t('footer.quickLinks')} className="mt-3">
-            <ul className="space-y-2">
-              <li>
-                <Link
-                  to="/"
-                  className="text-sm text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                >
-                  {t('nav.home')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/request"
-                  className="text-sm text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                >
-                  {t('nav.request')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/availability"
-                  className="text-sm text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                >
-                  {t('nav.availability')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/emergency"
-                  className="text-sm text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                >
-                  {t('nav.emergency')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/faq"
-                  className="text-sm text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                >
-                  {t('nav.faq')}
-                </Link>
-              </li>
-              <li>
-                <Link
-                  to="/contact"
-                  className="text-sm text-slate-600 hover:text-red-600 dark:text-slate-400 dark:hover:text-red-400"
-                >
-                  {t('nav.contact')}
-                </Link>
-              </li>
-            </ul>
-          </nav>
         </div>
 
         <div>

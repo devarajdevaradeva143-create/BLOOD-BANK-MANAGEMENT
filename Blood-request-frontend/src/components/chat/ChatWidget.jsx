@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { MessageCircle, X, Send, Loader2 } from 'lucide-react'
+import { MessageCircle, X, Send, Loader2, Trash2 } from 'lucide-react'
 import { useLanguage } from '../../context/useLanguage'
 import { sendChatMessage } from '../../lib/chat'
 
@@ -24,6 +24,7 @@ const STRINGS = {
     placeholder: 'Ask about requesting blood…',
     open: 'Open chat',
     close: 'Close chat',
+    clear: 'Clear chat',
     greeting: 'Hi! I can help with blood requests, availability, and emergency steps.',
     q1: 'How to request?',
     q1text: 'How do I request blood?',
@@ -39,6 +40,7 @@ const STRINGS = {
     placeholder: 'இரத்தம் கோருவது பற்றி கேளுங்கள்…',
     open: 'அரட்டையைத் திற',
     close: 'அரட்டையை மூடு',
+    clear: 'அரட்டையை அழி',
     greeting: 'வணக்கம்! இரத்த கோரிக்கை, இருப்பு, அவசர வழிகளில் உதவுவேன்.',
     q1: 'கோருவது எப்படி?',
     q1text: 'இரத்தம் எவ்வாறு கோருவது?',
@@ -64,7 +66,7 @@ export default function ChatWidget() {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(-20)))
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(1, 21)))
     } catch {
       /* ignore */
     }
@@ -97,6 +99,17 @@ export default function ChatWidget() {
     { label: s.q3, text: s.q3text },
   ]
 
+  function clearChat() {
+    setSending(false)
+    setInput('')
+    setMessages([{ role: 'assistant', content: s.greeting }])
+    try {
+      localStorage.removeItem(STORAGE_KEY)
+    } catch {
+      /* ignore */
+    }
+  }
+
   return (
     <div className="fixed right-5 bottom-5 z-50 flex flex-col items-end gap-3">
       {open && (
@@ -106,9 +119,20 @@ export default function ChatWidget() {
               <p className="text-sm font-bold">{s.title}</p>
               <p className="text-xs text-red-100">{s.subtitle}</p>
             </div>
-            <button onClick={() => setOpen(false)} aria-label={s.close} className="rounded-lg p-1.5 hover:bg-white/20">
-              <X className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={clearChat}
+                disabled={sending || messages.length <= 1}
+                aria-label={s.clear}
+                title={s.clear}
+                className="rounded-lg p-1.5 text-red-100 hover:bg-white/20 disabled:opacity-40 disabled:hover:bg-transparent"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+              <button onClick={() => setOpen(false)} aria-label={s.close} className="rounded-lg p-1.5 hover:bg-white/20">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">

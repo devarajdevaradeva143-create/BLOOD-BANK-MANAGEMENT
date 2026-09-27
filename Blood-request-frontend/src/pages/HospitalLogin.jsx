@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import toast from 'react-hot-toast'
 import {
   ArrowRight,
   Droplet,
@@ -9,8 +10,10 @@ import {
   Lock,
   Mail,
   ShieldCheck,
+  Sparkles,
   Users,
 } from 'lucide-react'
+import { demoLogin, loginUser } from '../lib/auth'
 
 const HospitalLogin = ({ onLogin, onRegister }) => {
   const [email, setEmail] = useState('')
@@ -31,25 +34,36 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
     setLoading(true)
 
     setTimeout(() => {
-      const registeredHospital = JSON.parse(
-        localStorage.getItem('registeredHospital')
-      )
-
-      if (
-        registeredHospital &&
-        registeredHospital.email === email &&
-        registeredHospital.password === password
-      ) {
-        localStorage.setItem('hospitalLoggedIn', 'true')
-
+      try {
+        loginUser({ email, password })
+        toast.success('Logged in successfully!')
         if (onLogin) {
           onLogin()
         }
-      } else {
-        setError('Invalid email or password.')
+      } catch (err) {
+        setError(err.message || 'Invalid email or password.')
+      } finally {
+        setLoading(false)
       }
+    }, 700)
+  }
 
-      setLoading(false)
+  const handleDemoLogin = () => {
+    setError('')
+    setLoading(true)
+
+    setTimeout(() => {
+      try {
+        demoLogin()
+        toast.success('Logged in with demo account!')
+        if (onLogin) {
+          onLogin()
+        }
+      } catch (err) {
+        setError(err.message || 'Demo login failed.')
+      } finally {
+        setLoading(false)
+      }
     }, 700)
   }
 
@@ -316,6 +330,21 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
 
               <div className="flex-1 h-px bg-slate-200" />
             </div>
+
+            {/* Demo Login */}
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              disabled={loading}
+              className="w-full h-10 rounded-md border border-red-200 bg-red-50 hover:bg-red-100 disabled:opacity-60 text-red-700 font-semibold text-[14px] flex items-center justify-center gap-2 transition"
+            >
+              <Sparkles size={17} />
+              Try Demo Account
+            </button>
+
+            <p className="text-center text-[11px] text-[#9aabc0] mt-2">
+              demo@hospital.com / Demo@1234
+            </p>
 
             {/* Register */}
             <p className="text-center text-[12px] text-[#526b87]">

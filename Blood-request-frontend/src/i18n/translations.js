@@ -131,6 +131,9 @@ export const translations = {
     'nav.faq': 'FAQ',
     'nav.contact': 'Contact',
     'nav.hospital': 'Hospital Login',
+    'nav.login': 'Login',
+    'nav.logout': 'Logout',
+    'nav.profile': 'Profile',
 
     'toast.copied': 'Request ID copied to clipboard',
     'toast.requestSubmitted': 'Blood request submitted successfully',
@@ -390,6 +393,9 @@ export const translations = {
     'nav.faq': 'கேள்விகள்',
     'nav.contact': 'தொடர்பு',
     'nav.hospital': 'மருத்துவமனை உள்நுழைவு',
+    'nav.login': 'உள்நுழைவு',
+    'nav.logout': 'வெளியேறு',
+    'nav.profile': 'சுயவிவரம்',
 
     'toast.copied': 'கோரிக்கை எண் நகலெடுக்கப்பட்டது',
     'toast.requestSubmitted': 'இரத்த கோரிக்கை வெற்றிகரமாகச் சமர்ப்பிக்கப்பட்டது',

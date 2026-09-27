@@ -1,7 +1,9 @@
-import { Droplet, Menu, X } from 'lucide-react'
+import { Droplet, LogOut, Menu, UserRound, X } from 'lucide-react'
 import { useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { useLanguage } from '../context/useLanguage'
+import { isLoggedIn, logoutUser } from '../lib/auth'
 import LanguageToggle from './LanguageToggle'
 import ThemeToggle from './ThemeToggle'
 
@@ -24,12 +26,22 @@ function linkClassName({ isActive }) {
 
 export default function Navbar() {
   const { t } = useLanguage()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const { pathname } = useLocation()
   const [prevPathname, setPrevPathname] = useState(pathname)
   if (prevPathname !== pathname) {
     setPrevPathname(pathname)
     setOpen(false)
+  }
+
+  const authed = isLoggedIn()
+
+  const handleLogout = () => {
+    logoutUser()
+    toast.success('Logged out successfully!')
+    setOpen(false)
+    navigate('/hospital/login')
   }
 
   return (
@@ -60,12 +72,32 @@ export default function Navbar() {
         <div className="flex h-10 items-center gap-2 sm:gap-3">
           <LanguageToggle />
           <ThemeToggle />
-          <Link
-            to="/hospital/login"
-            className="hidden h-10 items-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-sm shadow-red-600/30 transition hover:bg-red-700 lg:flex dark:bg-red-600 dark:hover:bg-red-700"
-          >
-            {t('nav.hospital')}
-          </Link>
+          {authed ? (
+            <>
+              <Link
+                to="/hospital/home"
+                className="hidden h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 lg:flex dark:border-red-900 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/40"
+              >
+                <UserRound size={16} aria-hidden="true" />
+                {t('nav.profile')}
+              </Link>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="hidden h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 lg:flex dark:border-red-900 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/40"
+              >
+                <LogOut size={16} aria-hidden="true" />
+                {t('nav.logout')}
+              </button>
+            </>
+          ) : (
+            <Link
+              to="/hospital/login"
+              className="hidden h-10 items-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-sm shadow-red-600/30 transition hover:bg-red-700 lg:flex dark:bg-red-600 dark:hover:bg-red-700"
+            >
+              {t('nav.login')}
+            </Link>
+          )}
           <button
             type="button"
             className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 transition duration-200 hover:bg-slate-50 lg:hidden dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -98,13 +130,34 @@ export default function Navbar() {
                 {t(link.key)}
               </NavLink>
             ))}
-            <Link
-              to="/hospital/login"
-              className="mt-1 block w-full rounded-lg bg-red-600 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-red-700"
-              onClick={() => setOpen(false)}
-            >
-              {t('nav.hospital')}
-            </Link>
+            {authed ? (
+              <>
+                <Link
+                  to="/hospital/home"
+                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:bg-slate-900 dark:text-red-400"
+                  onClick={() => setOpen(false)}
+                >
+                  <UserRound size={16} aria-hidden="true" />
+                  {t('nav.profile')}
+                </Link>
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className="mt-1 flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 dark:border-red-900 dark:bg-slate-900 dark:text-red-400"
+                >
+                  <LogOut size={16} aria-hidden="true" />
+                  {t('nav.logout')}
+                </button>
+              </>
+            ) : (
+              <Link
+                to="/hospital/login"
+                className="mt-1 block w-full rounded-lg bg-red-600 px-3 py-2 text-center text-sm font-semibold text-white transition hover:bg-red-700"
+                onClick={() => setOpen(false)}
+              >
+                {t('nav.login')}
+              </Link>
+            )}
           </div>
         </div>
       )}
