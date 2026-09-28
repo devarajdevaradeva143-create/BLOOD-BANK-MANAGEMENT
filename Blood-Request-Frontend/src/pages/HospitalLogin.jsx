@@ -51,6 +51,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
     }
   }
 
+
   const handleDemoLogin = async () => {
     setError('')
     setNotice('')

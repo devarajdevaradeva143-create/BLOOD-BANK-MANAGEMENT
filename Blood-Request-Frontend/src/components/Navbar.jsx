@@ -46,16 +46,16 @@ export default function Navbar() {
 
   return (
     <nav className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-slate-800 dark:bg-slate-950/80">
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-        <Link to="/" className="flex h-10 items-center gap-3" onClick={() => setOpen(false)}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-red-600 text-white shadow-sm shadow-red-600/30">
-            <Droplet className="h-5 w-5" aria-hidden="true" />
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
+        <Link to="/" className="flex h-9 items-center gap-2.5" onClick={() => setOpen(false)}>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm shadow-red-600/30">
+            <Droplet className="h-4 w-4" aria-hidden="true" />
           </div>
           <div className="min-w-0">
-            <p className="truncate text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+            <p className="truncate text-base font-bold tracking-tight text-slate-900 dark:text-white">
               {t('app.name')}
             </p>
-            <p className="truncate text-xs text-slate-500 dark:text-slate-400 sm:text-sm">
+            <p className="truncate text-[11px] text-slate-500 dark:text-slate-400 sm:text-xs">
               {t('app.tagline')}
             </p>
           </div>

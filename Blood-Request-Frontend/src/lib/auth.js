@@ -8,16 +8,13 @@ import {
 } from './api.js'
 
 const USER_KEY = 'hospitalUser'
+const DEMO_CREDENTIALS = { email: 'demo@hospital.com', password: 'Demo@1234' }
+export const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO !== 'false'
 const REMEMBER_KEY = 'hospitalRememberedEmail'
 const REGISTERED_KEY = 'registeredHospital'
 const LOCAL_SESSION_KEY = 'hospitalLocalSession'
 
-const DEMO_CREDENTIALS = { email: 'demo@hospital.com', password: 'Demo@1234' }
 
-// Demo login is TEMPORARY — kept until user says remove.
-// Set VITE_ENABLE_DEMO=false to hide/remove it in one step.
-// Real logins always hit the backend; no offline bypass for real accounts.
-export const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO !== 'false'
 
 /** Backend unreachable (DNS/refused/offline) — fetch throws TypeError, never ApiError. */
 function isNetworkError(err) {
@@ -69,15 +66,13 @@ function localSignIn(user) {
 }
 
 function localLoginUser({ email, password }) {
-  // Real website: no offline bypass for real accounts.
-  // Only the temporary demo account may sign in offline.
   if (!DEMO_ENABLED) {
     throw new Error('Backend unreachable. Please try again when online.')
   }
   if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
     return localSignIn({
       email: DEMO_CREDENTIALS.email,
-      hospitalName: 'Demo Hospital (Demo Mode — no real data)',
+      hospitalName: 'Life Saver Blood Bank',
       phone: '9876543210',
     })
   }
@@ -85,10 +80,26 @@ function localLoginUser({ email, password }) {
 }
 
 export function getCurrentUser() {
-  return readJSON(USER_KEY)
+  const user = readJSON(USER_KEY)
+  if (user && user.hospitalName === 'Demo Hospital (Demo Mode — no real data)') {
+    user.hospitalName = 'Life Saver Blood Bank'
+    writeUser(user)
+  }
+  return user
 }
 
 /** Compat alias — profile now comes from the backend session. */
+export async function demoLogin() {
+  if (!DEMO_ENABLED) {
+    throw new Error('Demo login is disabled.')
+  }
+  return await loginUser(DEMO_CREDENTIALS)
+}
+
+export function getDemoCredentials() {
+  return { ...DEMO_CREDENTIALS }
+}
+
 export function getRegisteredHospital() {
   return getCurrentUser()
 }
@@ -144,7 +155,6 @@ export async function loginUser({ email, password }) {
       body: { email, password },
     })
   } catch (err) {
-    // Demo offline fallback only — real accounts never bypass the backend.
     if (
       isNetworkError(err) &&
       DEMO_ENABLED &&
@@ -160,25 +170,6 @@ export async function loginUser({ email, password }) {
   if (data?.accessToken) setAccessToken(data.accessToken)
   writeUser(data?.user || null)
   return data?.user || null
-}
-
-export async function demoLogin() {
-  if (!DEMO_ENABLED) {
-    throw new Error('Demo login is disabled.')
-  }
-  try {
-    return await loginUser(DEMO_CREDENTIALS)
-  } catch (err) {
-    if (isNetworkError(err)) {
-      setLocalSession(false)
-      return localLoginUser(DEMO_CREDENTIALS)
-    }
-    throw err
-  }
-}
-
-export function getDemoCredentials() {
-  return { ...DEMO_CREDENTIALS }
 }
 
 export async function logoutUser() {

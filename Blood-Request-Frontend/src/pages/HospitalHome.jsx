@@ -364,7 +364,7 @@ export default function HospitalHome({ onLogout }) {
   ]
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 pb-10">
+    <div className="mx-auto max-w-6xl space-y-6 pb-10 lg:ml-[15%]">
       {/* ============ HEADER ============ */}
       <div className="card animate-fade-in-up overflow-hidden">
         <div className="bg-gradient-to-r from-red-600 via-red-600 to-red-700 px-5 py-6 text-white sm:px-7">
@@ -378,7 +378,7 @@ export default function HospitalHome({ onLogout }) {
                   </h1>
                   <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-1 text-[11px] font-semibold ring-1 ring-white/25">
                     <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
-                    {display.hospitalType || 'Hospital'}
+                    {display.hospitalType || ''}
                   </span>
                 </div>
                 <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-red-100">
@@ -869,20 +869,7 @@ export default function HospitalHome({ onLogout }) {
         </>
       )}
 
-      {/* ============ FOOTER ACTIONS ============ */}
-      <div className="flex flex-col gap-3 sm:flex-row">
-        <button type="button" onClick={onLogout} className="btn-secondary flex-1">
-          Logout
-        </button>
-        <button
-          type="button"
-          onClick={() => navigate('/request')}
-          className="btn-primary flex-1"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          New Blood Request
-        </button>
-      </div>
+
     </div>
   )
 }

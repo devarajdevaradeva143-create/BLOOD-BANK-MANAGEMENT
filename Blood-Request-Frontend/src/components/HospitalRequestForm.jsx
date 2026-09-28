@@ -94,6 +94,12 @@ function makePatient(seq) {
     units: '1',
     ward: '',
     diagnosis: '',
+    patientDistrict: '',
+    patientAddress: '',
+    doctorName: '',
+    doctorId: '',
+    doctorDepartment: '',
+    doctorContact: '',
   }
 }
 
@@ -183,12 +189,6 @@ export default function HospitalRequestForm() {
     if (Array.isArray(saved) && saved.length) return saved
     return [makePatient(1)]
   })
-  const [doctor, setDoctor] = useState(() => ({
-    name: draft?.doctor?.name || '',
-    id: draft?.doctor?.id || '',
-    department: draft?.doctor?.department || '',
-    contact: draft?.doctor?.contact || '',
-  }))
   const [docs, setDocs] = useState({ prescription: null, labReport: null, crossMatch: null })
   const [confirmed, setConfirmed] = useState(false)
   const [errors, setErrors] = useState({})
@@ -252,11 +252,6 @@ export default function HospitalRequestForm() {
     setErrors((prev) => ({ ...prev, [`patient.${index}.${field}`]: undefined }))
   }
 
-  function setDoctorField(name, value) {
-    setDoctor((prev) => ({ ...prev, [name]: value }))
-    setErrors((prev) => ({ ...prev, [`doctor.${name}`]: undefined }))
-  }
-
   function addPatient() {
     seqRef.current += 1
     setPatients((prev) => [...prev, makePatient(seqRef.current)])
@@ -308,12 +303,12 @@ export default function HospitalRequestForm() {
       if (!p.diagnosis.trim()) next[`patient.${i}.diagnosis`] = 'Diagnosis is required'
     })
 
-    if (!doctor.name.trim()) next['doctor.name'] = 'Doctor name is required'
-    if (!doctor.id.trim()) next['doctor.id'] = 'Doctor ID is required'
-    if (!doctor.department) next['doctor.department'] = 'Department is required'
-    if (!/^[0-9]{10}$/.test(doctor.contact.trim())) {
-      next['doctor.contact'] = 'Enter a valid 10-digit contact number'
-    }
+      if (!p.doctorName.trim()) next[`patient.${i}.doctorName`] = 'Doctor name is required'
+      if (!p.doctorId.trim()) next[`patient.${i}.doctorId`] = 'Doctor ID is required'
+      if (!p.doctorDepartment) next[`patient.${i}.doctorDepartment`] = 'Department is required'
+      if (!/^[0-9]{10}$/.test(p.doctorContact.trim())) {
+        next[`patient.${i}.doctorContact`] = 'Enter a valid 10-digit contact number'
+      }
 
     if (!confirmed) next.confirmed = 'Please confirm the declaration before submitting'
 
@@ -341,13 +336,7 @@ export default function HospitalRequestForm() {
       requiredTime: form.requiredTime,
       hospitalName: hospital?.hospitalName || '',
       hospitalAddress: hospital?.address || '',
-      contact: doctor.contact.trim(),
-      doctor: {
-        name: doctor.name.trim(),
-        id: doctor.id.trim(),
-        department: doctor.department,
-        contact: doctor.contact.trim(),
-      },
+      contact: patients[0]?.doctorContact?.trim() || '',
       patients: patients.map((p) => ({
         name: p.name.trim(),
         age: Number(p.age),
@@ -357,6 +346,10 @@ export default function HospitalRequestForm() {
         units: Number(p.units),
         ward: p.ward,
         diagnosis: p.diagnosis.trim(),
+        doctorName: p.doctorName.trim(),
+        doctorId: p.doctorId.trim(),
+        doctorDepartment: p.doctorDepartment,
+        doctorContact: p.doctorContact.trim(),
       })),
     }
   }
@@ -376,7 +369,7 @@ export default function HospitalRequestForm() {
     // Step 1: send OTP to the doctor contact, then verify in the dialog.
     setSubmitting(true)
     try {
-      await requestOtp(doctor.contact.trim())
+      await requestOtp(patients[0]?.doctorContact?.trim() || '')
       setPendingPayload(buildPayload())
       setOtpError('')
       setOtpOpen(true)
@@ -428,7 +421,7 @@ export default function HospitalRequestForm() {
   async function handleOtpResend() {
     setOtpError('')
     try {
-      await requestOtp(doctor.contact.trim())
+      await requestOtp(patients[0]?.doctorContact?.trim() || '')
       toast.success('OTP resent')
     } catch (err) {
       setOtpError(toUserMessage(err, 'Could not resend OTP.'))
@@ -445,7 +438,7 @@ export default function HospitalRequestForm() {
       requiredTime: '',
     })
     setPatients([makePatient(1)])
-    setDoctor({ name: '', id: '', department: '', contact: '' })
+
     setDocs({ prescription: null, labReport: null, crossMatch: null })
     setErrors({})
     setAttempted(false)
@@ -873,6 +866,71 @@ export default function HospitalRequestForm() {
                   </FormField>
                 </div>
               </div>
+              <div className="mt-4 border-t border-dashed border-slate-300 pt-4 dark:border-slate-700">
+                <div className="mb-3 flex items-center gap-2">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-md bg-red-100 text-red-600">
+                    <Stethoscope size={13} />
+                  </span>
+                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                    Doctor Details
+                  </h4>
+                  <div className="h-px flex-1 bg-slate-200" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  <FormField label="Doctor Name" htmlFor={`doc-name-${index}`} required error={errors[`patient.${index}.doctorName`]}>
+                    <input
+                      id={`doc-name-${index}`}
+                      type="text"
+                      value={patient.doctorName}
+                      onChange={(e) => setPatient(index, 'doctorName', e.target.value)}
+                      placeholder="Dr. full name"
+                      className={`input-base ${errors[`patient.${index}.doctorName`] ? 'input-error' : ''}`}
+                    />
+                  </FormField>
+                  <FormField label="Doctor ID" htmlFor={`doc-id-${index}`} required error={errors[`patient.${index}.doctorId`]}>
+                    <input
+                      id={`doc-id-${index}`}
+                      type="text"
+                      value={patient.doctorId}
+                      onChange={(e) => setPatient(index, 'doctorId', e.target.value)}
+                      placeholder="e.g. DR-1024"
+                      className={`input-base ${errors[`patient.${index}.doctorId`] ? 'input-error' : ''}`}
+                    />
+                  </FormField>
+                  <FormField label="Department" htmlFor={`doc-dept-${index}`} required error={errors[`patient.${index}.doctorDepartment`]}>
+                    <select
+                      id={`doc-dept-${index}`}
+                      value={patient.doctorDepartment}
+                      onChange={(e) => setPatient(index, 'doctorDepartment', e.target.value)}
+                      className={`input-base ${errors[`patient.${index}.doctorDepartment`] ? 'input-error' : ''}`}
+                    >
+                      <option value="">Select department</option>
+                      {DEPARTMENTS.map((d) => (
+                        <option key={d} value={d}>
+                          {d}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <FormField label="Contact Number" htmlFor={`doc-contact-${index}`} required error={errors[`patient.${index}.doctorContact`]}>
+                    <div className="relative">
+                      <Phone
+                        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
+                        aria-hidden="true"
+                      />
+                      <input
+                        id={`doc-contact-${index}`}
+                        type="tel"
+                        maxLength={10}
+                        value={patient.doctorContact}
+                        onChange={(e) => setPatient(index, 'doctorContact', e.target.value.replace(/\D/g, ''))}
+                        placeholder="10-digit mobile"
+                        className={`input-base pl-9 ${errors[`patient.${index}.doctorContact`] ? 'input-error' : ''}`}
+                      />
+                    </div>
+                  </FormField>
+                </div>
+              </div>
             </div>
           ))}
 
@@ -880,69 +938,6 @@ export default function HospitalRequestForm() {
             <Plus className="h-4 w-4" aria-hidden="true" />
             Add Another Patient
           </button>
-        </div>
-      </Section>
-
-      <Section
-        id="sec-4"
-        step="4"
-        icon={Stethoscope}
-        title="Doctor Details"
-        description="Requesting doctor responsible for this transfusion request"
-      >
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <FormField label="Doctor Name" htmlFor="doc-name" required error={errors['doctor.name']}>
-            <input
-              id="doc-name"
-              type="text"
-              value={doctor.name}
-              onChange={(e) => setDoctorField('name', e.target.value)}
-              placeholder="Dr. full name"
-              className={`input-base ${errors['doctor.name'] ? 'input-error' : ''}`}
-            />
-          </FormField>
-          <FormField label="Doctor ID" htmlFor="doc-id" required error={errors['doctor.id']}>
-            <input
-              id="doc-id"
-              type="text"
-              value={doctor.id}
-              onChange={(e) => setDoctorField('id', e.target.value)}
-              placeholder="e.g. DR-1024"
-              className={`input-base ${errors['doctor.id'] ? 'input-error' : ''}`}
-            />
-          </FormField>
-          <FormField label="Department" htmlFor="doc-dept" required error={errors['doctor.department']}>
-            <select
-              id="doc-dept"
-              value={doctor.department}
-              onChange={(e) => setDoctorField('department', e.target.value)}
-              className={`input-base ${errors['doctor.department'] ? 'input-error' : ''}`}
-            >
-              <option value="">Select department</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </FormField>
-          <FormField label="Contact Number" htmlFor="doc-contact" required error={errors['doctor.contact']}>
-            <div className="relative">
-              <Phone
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
-                aria-hidden="true"
-              />
-              <input
-                id="doc-contact"
-                type="tel"
-                maxLength={10}
-                value={doctor.contact}
-                onChange={(e) => setDoctorField('contact', e.target.value.replace(/\D/g, ''))}
-                placeholder="10-digit mobile"
-                className={`input-base pl-9 ${errors['doctor.contact'] ? 'input-error' : ''}`}
-              />
-            </div>
-          </FormField>
         </div>
       </Section>
 
@@ -1173,12 +1168,12 @@ export default function HospitalRequestForm() {
 
       <p className="pb-4 text-center text-xs text-slate-400 dark:text-slate-500">
         <UserRound className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-        Requested by {doctor.name || '—'} • {hospital?.hospitalName || 'Hospital'}
+        Requested by {patients[0]?.doctorName || '—'} • {hospital?.hospitalName || 'Hospital'}
       </p>
 
       {otpOpen && (
         <OtpDialog
-          contact={pendingPayload?.contact || doctor.contact}
+          contact={pendingPayload?.contact || patients[0]?.doctorContact || ''}
           sending={submitting}
           error={otpError}
           onConfirm={handleOtpConfirm}
