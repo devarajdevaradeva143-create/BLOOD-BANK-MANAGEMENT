@@ -12,6 +12,7 @@ import {
 } from '../schemas/auth.schema.js';
 import {
   listHospitals,
+  updateHospitalStatus,
   registerHospital,
   loginHospital,
   refreshHospital,
@@ -25,6 +26,12 @@ import {
 const router = Router();
 
 router.get('/', requireAuth, requireRole('DistrictAdmin', 'SuperAdmin'), listHospitals);
+router.patch(
+  '/:id/status',
+  requireAuth,
+  requireRole('SuperAdmin'),
+  updateHospitalStatus
+);
 router.post('/register', authLimiter, validate(hospitalRegisterSchema), registerHospital);
 router.post('/login', authLimiter, validate(hospitalLoginSchema), loginHospital);
 router.post('/refresh', refreshHospital);

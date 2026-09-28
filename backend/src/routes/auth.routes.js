@@ -12,6 +12,8 @@ import {
   refresh,
   logout,
   me,
+  updateProfile,
+  changePassword,
   forgotPassword,
   resetPassword,
 } from '../controllers/auth.controller.js';
@@ -22,6 +24,8 @@ router.post('/login', authLimiter, validate(loginSchema), login);
 router.post('/refresh', refresh);
 router.post('/logout', logout);
 router.get('/me', requireAuth, me);
+router.patch('/profile', requireAuth, updateProfile);
+router.post('/change-password', authLimiter, requireAuth, changePassword);
 // Secure staff/doctor PIN reset (generic responses, hashed OTP, cooldown).
 router.post(
   '/forgot-password',

@@ -34,7 +34,7 @@ export function UnitProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    // Frontend demo sessions run fully offline on mock data.
+    // Demo sessions run fully offline on mock data.
     if (getStoredDemoUser() !== null) {
       setLoading(true);
       setError(null);

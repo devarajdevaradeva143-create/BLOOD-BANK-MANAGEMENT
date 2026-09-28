@@ -38,6 +38,8 @@ function toSafeUser(user) {
     name: user.name,
     role: user.role,
     designation: user.designation || null,
+    email: user.email || '',
+    phone: user.phone || '',
     districtId: user.districtId || '',
     active: user.active,
   };
@@ -278,4 +280,93 @@ export const resetPassword = asyncHandler(async (req, res) => {
   return res.status(200).json({ message: 'PIN reset successful. Please login again.' });
 });
 
-export default { login, refresh, logout, me, forgotPassword, resetPassword };
+/**
+ * PATCH /api/auth/profile (auth required)
+ * Body: { name?, email?, phone? } — updates the caller's own User.
+ */
+export const updateProfile = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user?.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const { name, email, phone } = req.body || {};
+
+  if (name !== undefined) {
+    const clean = String(name).trim();
+    if (clean.length < 2) {
+      return res
+        .status(400)
+        .json({ message: 'name must be at least 2 characters' });
+    }
+    user.name = clean;
+  }
+  if (email !== undefined) {
+    const clean = String(email).trim().toLowerCase();
+    if (clean && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clean)) {
+      return res.status(400).json({ message: 'Invalid email address' });
+    }
+    user.email = clean;
+  }
+  if (phone !== undefined) {
+    const clean = String(phone).trim();
+    if (clean && !/^\d{10}$/.test(clean)) {
+      return res.status(400).json({ message: 'Phone must be 10 digits' });
+    }
+    user.phone = clean;
+  }
+
+  await user.save();
+  logAudit(String(user._id), 'auth.profile_update', 'User', String(user._id), req);
+  return res
+    .status(200)
+    .json({ message: 'Profile updated', user: toSafeUser(user) });
+});
+
+/**
+ * POST /api/auth/change-password (auth required)
+ * Body: { currentPin, newPin } — verifies the current PIN, sets the new
+ * PIN hash and revokes all refresh sessions.
+ */
+export const changePassword = asyncHandler(async (req, res) => {
+  const currentPin = String(req.body?.currentPin || '');
+  const newPin = String(req.body?.newPin || '');
+  if (!currentPin || !newPin) {
+    return res
+      .status(400)
+      .json({ message: 'currentPin and newPin are required' });
+  }
+  if (newPin.length < 4) {
+    return res
+      .status(400)
+      .json({ message: 'newPin must be at least 4 characters' });
+  }
+
+  const user = await User.findById(req.user?.id);
+  if (!user || user.active === false) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const ok = await comparePin(currentPin, user.pinHash);
+  if (!ok) {
+    return res.status(401).json({ message: 'Current PIN is incorrect' });
+  }
+
+  user.pinHash = await hashPin(newPin);
+  // Revoke all sessions — a password change must log out other devices.
+  user.refreshTokens = [];
+  await user.save();
+
+  logAudit(
+    String(user._id),
+    'auth.change_password',
+    'User',
+    String(user._id),
+    req
+  );
+  return res
+    .status(200)
+    .json({ message: 'PIN changed successfully. Please login again.' });
+});
+
+export default { login, refresh, logout, me, updateProfile, changePassword, forgotPassword, resetPassword };

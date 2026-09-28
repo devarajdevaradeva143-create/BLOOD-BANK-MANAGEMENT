@@ -1,10 +1,10 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import toast from 'react-hot-toast';
-import { Check, Eye, Search, X } from 'lucide-react';
+import { Check, CheckCheck, Eye, Search, X } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
-import { REQUESTS } from '../../data/superadminMock';
-import type { BloodRequestRow } from '../../data/superadminMock';
+import { listRequests, updateRequestStatusApi } from '../../lib/api';
+import type { BloodRequest, RequestStatus } from '../../data/types';
 import { DISTRICTS } from '../../data/constants';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -13,67 +13,148 @@ import { Button } from '../../components/ui/Button';
 import { Input, Select } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Spinner } from '../../components/ui/Spinner';
 
-type Tab = 'all' | 'pending' | 'approved' | 'rejected';
+type Tab = 'all' | 'submitted' | 'approved' | 'cancelled';
 type PriorityFilter = 'all' | 'emergency' | 'normal';
+
+const PAGE_SIZE = 10;
 
 const th =
   'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400';
 
-function statusTone(status: BloodRequestRow['status']): 'amber' | 'emerald' | 'rose' {
+function statusTone(status: RequestStatus): 'amber' | 'emerald' | 'sky' | 'rose' {
   if (status === 'approved') return 'emerald';
-  if (status === 'rejected') return 'rose';
+  if (status === 'fulfilled') return 'sky';
+  if (status === 'cancelled') return 'rose';
   return 'amber';
+}
+
+function districtDisplay(districtId: string): string {
+  const slug = (districtId ?? '').trim().toLowerCase();
+  if (!slug) return '—';
+  return DISTRICTS.find((d) => d.toLowerCase() === slug) ?? districtId;
 }
 
 export default function RequestsPage() {
   const { t } = useI18n();
-  const [rows, setRows] = useState<BloodRequestRow[]>(REQUESTS);
   const [tab, setTab] = useState<Tab>('all');
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [district, setDistrict] = useState('');
   const [priority, setPriority] = useState<PriorityFilter>('all');
-  const [selected, setSelected] = useState<BloodRequestRow | null>(null);
+  const [page, setPage] = useState(1);
+  const [rows, setRows] = useState<BloodRequest[]>([]);
+  const [total, setTotal] = useState(0);
+  const [counts, setCounts] = useState<Record<Tab, number>>({
+    all: 0,
+    submitted: 0,
+    approved: 0,
+    cancelled: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<BloodRequest | null>(null);
+  const [actingId, setActingId] = useState<string | null>(null);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
-  const base = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return rows.filter((r) => {
-      if (q && !r.id.toLowerCase().includes(q) && !r.hospital.toLowerCase().includes(q))
-        return false;
-      if (district && r.district !== district) return false;
-      if (priority !== 'all' && r.priority !== priority) return false;
-      return true;
-    });
-  }, [rows, search, district, priority]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
-  const counts = useMemo(
-    () => ({
-      all: base.length,
-      pending: base.filter((r) => r.status === 'pending').length,
-      approved: base.filter((r) => r.status === 'approved').length,
-      rejected: base.filter((r) => r.status === 'rejected').length,
-    }),
-    [base],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await listRequests({
+          status: tab === 'all' ? undefined : tab,
+          search: debouncedSearch || undefined,
+          districtId: district || undefined,
+          requestType: priority === 'all' ? undefined : priority,
+          page,
+          limit: PAGE_SIZE,
+        });
+        if (cancelled) return;
+        setRows(res.data ?? []);
+        setTotal(res.total ?? 0);
+      } catch (e) {
+        if (cancelled) return;
+        setRows([]);
+        setTotal(0);
+        setError(e instanceof Error ? e.message : t('common.error'));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, debouncedSearch, district, priority, page, refreshNonce, t]);
 
-  const filtered = useMemo(
-    () => (tab === 'all' ? base : base.filter((r) => r.status === tab)),
-    [base, tab],
-  );
+  useEffect(() => {
+    let cancelled = false;
+    async function runCounts() {
+      try {
+        const base = {
+          search: debouncedSearch || undefined,
+          districtId: district || undefined,
+          requestType: priority === 'all' ? undefined : priority,
+          page: 1,
+          limit: 1,
+        };
+        const [allRes, subRes, appRes, canRes] = await Promise.all([
+          listRequests(base),
+          listRequests({ ...base, status: 'submitted' }),
+          listRequests({ ...base, status: 'approved' }),
+          listRequests({ ...base, status: 'cancelled' }),
+        ]);
+        if (cancelled) return;
+        setCounts({
+          all: allRes.total ?? 0,
+          submitted: subRes.total ?? 0,
+          approved: appRes.total ?? 0,
+          cancelled: canRes.total ?? 0,
+        });
+      } catch {
+        /* ignore count errors — rows carry their own total */
+      }
+    }
+    runCounts();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, district, priority, refreshNonce]);
 
-  const statusLabel = (s: BloodRequestRow['status']) =>
-    s === 'pending'
-      ? t('admin.requests.pending')
-      : s === 'approved'
-        ? t('admin.requests.approved')
-        : t('admin.requests.rejected');
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
-  const updateStatus = (id: string, next: 'approved' | 'rejected') => {
-    setRows((prev) => prev.map((r) => (r.id === id ? { ...r, status: next } : r)));
-    setSelected((prev) => (prev && prev.id === id ? { ...prev, status: next } : prev));
-    toast.success(
-      `${id} · ${next === 'approved' ? t('admin.requests.approved') : t('admin.requests.rejected')}`,
-    );
+  const refetch = () => setRefreshNonce((n) => n + 1);
+
+  const statusLabel = (s: RequestStatus): string => {
+    if (s === 'submitted') return t('admin.requests.pending');
+    if (s === 'approved') return t('admin.requests.approved');
+    if (s === 'cancelled') return t('admin.requests.rejected');
+    return 'Fulfilled';
+  };
+
+  const handleAction = async (row: BloodRequest, next: 'approved' | 'fulfilled' | 'cancelled') => {
+    if (actingId) return;
+    setActingId(row.requestId);
+    try {
+      const updated = await updateRequestStatusApi(row.requestId, next);
+      toast.success(`${row.requestId} · ${statusLabel(updated.status)}`);
+      setSelected((prev) =>
+        prev && prev.requestId === row.requestId ? updated : prev,
+      );
+      refetch();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : t('common.error'));
+    } finally {
+      setActingId(null);
+    }
   };
 
   const emergencyBadge = (
@@ -89,29 +170,52 @@ export default function RequestsPage() {
     </div>
   );
 
-  const renderActions = (row: BloodRequestRow) => (
-    <div className="flex items-center justify-end gap-1.5">
-      {row.status === 'pending' ? (
-        <>
-          <Button size="sm" variant="success" icon={<Check className="h-3.5 w-3.5" />} onClick={() => updateStatus(row.id, 'approved')}>
+  const renderActions = (row: BloodRequest) => {
+    const busy = actingId === row.requestId;
+    if (row.status === 'submitted') {
+      return (
+        <div className="flex items-center justify-end gap-1.5">
+          <Button size="sm" variant="success" icon={<Check className="h-3.5 w-3.5" />} loading={busy} onClick={() => handleAction(row, 'approved')}>
             Approve
           </Button>
-          <Button size="sm" variant="danger" icon={<X className="h-3.5 w-3.5" />} onClick={() => updateStatus(row.id, 'rejected')}>
-            Reject
+          <Button size="sm" variant="danger" icon={<X className="h-3.5 w-3.5" />} disabled={busy} onClick={() => handleAction(row, 'cancelled')}>
+            Cancel
           </Button>
-        </>
-      ) : null}
-      <Button variant="outline" size="sm" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => setSelected(row)}>
-        {t('admin.table.view')}
-      </Button>
-    </div>
-  );
+          <Button variant="outline" size="sm" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => setSelected(row)}>
+            {t('admin.table.view')}
+          </Button>
+        </div>
+      );
+    }
+    if (row.status === 'approved') {
+      return (
+        <div className="flex items-center justify-end gap-1.5">
+          <Button size="sm" variant="primary" icon={<CheckCheck className="h-3.5 w-3.5" />} loading={busy} onClick={() => handleAction(row, 'fulfilled')}>
+            Fulfil
+          </Button>
+          <Button size="sm" variant="danger" icon={<X className="h-3.5 w-3.5" />} disabled={busy} onClick={() => handleAction(row, 'cancelled')}>
+            Cancel
+          </Button>
+          <Button variant="outline" size="sm" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => setSelected(row)}>
+            {t('admin.table.view')}
+          </Button>
+        </div>
+      );
+    }
+    return (
+      <div className="flex items-center justify-end gap-1.5">
+        <Button variant="outline" size="sm" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => setSelected(row)}>
+          {t('admin.table.view')}
+        </Button>
+      </div>
+    );
+  };
 
   const tabs: { key: Tab; label: string; count: number }[] = [
     { key: 'all', label: t('admin.table.allStatus'), count: counts.all },
-    { key: 'pending', label: t('admin.requests.pending'), count: counts.pending },
+    { key: 'submitted', label: t('admin.requests.pending'), count: counts.submitted },
     { key: 'approved', label: t('admin.requests.approved'), count: counts.approved },
-    { key: 'rejected', label: t('admin.requests.rejected'), count: counts.rejected },
+    { key: 'cancelled', label: t('admin.requests.rejected'), count: counts.cancelled },
   ];
 
   return (
@@ -124,7 +228,10 @@ export default function RequestsPage() {
             <button
               key={item.key}
               type="button"
-              onClick={() => setTab(item.key)}
+              onClick={() => {
+                setTab(item.key);
+                setPage(1);
+              }}
               className={`inline-flex h-8 items-center gap-1.5 rounded-full px-3.5 text-xs font-medium transition ${
                 tab === item.key
                   ? 'bg-red-600 text-white shadow-sm shadow-red-600/20'
@@ -158,7 +265,10 @@ export default function RequestsPage() {
               <Input
                 id="request-search"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
                 placeholder={t('admin.table.searchPh')}
                 className="pl-9"
                 aria-label={t('admin.table.searchPh')}
@@ -177,7 +287,10 @@ export default function RequestsPage() {
               id="request-district"
               className="mt-1.5"
               value={district}
-              onChange={(e) => setDistrict(e.target.value)}
+              onChange={(e) => {
+                setDistrict(e.target.value);
+                setPage(1);
+              }}
             >
               <option value="">{t('admin.table.allDistricts')}</option>
               {DISTRICTS.map((d) => (
@@ -199,7 +312,10 @@ export default function RequestsPage() {
               id="request-priority"
               className="mt-1.5"
               value={priority}
-              onChange={(e) => setPriority(e.target.value as PriorityFilter)}
+              onChange={(e) => {
+                setPriority(e.target.value as PriorityFilter);
+                setPage(1);
+              }}
             >
               <option value="all">{t('admin.table.allStatus')}</option>
               <option value="emergency">{t('admin.requests.emergency')}</option>
@@ -210,7 +326,21 @@ export default function RequestsPage() {
       </Card>
 
       <Card padded={false} className="mt-4 overflow-hidden">
-        {filtered.length === 0 ? (
+        {loading && rows.length === 0 ? (
+          <div className="flex items-center justify-center gap-3 py-12 text-slate-500 dark:text-slate-400">
+            <Spinner />
+            <span className="text-sm">{t('common.loading')}</span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+            <p role="alert" className="text-sm font-medium text-rose-600 dark:text-rose-300">
+              {error}
+            </p>
+            <Button variant="outline" size="sm" onClick={refetch}>
+              {t('admin.messages.retry')}
+            </Button>
+          </div>
+        ) : rows.length === 0 ? (
           <EmptyState title={t('admin.table.noResults')} hint={t('admin.table.noResultsHint')} />
         ) : (
           <>
@@ -229,35 +359,35 @@ export default function RequestsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
-                  {filtered.map((row) => (
+                  {rows.map((row) => (
                     <tr
-                      key={row.id}
+                      key={row.requestId}
                       className={`transition hover:bg-slate-50 dark:hover:bg-slate-800/50 ${
-                        row.priority === 'emergency'
+                        row.requestType === 'emergency'
                           ? 'border-l-4 border-l-rose-500 bg-rose-50/50 dark:bg-rose-950/20'
                           : ''
                       }`}
                     >
                       <td className="whitespace-nowrap px-4 py-3">
                         <span className="block font-mono text-sm font-semibold text-slate-900 dark:text-white">
-                          {row.id}
+                          {row.requestId}
                         </span>
-                        {row.priority === 'emergency' ? emergencyBadge : null}
+                        {row.requestType === 'emergency' ? emergencyBadge : null}
                       </td>
                       <td className="max-w-[220px] truncate px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
-                        {row.hospital}
+                        {row.hospitalName || '—'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                        {row.district}
+                        {districtDisplay(row.districtId)}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
-                        <Badge tone="red">{row.group}</Badge>
+                        <Badge tone="red">{row.bloodGroup || '—'}</Badge>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
                         {row.units}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                        {row.date}
+                        {row.requiredDate || (row.createdAt ? row.createdAt.slice(0, 10) : '—')}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
                         <Badge tone={statusTone(row.status)}>{statusLabel(row.status)}</Badge>
@@ -270,39 +400,64 @@ export default function RequestsPage() {
             </div>
 
             <div className="divide-y divide-slate-100 md:hidden dark:divide-slate-800">
-              {filtered.map((row) => (
+              {rows.map((row) => (
                 <div
-                  key={row.id}
+                  key={row.requestId}
                   className={`p-4 ${
-                    row.priority === 'emergency'
+                    row.requestType === 'emergency'
                       ? 'border-l-4 border-l-rose-500 bg-rose-50/50 dark:bg-rose-950/20'
                       : ''
                   }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">
-                      {row.id}
+                      {row.requestId}
                     </span>
                     <Badge tone={statusTone(row.status)}>{statusLabel(row.status)}</Badge>
                   </div>
-                  {row.priority === 'emergency' ? <div>{emergencyBadge}</div> : null}
+                  {row.requestType === 'emergency' ? <div>{emergencyBadge}</div> : null}
                   <p className="mt-1.5 text-sm font-medium text-slate-900 dark:text-white">
-                    {row.hospital}
+                    {row.hospitalName || '—'}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <Badge tone="red">{row.group}</Badge>
+                    <Badge tone="red">{row.bloodGroup || '—'}</Badge>
                   </div>
                   <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-                    {row.district} · {t('admin.requests.units')}: {row.units} ·{' '}
-                    {t('admin.requests.date')}: {row.date}
+                    {districtDisplay(row.districtId)} · {t('admin.requests.units')}: {row.units} ·{' '}
+                    {t('admin.requests.date')}:{' '}
+                    {row.requiredDate || (row.createdAt ? row.createdAt.slice(0, 10) : '—')}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-1.5">{renderActions(row)}</div>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-slate-200 px-4 py-3 text-xs font-medium text-slate-500 dark:border-slate-800 dark:text-slate-400">
-              {t('admin.table.showing', { count: filtered.length, total: rows.length })}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 px-4 py-3 dark:border-slate-800">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {t('admin.table.showing', { count: rows.length, total })}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  {t('common.back')}
+                </Button>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages || loading}
+                  onClick={() => setPage((p) => p + 1)}
+                  aria-label={`${page + 1} / ${totalPages}`}
+                >
+                  ›
+                </Button>
+              </div>
             </div>
           </>
         )}
@@ -311,8 +466,8 @@ export default function RequestsPage() {
       <Modal
         open={selected !== null}
         onClose={() => setSelected(null)}
-        title={selected?.id ?? ''}
-        subtitle={selected?.hospital ?? ''}
+        title={selected?.requestId ?? ''}
+        subtitle={selected?.hospitalName ?? ''}
         footer={
           <Button variant="outline" onClick={() => setSelected(null)}>
             {t('common.close')}
@@ -321,14 +476,17 @@ export default function RequestsPage() {
       >
         {selected ? (
           <dl className="divide-y divide-slate-100 dark:divide-slate-800">
-            {detailRow(t('admin.requests.hospital'), selected.hospital)}
-            {detailRow(t('admin.donors.district'), selected.district)}
-            {detailRow(t('admin.requests.group'), <Badge tone="red">{selected.group}</Badge>)}
+            {detailRow(t('admin.requests.hospital'), selected.hospitalName || '—')}
+            {detailRow(t('admin.donors.district'), districtDisplay(selected.districtId))}
+            {detailRow(t('admin.requests.group'), <Badge tone="red">{selected.bloodGroup || '—'}</Badge>)}
             {detailRow(t('admin.requests.units'), selected.units)}
-            {detailRow(t('admin.requests.date'), selected.date)}
+            {detailRow(
+              t('admin.requests.date'),
+              selected.requiredDate || (selected.createdAt ? selected.createdAt.slice(0, 10) : '—'),
+            )}
             {detailRow(
               t('admin.requests.type'),
-              selected.priority === 'emergency' ? (
+              selected.requestType === 'emergency' ? (
                 <Badge tone="rose">{t('admin.requests.emergency')}</Badge>
               ) : (
                 t('admin.requests.normal')

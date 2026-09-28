@@ -8,7 +8,6 @@ import { Input } from '../components/ui/Input';
 import AuthSidePanel from '../components/layout/AuthSidePanel';
 import { DEMO_ACCOUNTS } from '../data/constants';
 import type { DemoAccount } from '../data/constants';
-import { findDemoAccount } from '../data/demo';
 import type { TranslationKey } from '../i18n/translations';
 import toast from 'react-hot-toast';
 
@@ -34,12 +33,11 @@ export default function LoginPage() {
   if (user) return <Navigate to="/dashboard" replace />;
 
   const attemptLogin = async (id: string, pinCode: string) => {
-    const ok = await login(id, pinCode, remember);
-    if (ok) {
+    const account = await login(id, pinCode, remember);
+    if (account) {
       toast.success(t('login.title'));
       // Same login page serves every role — route SuperAdmin to its dashboard.
-      const demoUser = findDemoAccount(id, pinCode);
-      if (demoUser?.role === 'SuperAdmin') {
+      if (account.role === 'SuperAdmin') {
         navigate('/superadmin/dashboard', { replace: true });
       } else {
         navigate('/dashboard', { replace: true });

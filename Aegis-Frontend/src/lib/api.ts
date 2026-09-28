@@ -916,3 +916,488 @@ export async function getDistrictStats(): Promise<DistrictStats> {
   const data = await apiFetch<any>('/api/stats/district', { auth: true });
   return mapServerDistrictStats(data);
 }
+
+export interface ListDistrictMessagesParams {
+  districtId?: string;
+  district?: string;
+  status?: string;
+  search?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListDistrictMessagesResult {
+  data: Message[];
+  total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export async function listDistrictMessages(
+  params: ListDistrictMessagesParams = {},
+): Promise<ListDistrictMessagesResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }>(`/api/messages${query}`, { auth: true });
+  return {
+    data: (data.data ?? []).map(mapServerMessage),
+    total: data.total ?? 0,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
+}
+
+export async function markMessageRead(id: string): Promise<Message> {
+  const data = await apiFetch<any>(`/api/messages/${encodeURIComponent(id)}/read`, {
+    method: 'PATCH',
+    auth: true,
+  });
+  const raw = (data as { data?: unknown })?.data ?? data;
+  if (raw && typeof raw === 'object') {
+    try {
+      return { ...mapServerMessage(raw), status: 'read' };
+    } catch {
+      /* fall through to synthesized receipt */
+    }
+  }
+  return { messageId: id, subject: '', body: '', status: 'read' };
+}
+
+export async function replyToMessage(id: string, reply: string): Promise<Message> {
+  const data = await apiFetch<any>(`/api/messages/${encodeURIComponent(id)}/reply`, {
+    method: 'POST',
+    body: { reply },
+    auth: true,
+  });
+  const raw = (data as { data?: unknown })?.data ?? data;
+  if (raw && typeof raw === 'object') {
+    try {
+      return { ...mapServerMessage(raw), status: 'replied' };
+    } catch {
+      /* fall through to synthesized receipt */
+    }
+  }
+  return { messageId: id, subject: '', body: '', reply, status: 'replied' };
+}
+
+// ===== SuperAdmin HARD pages (appended only — existing helpers untouched) =====
+
+export interface BloodBank {
+  id: string;
+  name: string;
+  district: string;
+  contact: string;
+  units: number;
+  status: 'active' | 'inactive' | 'maintenance';
+}
+
+export interface ListBloodBanksParams {
+  search?: string;
+  district?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListBloodBanksResult {
+  data: BloodBank[];
+  total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export function mapServerBloodBank(raw: any): BloodBank {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const str = (v: unknown): string =>
+    typeof v === 'string' ? v : v === null || v === undefined ? '' : String(v);
+  const first = (...vals: unknown[]): string => {
+    for (const v of vals) {
+      const s = str(v);
+      if (s) return s;
+    }
+    return '';
+  };
+  const statusRaw = first(r.status).toLowerCase() || 'active';
+  const status: BloodBank['status'] =
+    statusRaw === 'inactive' ? 'inactive' : statusRaw === 'maintenance' ? 'maintenance' : 'active';
+  const n = Number(r.units ?? r.availableUnits ?? r.totalUnits ?? r.stock ?? 0);
+  return {
+    id: first(r.id, r._id, r.bankId, r.code),
+    name: first(r.name, r.bankName),
+    district: first(r.district, r.districtId, r.districtName),
+    contact: first(r.contact, r.phone, r.mobile),
+    units: Number.isFinite(n) ? n : 0,
+    status,
+  };
+}
+
+export async function listBloodBanks(params: ListBloodBanksParams = {}): Promise<ListBloodBanksResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }>(`/api/blood-banks${query}`, { auth: true });
+  return {
+    data: (data.data ?? []).map(mapServerBloodBank),
+    total: data.total ?? 0,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
+}
+
+export interface CreateBloodBankInput {
+  name: string;
+  district: string;
+  contact: string;
+  units?: number;
+  status?: BloodBank['status'];
+}
+
+export async function createBloodBank(input: CreateBloodBankInput): Promise<BloodBank> {
+  const data = await apiFetch<{ bank?: any; data?: any } | any>('/api/blood-banks', {
+    method: 'POST',
+    body: input,
+    auth: true,
+  });
+  const raw = (data as { bank?: unknown })?.bank ?? (data as { data?: unknown })?.data ?? data;
+  return mapServerBloodBank(raw);
+}
+
+export async function updateBloodBank(
+  id: string,
+  patch: Partial<Pick<BloodBank, 'name' | 'district' | 'contact' | 'units' | 'status'>>,
+): Promise<BloodBank> {
+  const data = await apiFetch<{ bank?: any; data?: any } | any>(
+    `/api/blood-banks/${encodeURIComponent(id)}`,
+    {
+      method: 'PATCH',
+      body: patch,
+      auth: true,
+    },
+  );
+  const raw = (data as { bank?: unknown })?.bank ?? (data as { data?: unknown })?.data ?? data;
+  return mapServerBloodBank(raw);
+}
+
+export interface AdminAccount {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  district: string;
+  role: string;
+  status: 'active' | 'inactive';
+}
+
+export interface ListAdminsParams {
+  search?: string;
+  district?: string;
+  role?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListAdminsResult {
+  data: AdminAccount[];
+  total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export function mapServerAdmin(raw: any): AdminAccount {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const str = (v: unknown): string =>
+    typeof v === 'string' ? v : v === null || v === undefined ? '' : String(v);
+  const first = (...vals: unknown[]): string => {
+    for (const v of vals) {
+      const s = str(v);
+      if (s) return s;
+    }
+    return '';
+  };
+  const statusRaw = first(r.status).toLowerCase();
+  return {
+    id: first(r.id, r._id, r.adminId, r.staffId),
+    name: first(r.name),
+    email: first(r.email),
+    phone: first(r.phone, r.mobile, r.contact),
+    district: first(r.district, r.districtId, r.districtName),
+    role: first(r.role, r.designation),
+    status: statusRaw === 'inactive' ? 'inactive' : 'active',
+  };
+}
+
+export async function listAdmins(params: ListAdminsParams = {}): Promise<ListAdminsResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }>(`/api/admins${query}`, { auth: true });
+  return {
+    data: (data.data ?? []).map(mapServerAdmin),
+    total: data.total ?? 0,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
+}
+
+export interface CreateAdminInput {
+  name: string;
+  email: string;
+  phone: string;
+  district: string;
+  role: string;
+  status?: 'active' | 'inactive';
+}
+
+export async function createAdmin(input: CreateAdminInput): Promise<AdminAccount> {
+  const data = await apiFetch<{ admin?: any; data?: any } | any>('/api/admins', {
+    method: 'POST',
+    body: input,
+    auth: true,
+  });
+  const raw = (data as { admin?: unknown })?.admin ?? (data as { data?: unknown })?.data ?? data;
+  return mapServerAdmin(raw);
+}
+
+export async function updateAdmin(
+  id: string,
+  patch: Partial<Pick<AdminAccount, 'name' | 'email' | 'phone' | 'district' | 'role' | 'status'>>,
+): Promise<AdminAccount> {
+  const data = await apiFetch<{ admin?: any; data?: any } | any>(
+    `/api/admins/${encodeURIComponent(id)}`,
+    {
+      method: 'PATCH',
+      body: patch,
+      auth: true,
+    },
+  );
+  const raw = (data as { admin?: unknown })?.admin ?? (data as { data?: unknown })?.data ?? data;
+  return mapServerAdmin(raw);
+}
+
+export interface ResetPinResult {
+  pin?: string;
+  message?: string;
+}
+
+export async function resetAdminPin(id: string): Promise<ResetPinResult> {
+  const data = await apiFetch<any>(`/api/admins/${encodeURIComponent(id)}/reset-pin`, {
+    method: 'POST',
+    auth: true,
+  });
+  if (data !== null && typeof data === 'object') {
+    const r = data as Record<string, unknown>;
+    const pin =
+      typeof r.pin === 'string'
+        ? r.pin
+        : typeof r.tempPin === 'string'
+          ? r.tempPin
+          : typeof r.newPin === 'string'
+            ? r.newPin
+            : undefined;
+    const message = typeof r.message === 'string' ? r.message : undefined;
+    return { pin, message };
+  }
+  return {};
+}
+
+export type ReportPeriod = 'daily' | 'weekly' | 'monthly';
+
+export interface SuperAdminReports {
+  collections?: number;
+  issues?: number;
+  newDonors?: number;
+  fulfilment?: number | string;
+  totalUnits?: number;
+  totalDonors?: number;
+  totalHospitals?: number;
+  totalBanks?: number;
+  pendingRequests?: number;
+  stockByGroup?: Record<string, number>;
+  [key: string]: unknown;
+}
+
+export async function getReports(period: ReportPeriod = 'daily'): Promise<SuperAdminReports> {
+  const qs = new URLSearchParams();
+  qs.set('period', period);
+  return apiFetch<SuperAdminReports>(`/api/stats/reports?${qs.toString()}`, { auth: true });
+}
+
+export async function updateProfile(patch: {
+  name?: string;
+  email?: string;
+  phone?: string;
+}): Promise<AuthUser> {
+  const data = await apiFetch<{ user?: any } | any>('/api/auth/profile', {
+    method: 'PATCH',
+    body: patch,
+    auth: true,
+  });
+  const raw: any = (data as { user?: unknown })?.user ?? data;
+  const mapped = mapServerUser(raw as ServerUser);
+  if (raw && typeof raw.email === 'string') mapped.email = raw.email;
+  else if (typeof patch.email === 'string') mapped.email = patch.email;
+  if (raw && typeof raw.phone === 'string') mapped.phone = raw.phone;
+  else if (typeof patch.phone === 'string') mapped.phone = patch.phone;
+  if (raw && typeof raw.name === 'string' && raw.name) mapped.name = raw.name;
+  return mapped;
+}
+
+export async function changePassword(input: {
+  currentPassword: string;
+  newPassword: string;
+}): Promise<void> {
+  await apiFetch<{ message?: string }>('/api/auth/change-password', {
+    method: 'POST',
+    body: input,
+    auth: true,
+  });
+}
+
+// ===== SuperAdmin MEDIUM pages (appended only — existing helpers untouched) =====
+
+export interface DistrictOverviewRow {
+  district: string;
+  hospitals: number;
+  banks: number;
+  donors: number;
+  requests: number;
+  stock: number;
+}
+
+function toFiniteNumber(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export function mapServerDistrictOverview(raw: any): DistrictOverviewRow {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const str = (v: unknown): string =>
+    typeof v === 'string' ? v : v === null || v === undefined ? '' : String(v);
+  const first = (...vals: unknown[]): string => {
+    for (const v of vals) {
+      const s = str(v).trim();
+      if (s) return s;
+    }
+    return '';
+  };
+  return {
+    district: first(r.district, r.districtId, r.name, r.districtName),
+    hospitals: toFiniteNumber(r.hospitals ?? r.totalHospitals ?? r.hospitalCount),
+    banks: toFiniteNumber(r.banks ?? r.totalBanks ?? r.bankCount ?? r.bloodBanks),
+    donors: toFiniteNumber(r.donors ?? r.totalDonors ?? r.donorCount),
+    requests: toFiniteNumber(r.requests ?? r.totalRequests ?? r.requestCount),
+    stock: toFiniteNumber(
+      r.stock ?? r.availableUnits ?? r.available ?? r.totalUnits ?? r.units,
+    ),
+  };
+}
+
+/**
+ * GET /api/stats/districts — aggregate per-district overview.
+ * NOTE: backend currently exposes only GET /api/stats and
+ * GET /api/stats/district (singular). This helper targets the plural
+ * aggregate endpoint; callers MUST catch failures and fall back to
+ * per-district getDistrictStatsFor() fan-out. Never mock.
+ */
+export async function listDistrictsOverview(): Promise<DistrictOverviewRow[]> {
+  const data = await apiFetch<any>('/api/stats/districts', { auth: true });
+  const arr: unknown[] = Array.isArray(data)
+    ? data
+    : Array.isArray((data as { data?: unknown })?.data)
+      ? (data as { data: unknown[] }).data
+      : Array.isArray((data as { districts?: unknown })?.districts)
+        ? (data as { districts: unknown[] }).districts
+        : [];
+  return arr
+    .map(mapServerDistrictOverview)
+    .filter((row) => row.district !== '');
+}
+
+export interface DistrictScopedStats {
+  district: string;
+  donors: number;
+  requests: number;
+  fulfilledUnits: number;
+  availableUnits: number;
+  hospitals: number;
+}
+
+/**
+ * GET /api/stats/district?districtId=<slug> — per-district counters.
+ * Backend supports ?districtId= / ?district= for SuperAdmin.
+ * Separate from the legacy zero-arg getDistrictStats() above (untouched).
+ */
+export async function getDistrictStatsFor(districtId: string): Promise<DistrictScopedStats> {
+  const qs = new URLSearchParams();
+  qs.set('districtId', districtId);
+  const data = await apiFetch<any>(`/api/stats/district?${qs.toString()}`, { auth: true });
+  const src = (data ?? {}) as Record<string, unknown>;
+  const str = (v: unknown): string =>
+    typeof v === 'string' ? v : v === null || v === undefined ? '' : String(v);
+  return {
+    district: str(src.district) || districtId,
+    donors: toFiniteNumber(src.donors),
+    requests: toFiniteNumber(src.requests),
+    fulfilledUnits: toFiniteNumber(src.fulfilledUnits),
+    availableUnits: toFiniteNumber(src.availableUnits),
+    hospitals: toFiniteNumber(src.hospitals),
+  };
+}
+
+/**
+ * PATCH /api/hospitals/:id/status — hospital approve/reject.
+ * NOTE: backend routes (hospitals.routes.js) currently expose only
+ * GET /, POST register/login/refresh/logout, GET /me, PATCH /me.
+ * This helper documents the intended endpoint; callers MUST catch
+ * 404/failures and fall back to local-state + toast with a backend-pending note.
+ */
+export async function updateHospitalStatusApi(
+  id: string,
+  status: string,
+): Promise<DistrictHospital> {
+  const data = await apiFetch<{ hospital?: any; data?: any } | any>(
+    `/api/hospitals/${encodeURIComponent(id)}/status`,
+    {
+      method: 'PATCH',
+      body: { status },
+      auth: true,
+    },
+  );
+  const raw =
+    (data as { hospital?: unknown })?.hospital ??
+    (data as { data?: unknown })?.data ??
+    data;
+  return mapServerHospital(raw);
+}

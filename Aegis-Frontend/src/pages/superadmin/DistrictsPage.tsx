@@ -1,34 +1,131 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
-import { DISTRICTS_OVERVIEW } from '../../data/superadminMock';
+import { DISTRICTS } from '../../data/constants';
+import { getDistrictStatsFor, listDistrictsOverview } from '../../lib/api';
+import type { DistrictOverviewRow } from '../../lib/api';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
+import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Spinner } from '../../components/ui/Spinner';
 
 const th =
   'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400';
 
 const num = 'whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300';
 
+const MAJOR_DISTRICTS = [
+  'Chennai',
+  'Coimbatore',
+  'Madurai',
+  'Salem',
+  'Tiruchirappalli',
+  'Vellore',
+  'Tirunelveli',
+];
+
+function displayName(slugOrName: string): string {
+  const found = DISTRICTS.find((d) => d.toLowerCase() === slugOrName.trim().toLowerCase());
+  return found ?? slugOrName;
+}
+
 export default function DistrictsPage() {
   const { t } = useI18n();
+  const [rows, setRows] = useState<DistrictOverviewRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [fallback, setFallback] = useState(false);
   const [search, setSearch] = useState('');
+  const [refreshNonce, setRefreshNonce] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      setLoading(true);
+      setError(null);
+      setFallback(false);
+      // Primary: aggregate endpoint GET /api/stats/districts.
+      try {
+        const overview = await listDistrictsOverview();
+        if (cancelled) return;
+        if (overview.length > 0) {
+          setRows([...overview].sort((a, b) => b.stock - a.stock));
+          setLoading(false);
+          return;
+        }
+        throw new Error('Empty district overview');
+      } catch {
+        // Fall through to per-district fan-out — never crash, never mock.
+      }
+      // Fallback: per-district GET /api/stats/district?districtId= for majors.
+      try {
+        const settled = await Promise.allSettled(
+          MAJOR_DISTRICTS.map((d) => getDistrictStatsFor(d.trim().toLowerCase())),
+        );
+        if (cancelled) return;
+        const mapped: DistrictOverviewRow[] = [];
+        for (const result of settled) {
+          if (result.status !== 'fulfilled') continue;
+          const s = result.value;
+          mapped.push({
+            district: displayName(s.district),
+            hospitals: s.hospitals,
+            banks: 0,
+            donors: s.donors,
+            requests: s.requests,
+            stock: s.availableUnits,
+          });
+        }
+        if (mapped.length === 0) {
+          setRows([]);
+          setError(t('common.error'));
+        } else {
+          setRows(mapped.sort((a, b) => b.stock - a.stock));
+          setFallback(true);
+          setError(null);
+        }
+      } catch (e) {
+        if (cancelled) return;
+        setRows([]);
+        setError(e instanceof Error ? e.message : t('common.error'));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [refreshNonce, t]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return DISTRICTS_OVERVIEW.filter((row) => {
-      if (q && !row.district.toLowerCase().includes(q)) return false;
-      return true;
-    }).sort((a, b) => b.stock - a.stock);
-  }, [search]);
+    return rows
+      .filter((row) => {
+        if (q && !row.district.toLowerCase().includes(q)) return false;
+        return true;
+      })
+      .sort((a, b) => b.stock - a.stock);
+  }, [rows, search]);
+
+  const refetch = () => setRefreshNonce((n) => n + 1);
 
   return (
     <div>
       <PageHeader title={t('admin.districts.title')} subtitle={t('admin.districts.subtitle')} />
 
-      <Card>
+      {fallback && !loading && !error ? (
+        <Card className="border-amber-200 bg-amber-50 dark:border-amber-900 dark:bg-amber-950/40">
+          <p className="text-xs font-medium text-amber-800 dark:text-amber-200">
+            Aggregate endpoint /api/stats/districts is unavailable — showing per-district stats for
+            major districts. Bank counts are unavailable from the API.
+          </p>
+        </Card>
+      ) : null}
+
+      <Card className={fallback ? 'mt-4' : ''}>
         <div className="w-full min-w-[180px] flex-1 sm:max-w-sm">
           <label
             htmlFor="district-search"
@@ -51,7 +148,21 @@ export default function DistrictsPage() {
       </Card>
 
       <Card padded={false} className="mt-4 overflow-hidden">
-        {filtered.length === 0 ? (
+        {loading && rows.length === 0 ? (
+          <div className="flex items-center justify-center gap-3 py-14 text-slate-500 dark:text-slate-400">
+            <Spinner />
+            <span className="text-sm">{t('common.loading')}</span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-14 text-center">
+            <p role="alert" className="text-sm font-medium text-rose-600 dark:text-rose-300">
+              {error}
+            </p>
+            <Button variant="outline" size="sm" onClick={refetch}>
+              Retry
+            </Button>
+          </div>
+        ) : filtered.length === 0 ? (
           <EmptyState title={t('admin.table.noResults')} hint={t('admin.table.noResultsHint')} />
         ) : (
           <>
@@ -149,7 +260,7 @@ export default function DistrictsPage() {
             <div className="border-t border-slate-200 px-4 py-3 text-xs font-medium text-slate-500 dark:border-slate-800 dark:text-slate-400">
               {t('admin.table.showing', {
                 count: filtered.length,
-                total: DISTRICTS_OVERVIEW.length,
+                total: rows.length,
               })}
             </div>
           </>

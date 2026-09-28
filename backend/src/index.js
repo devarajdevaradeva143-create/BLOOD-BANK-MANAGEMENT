@@ -9,6 +9,7 @@ import connectDB from './config/db.js';
 import { globalLimiter } from './middleware/rateLimit.js';
 import { notFound, errorHandler } from './middleware/error.js';
 import authRoutes from './routes/auth.routes.js';
+import adminsRoutes from './routes/admins.routes.js';
 import otpRoutes from './routes/otp.routes.js';
 import donorRoutes from './routes/donors.routes.js';
 import hospitalRoutes from './routes/hospitals.routes.js';
@@ -18,6 +19,7 @@ import messageRoutes from './routes/messages.routes.js';
 import unitsRoutes from './routes/units.routes.js';
 import availabilityRoutes from './routes/availability.routes.js';
 import statsRoutes from './routes/stats.routes.js';
+import bloodbanksRoutes from './routes/bloodbanks.routes.js';
 import chatRoutes from './routes/chat.routes.js';
 import notificationRoutes from './routes/notifications.routes.js';
 
@@ -52,6 +54,7 @@ app.get('/healthz', (_req, res) => {
 
 // --- API routers ---
 app.use('/api/auth', authRoutes);
+app.use('/api/admins', adminsRoutes);
 app.use('/api/otp', otpRoutes);
 app.use('/api/donors', donorRoutes);
 app.use('/api/hospitals', hospitalRoutes);
@@ -61,6 +64,7 @@ app.use('/api/messages', messageRoutes);
 app.use('/api/units', unitsRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/blood-banks', bloodbanksRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/notifications', notificationRoutes);
 

@@ -409,8 +409,42 @@ export const resetHospitalPassword = asyncHandler(async (req, res) => {
     .json({ message: 'Password reset successful. Please login again.' });
 });
 
+/**
+ * PATCH /api/hospitals/:id/status (SuperAdmin only at route level)
+ * Body: { active: boolean } — approve (true) / suspend (false) a hospital.
+ */
+export const updateHospitalStatus = asyncHandler(async (req, res) => {
+  const { active } = req.body || {};
+  if (typeof active !== 'boolean') {
+    return res.status(400).json({ message: 'active must be a boolean' });
+  }
+
+  const hospital = await Hospital.findById(req.params.id).select(
+    '-passwordHash -refreshTokens'
+  );
+  if (!hospital) {
+    return res.status(404).json({ message: 'Hospital not found' });
+  }
+
+  hospital.active = active;
+  await hospital.save();
+
+  logAudit(
+    req.user?.id || null,
+    active ? 'hospital.approve' : 'hospital.suspend',
+    'Hospital',
+    String(hospital._id),
+    req
+  );
+  return res.status(200).json({
+    message: active ? 'Hospital approved' : 'Hospital suspended',
+    hospital: toSafeHospital(hospital),
+  });
+});
+
 export default {
   listHospitals,
+  updateHospitalStatus,
   registerHospital,
   loginHospital,
   refreshHospital,

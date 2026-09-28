@@ -11,13 +11,13 @@ import { fetchMe, login as loginApi, logoutApi } from '../lib/api';
 
 interface AuthContextValue {
   user: AuthUser | null;
-  login: (staffId: string, pin: string, remember: boolean) => Promise<boolean>;
+  login: (staffId: string, pin: string, remember: boolean) => Promise<AuthUser | null>;
   logout: () => Promise<void>;
   updateProfile: (patch: Partial<Pick<AuthUser, 'name' | 'email' | 'phone'>>) => void;
   loading: boolean;
 }
 
-const PROFILE_OVERRIDE_KEY = 'aegis-demo-profile-overrides';
+const PROFILE_OVERRIDE_KEY = 'aegis-profile-overrides';
 
 function getProfileOverrides(): Record<string, Partial<AuthUser>> {
   try {
@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Frontend demo sessions work fully offline — restore first.
+      // Demo accounts work fully offline — restore first.
       const demo = getStoredDemoUser();
       if (demo) {
         if (!cancelled) {
@@ -85,15 +85,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (demo) {
       storeDemoUser(demo);
       setUser(applyProfileOverrides(demo));
-      return true;
+      return demo;
     }
     try {
       const account = await loginApi(staffId.trim(), pin.trim());
       const withOverrides = applyProfileOverrides(account) ?? account;
-      setUser({ ...withOverrides, districtId: withOverrides.districtId ?? account.districtId });
-      return true;
+      const next = { ...withOverrides, districtId: withOverrides.districtId ?? account.districtId };
+      setUser(next);
+      return next;
     } catch {
-      return false;
+      return null;
     }
   }, []);
 

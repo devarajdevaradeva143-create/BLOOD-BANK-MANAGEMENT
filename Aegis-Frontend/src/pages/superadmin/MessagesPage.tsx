@@ -4,7 +4,8 @@ import toast from 'react-hot-toast';
 import { CheckCheck, Eye, RefreshCw, Reply, Search } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
 import { DISTRICTS } from '../../data/constants';
-import { apiFetch } from '../../lib/api';
+import { listDistrictMessages, markMessageRead, replyToMessage } from '../../lib/api';
+import type { Message as MessageRow } from '../../data/types';
 import { formatDateTime } from '../../utils/format';
 import { PageHeader } from '../../components/ui/PageHeader';
 import { Card } from '../../components/ui/Card';
@@ -16,107 +17,6 @@ import { EmptyState } from '../../components/ui/EmptyState';
 import { Spinner } from '../../components/ui/Spinner';
 
 type MessageStatus = 'unread' | 'read' | 'replied';
-
-interface MessageRow {
-  messageId: string;
-  fromName?: string;
-  fromDistrictId?: string;
-  subject: string;
-  body: string;
-  reply?: string;
-  status: MessageStatus;
-  createdAt?: string;
-}
-
-interface ListDistrictMessagesResult {
-  data: MessageRow[];
-  total: number;
-  page?: number;
-  limit?: number;
-  totalPages?: number;
-}
-
-interface ListDistrictMessagesParams {
-  districtId?: string;
-  status?: string;
-  search?: string;
-  page?: number;
-  limit?: number;
-}
-
-function toMessageRow(raw: any): MessageRow {
-  const messageId =
-    (typeof raw?.messageId === 'string' && raw.messageId) ||
-    (typeof raw?._id === 'string' && raw._id) ||
-    String(raw?.id ?? '');
-  const statusRaw = String(raw?.status ?? 'unread');
-  const status: MessageStatus =
-    statusRaw === 'read' || statusRaw === 'replied' ? statusRaw : 'unread';
-  const reply =
-    raw?.reply !== undefined && raw?.reply !== null && String(raw.reply) !== ''
-      ? String(raw.reply)
-      : undefined;
-  return {
-    messageId,
-    fromName:
-      raw?.fromName !== undefined && raw?.fromName !== null
-        ? String(raw.fromName)
-        : undefined,
-    fromDistrictId:
-      raw?.fromDistrictId !== undefined && raw?.fromDistrictId !== null
-        ? String(raw.fromDistrictId)
-        : undefined,
-    subject: String(raw?.subject ?? ''),
-    body: String(raw?.body ?? ''),
-    reply,
-    status,
-    createdAt:
-      typeof raw?.createdAt === 'string'
-        ? raw.createdAt
-        : raw?.createdAt
-          ? new Date(String(raw.createdAt)).toISOString()
-          : undefined,
-  };
-}
-
-async function listDistrictMessages(
-  params: ListDistrictMessagesParams = {},
-): Promise<ListDistrictMessagesResult> {
-  const qs = new URLSearchParams();
-  for (const [key, value] of Object.entries(params)) {
-    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
-  }
-  const query = qs.toString() ? `?${qs.toString()}` : '';
-  const data = await apiFetch<{
-    data: any[];
-    total: number;
-    page?: number;
-    limit?: number;
-    totalPages?: number;
-  }>(`/api/messages${query}`, { auth: true });
-  return {
-    data: (data.data ?? []).map(toMessageRow),
-    total: data.total ?? 0,
-    page: data.page,
-    limit: data.limit,
-    totalPages: data.totalPages,
-  };
-}
-
-async function markMessageRead(id: string): Promise<void> {
-  await apiFetch(`/api/messages/${encodeURIComponent(id)}/read`, {
-    method: 'PATCH',
-    auth: true,
-  });
-}
-
-async function replyToMessage(id: string, reply: string): Promise<void> {
-  await apiFetch(`/api/messages/${encodeURIComponent(id)}/reply`, {
-    method: 'POST',
-    body: { reply },
-    auth: true,
-  });
-}
 
 const PAGE_SIZE = 10;
 
@@ -169,9 +69,10 @@ export default function MessagesPage() {
             page,
             limit: PAGE_SIZE,
           }),
-          listDistrictMessages({ status: 'unread', page: 1, limit: 1 }).catch(
-            (): ListDistrictMessagesResult => ({ data: [], total: 0 }),
-          ),
+          listDistrictMessages({ status: 'unread', page: 1, limit: 1 }).catch(() => ({
+            data: [],
+            total: 0,
+          })),
         ]);
         if (cancelled) return;
         setRows(list.data);

@@ -1,9 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Eye, Search } from 'lucide-react';
 import { useI18n } from '../../i18n/I18nContext';
-import { DONORS } from '../../data/superadminMock';
-import type { DonorRow } from '../../data/superadminMock';
+import { listDonors } from '../../lib/api';
 import { BLOOD_GROUPS, DISTRICTS } from '../../data/constants';
 import type { BloodGroup } from '../../data/types';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -13,8 +12,46 @@ import { Button } from '../../components/ui/Button';
 import { Input, Select } from '../../components/ui/Input';
 import { Modal } from '../../components/ui/Modal';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { Spinner } from '../../components/ui/Spinner';
 
 type StatusFilter = '' | 'eligible' | 'deferred';
+
+interface SuperAdminDonor {
+  id: string;
+  name: string;
+  group: string;
+  district: string;
+  mobile: string;
+  lastDonation: string;
+  nextDonation: string;
+  status: 'eligible' | 'deferred';
+}
+
+function mapDonor(raw: unknown): SuperAdminDonor {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const str = (v: unknown): string =>
+    typeof v === 'string' ? v : v === null || v === undefined ? '' : String(v);
+  const first = (...vals: unknown[]): string => {
+    for (const v of vals) {
+      const s = str(v);
+      if (s) return s;
+    }
+    return '';
+  };
+  const statusRaw = str(r.status).toLowerCase();
+  return {
+    id: first(r.donorId, r.id, r._id),
+    name: first(r.fullName, r.name, r.donorName),
+    group: first(r.bloodGroup, r.group),
+    district: first(r.district, r.districtId),
+    mobile: str(r.mobile),
+    lastDonation: first(r.lastDonation, r.lastDonatedAt, r.lastDonated),
+    nextDonation: first(r.nextDonation, r.nextEligible, r.nextEligibleDate),
+    status: statusRaw.includes('defer') ? 'deferred' : 'eligible',
+  };
+}
+
+const PAGE_SIZE = 12;
 
 const th =
   'px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400';
@@ -22,24 +59,60 @@ const th =
 export default function DonorsPage() {
   const { t } = useI18n();
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [district, setDistrict] = useState('');
   const [group, setGroup] = useState<'' | BloodGroup>('');
   const [status, setStatus] = useState<StatusFilter>('');
-  const [selected, setSelected] = useState<DonorRow | null>(null);
+  const [page, setPage] = useState(1);
+  const [rows, setRows] = useState<SuperAdminDonor[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<SuperAdminDonor | null>(null);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return DONORS.filter((d) => {
-      if (q && !d.name.toLowerCase().includes(q) && !d.id.toLowerCase().includes(q))
-        return false;
-      if (district && d.district !== district) return false;
-      if (group && d.group !== group) return false;
-      if (status && d.status !== status) return false;
-      return true;
-    });
-  }, [search, district, group, status]);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
-  const statusBadge = (s: DonorRow['status']) => (
+  useEffect(() => {
+    let cancelled = false;
+    async function run() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await listDonors({
+          bloodGroup: group || undefined,
+          district: district || undefined,
+          search: debouncedSearch || undefined,
+          page,
+          limit: PAGE_SIZE,
+        });
+        if (cancelled) return;
+        const mapped = (res.data ?? []).map(mapDonor);
+        setRows(status ? mapped.filter((d) => d.status === status) : mapped);
+        setTotal(res.total ?? 0);
+      } catch (e) {
+        if (cancelled) return;
+        setRows([]);
+        setTotal(0);
+        setError(e instanceof Error ? e.message : t('common.error'));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [group, district, debouncedSearch, page, status, refreshNonce, t]);
+
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+
+  const refetch = () => setRefreshNonce((n) => n + 1);
+
+  const statusBadge = (s: SuperAdminDonor['status']) => (
     <Badge tone={s === 'eligible' ? 'emerald' : 'amber'}>
       {s === 'eligible' ? t('admin.donors.eligible') : t('admin.donors.deferred')}
     </Badge>
@@ -52,7 +125,7 @@ export default function DonorsPage() {
     </div>
   );
 
-  const renderViewAction = (donor: DonorRow) => (
+  const renderViewAction = (donor: SuperAdminDonor) => (
     <Button variant="outline" size="sm" icon={<Eye className="h-3.5 w-3.5" />} onClick={() => setSelected(donor)}>
       {t('admin.table.view')}
     </Button>
@@ -76,7 +149,10 @@ export default function DonorsPage() {
               <Input
                 id="donor-search"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setPage(1);
+                }}
                 placeholder={t('admin.table.searchPh')}
                 className="pl-9"
                 aria-label={t('admin.table.searchPh')}
@@ -95,7 +171,10 @@ export default function DonorsPage() {
               id="donor-district"
               className="mt-1.5"
               value={district}
-              onChange={(e) => setDistrict(e.target.value)}
+              onChange={(e) => {
+                setDistrict(e.target.value);
+                setPage(1);
+              }}
             >
               <option value="">{t('admin.table.allDistricts')}</option>
               {DISTRICTS.map((d) => (
@@ -117,7 +196,10 @@ export default function DonorsPage() {
               id="donor-group"
               className="mt-1.5"
               value={group}
-              onChange={(e) => setGroup(e.target.value as '' | BloodGroup)}
+              onChange={(e) => {
+                setGroup(e.target.value as '' | BloodGroup);
+                setPage(1);
+              }}
             >
               <option value="">All</option>
               {BLOOD_GROUPS.map((g) => (
@@ -139,7 +221,10 @@ export default function DonorsPage() {
               id="donor-status"
               className="mt-1.5"
               value={status}
-              onChange={(e) => setStatus(e.target.value as StatusFilter)}
+              onChange={(e) => {
+                setStatus(e.target.value as StatusFilter);
+                setPage(1);
+              }}
             >
               <option value="">{t('admin.table.allStatus')}</option>
               <option value="eligible">{t('admin.donors.eligible')}</option>
@@ -150,7 +235,21 @@ export default function DonorsPage() {
       </Card>
 
       <Card padded={false} className="mt-4 overflow-hidden">
-        {filtered.length === 0 ? (
+        {loading && rows.length === 0 ? (
+          <div className="flex items-center justify-center gap-3 py-12 text-slate-500 dark:text-slate-400">
+            <Spinner />
+            <span className="text-sm">{t('common.loading')}</span>
+          </div>
+        ) : error ? (
+          <div className="flex flex-col items-center justify-center gap-3 px-6 py-12 text-center">
+            <p role="alert" className="text-sm font-medium text-rose-600 dark:text-rose-300">
+              {error}
+            </p>
+            <Button variant="outline" size="sm" onClick={refetch}>
+              {t('admin.messages.retry')}
+            </Button>
+          </div>
+        ) : rows.length === 0 ? (
           <EmptyState title={t('admin.table.noResults')} hint={t('admin.table.noResultsHint')} />
         ) : (
           <>
@@ -169,28 +268,28 @@ export default function DonorsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 bg-white dark:divide-slate-800 dark:bg-slate-900">
-                  {filtered.map((donor) => (
+                  {rows.map((donor) => (
                     <tr
                       key={donor.id}
                       className="transition hover:bg-slate-50 dark:hover:bg-slate-800/50"
                     >
                       <td className="whitespace-nowrap px-4 py-3 font-mono text-sm font-semibold text-slate-900 dark:text-white">
-                        {donor.id}
+                        {donor.id || '—'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm font-medium text-slate-900 dark:text-white">
-                        {donor.name}
+                        {donor.name || '—'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">
-                        <Badge tone="red">{donor.group}</Badge>
+                        <Badge tone="red">{donor.group || '—'}</Badge>
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                        {donor.district}
+                        {donor.district || '—'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                        {donor.lastDonation}
+                        {donor.lastDonation || '—'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3 text-sm text-slate-700 dark:text-slate-300">
-                        {donor.nextDonation}
+                        {donor.nextDonation || '—'}
                       </td>
                       <td className="whitespace-nowrap px-4 py-3">{statusBadge(donor.status)}</td>
                       <td className="whitespace-nowrap px-4 py-3 text-right">
@@ -203,31 +302,56 @@ export default function DonorsPage() {
             </div>
 
             <div className="divide-y divide-slate-100 md:hidden dark:divide-slate-800">
-              {filtered.map((donor) => (
+              {rows.map((donor) => (
                 <div key={donor.id} className="p-4">
                   <div className="flex items-start justify-between gap-3">
                     <span className="font-mono text-sm font-semibold text-slate-900 dark:text-white">
-                      {donor.id}
+                      {donor.id || '—'}
                     </span>
                     {statusBadge(donor.status)}
                   </div>
                   <p className="mt-1.5 text-sm font-medium text-slate-900 dark:text-white">
-                    {donor.name}
+                    {donor.name || '—'}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <Badge tone="red">{donor.group}</Badge>
+                    <Badge tone="red">{donor.group || '—'}</Badge>
                   </div>
                   <p className="mt-2 text-xs text-slate-600 dark:text-slate-400">
-                    {donor.district} · {t('admin.donors.lastDonation')}: {donor.lastDonation} ·{' '}
-                    {t('admin.donors.nextDonation')}: {donor.nextDonation}
+                    {donor.district || '—'} · {t('admin.donors.lastDonation')}:{' '}
+                    {donor.lastDonation || '—'} · {t('admin.donors.nextDonation')}:{' '}
+                    {donor.nextDonation || '—'}
                   </p>
                   <div className="mt-3">{renderViewAction(donor)}</div>
                 </div>
               ))}
             </div>
 
-            <div className="border-t border-slate-200 px-4 py-3 text-xs font-medium text-slate-500 dark:border-slate-800 dark:text-slate-400">
-              {t('admin.table.showing', { count: filtered.length, total: DONORS.length })}
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-200 px-4 py-3 dark:border-slate-800">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                {t('admin.table.showing', { count: rows.length, total })}
+              </span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                >
+                  {t('common.back')}
+                </Button>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  {page} / {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={page >= totalPages || loading}
+                  onClick={() => setPage((p) => p + 1)}
+                  aria-label={`${page + 1} / ${totalPages}`}
+                >
+                  ›
+                </Button>
+              </div>
             </div>
           </>
         )}
@@ -246,12 +370,12 @@ export default function DonorsPage() {
       >
         {selected ? (
           <dl className="divide-y divide-slate-100 dark:divide-slate-800">
-            {detailRow(t('admin.donors.donorId'), <span className="font-mono">{selected.id}</span>)}
-            {detailRow(t('admin.donors.name'), selected.name)}
-            {detailRow(t('admin.donors.group'), <Badge tone="red">{selected.group}</Badge>)}
-            {detailRow(t('admin.donors.district'), selected.district)}
-            {detailRow(t('admin.donors.lastDonation'), selected.lastDonation)}
-            {detailRow(t('admin.donors.nextDonation'), selected.nextDonation)}
+            {detailRow(t('admin.donors.donorId'), <span className="font-mono">{selected.id || '—'}</span>)}
+            {detailRow(t('admin.donors.name'), selected.name || '—')}
+            {detailRow(t('admin.donors.group'), <Badge tone="red">{selected.group || '—'}</Badge>)}
+            {detailRow(t('admin.donors.district'), selected.district || '—')}
+            {detailRow(t('admin.donors.lastDonation'), selected.lastDonation || '—')}
+            {detailRow(t('admin.donors.nextDonation'), selected.nextDonation || '—')}
             {detailRow(t('admin.donors.status'), statusBadge(selected.status))}
           </dl>
         ) : null}

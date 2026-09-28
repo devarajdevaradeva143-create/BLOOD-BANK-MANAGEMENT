@@ -75,6 +75,7 @@ export default function DonorsMapPage() {
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [tripMode, setTripMode] = useState(false);
+  const [refreshNonce, setRefreshNonce] = useState(0);
 
   const userDistrictSlug = useMemo(() => (user?.districtId ?? '').trim().toLowerCase(), [user]);
   const userDistrictDisplay = useMemo(() => {
@@ -121,7 +122,7 @@ export default function DonorsMapPage() {
     return () => {
       cancelled = true;
     };
-  }, [bloodGroup, userDistrictSlug, userDistrictDisplay, districtMissing, t]);
+  }, [bloodGroup, userDistrictSlug, userDistrictDisplay, districtMissing, refreshNonce, t]);
 
   const toggleSelect = (id: string) => {
     setSelected((prev) => {
@@ -201,7 +202,12 @@ export default function DonorsMapPage() {
               <span className="text-sm">{t('donorMap.loading')}</span>
             </div>
           ) : error && donors.length === 0 ? (
-            <EmptyState title={t('donors.error')} hint={error} />
+            <div className="flex flex-col items-center gap-3 px-6 py-12">
+              <EmptyState title={t('donors.error')} hint={error} />
+              <Button variant="outline" size="sm" onClick={() => setRefreshNonce((n) => n + 1)}>
+                {t('donors.retry')}
+              </Button>
+            </div>
           ) : donors.length === 0 ? (
             <EmptyState title={t('donors.empty')} hint={t('donors.noResultsHint')} />
           ) : (
