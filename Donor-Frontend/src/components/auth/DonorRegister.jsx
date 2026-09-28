@@ -26,6 +26,18 @@ const BENEFITS = [
   { key: "regular", Icon: HeartHandshake },
 ];
 
+function getMinDob() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 65);
+  return d.toISOString().slice(0, 10);
+}
+
+function getMaxDob() {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d.toISOString().slice(0, 10);
+}
+
 export default function DonorRegister() {
   const { t } = useLanguage();
   const navigate = useNavigate();
@@ -279,6 +291,8 @@ export default function DonorRegister() {
                   name="dob"
                   value={form.dob}
                   onChange={handleChange}
+                  min={getMinDob()}
+                  max={getMaxDob()}
                 />
               </div>
             </div>
