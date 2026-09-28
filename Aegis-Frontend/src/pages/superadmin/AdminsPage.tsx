@@ -8,6 +8,7 @@ import {
   resetAdminPin,
   updateAdmin,
 } from '../../lib/api';
+import { generateStrongPassword } from '../../utils/passwordStrength';
 import type { AdminAccount } from '../../lib/api';
 import { useI18n } from '../../i18n/I18nContext';
 import { PageHeader } from '../../components/ui/PageHeader';
@@ -194,13 +195,15 @@ export default function AdminsPage() {
   };
 
   const handleResetPin = async (admin: AdminAccount) => {
+    // Real-website: generate a strong 8+ password client-side and send as newPin.
+    const newPin = generateStrongPassword();
     setActingId(admin.id);
     try {
-      const res = await resetAdminPin(admin.id);
+      const res = await resetAdminPin(admin.id, newPin);
       if (res.pin) {
         toast.success(`${t('common.success')}: ${res.pin}`);
       } else {
-        toast.success(res.message || t('common.success'));
+        toast.success(`${res.message || t('common.success')}: ${newPin}`);
       }
     } catch (e) {
       toast.error(e instanceof Error ? e.message : t('common.error'));

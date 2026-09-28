@@ -19,11 +19,23 @@ export function generateStrongPassword(length = 14) {
     "!@#$%^&*()-_=+",
   ];
   const all = sets.join("");
-  const pick = (source) => source[Math.floor(Math.random() * source.length)];
+  const secureRandom = (max) => {
+    try {
+      if (typeof crypto !== "undefined" && crypto.getRandomValues) {
+        const buf = new Uint32Array(1);
+        crypto.getRandomValues(buf);
+        return buf[0] % max;
+      }
+    } catch {
+      /* fall through */
+    }
+    return Math.floor(Math.random() * max);
+  };
+  const pick = (source) => source[secureRandom(source.length)];
   const chars = sets.map((set) => pick(set));
   while (chars.length < length) chars.push(pick(all));
   for (let i = chars.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
+    const j = secureRandom(i + 1);
     [chars[i], chars[j]] = [chars[j], chars[i]];
   }
   return chars.join("");

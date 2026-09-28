@@ -14,7 +14,7 @@ import Hospital from './src/models/Hospital.js';
 import BloodUnit from './src/models/BloodUnit.js';
 
 const districtAdminId = process.env.SEED_DISTRICT_ADMIN_ID || 'DIST-001';
-const districtAdminPin = process.env.SEED_DISTRICT_ADMIN_PIN || '1234';
+const districtAdminPin = process.env.SEED_DISTRICT_ADMIN_PIN || 'Dist@1234';
 const districtAdminDistrict = (process.env.SEED_DISTRICT_ADMIN_DISTRICT || '').trim().toLowerCase();
 const superAdminId = process.env.SEED_SUPER_ADMIN_ID || 'SUPER001';
 const superAdminPin = process.env.SEED_SUPER_ADMIN_PIN || 'Admin@123';

@@ -21,7 +21,7 @@ export const DEMO_CREDENTIALS: DemoCredential[] = [
   {
     role: 'DistrictAdmin',
     staffId: 'DIST-001',
-    pin: '1234',
+    pin: 'Dist@1234',
     user: { id: 'DIST-001', name: 'District Admin', role: 'DistrictAdmin', designation: 'District Coordinator', districtId: 'chennai' },
   },
   {

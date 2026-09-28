@@ -1235,10 +1235,11 @@ export interface ResetPinResult {
   message?: string;
 }
 
-export async function resetAdminPin(id: string): Promise<ResetPinResult> {
+export async function resetAdminPin(id: string, newPin?: string): Promise<ResetPinResult> {
   const data = await apiFetch<any>(`/api/admins/${encodeURIComponent(id)}/reset-pin`, {
     method: 'POST',
     auth: true,
+    ...(newPin ? { body: { newPin } } : {}),
   });
   if (data !== null && typeof data === 'object') {
     const r = data as Record<string, unknown>;

@@ -13,13 +13,12 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordSchema = z.object({
   staffId: z.string().min(1, 'staffId is required'),
   code: z.string().length(6, 'code must be 6 characters'),
-  newPin: z
-    .string()
-    .min(4, 'pin must be at least 4 chars')
-    .max(10, 'pin must be at most 10 chars'),
+  newPin: strongPassword,
 });
 
 // Donor password reset — identifier is email (Donor.email, lowercase).
+// Shared 8+strong rule used for donor/hospital passwords AND staff PINs
+// (real-website policy: everywhere passwords are created).
 const strongPassword = z
   .string()
   .min(8, 'password must be at least 8 characters')
@@ -27,6 +26,21 @@ const strongPassword = z
   .regex(/[a-z]/, 'password must contain a lowercase letter')
   .regex(/[0-9]/, 'password must contain a number')
   .regex(/[^A-Za-z0-9]/, 'password must contain a special character');
+
+export function isStrongPassword(v) {
+  const s = String(v || '');
+  return (
+    s.length >= 8 &&
+    /[A-Z]/.test(s) &&
+    /[a-z]/.test(s) &&
+    /[0-9]/.test(s) &&
+    /[^A-Za-z0-9]/.test(s)
+  );
+}
+
+export function strongPasswordMessage() {
+  return 'password must be 8+ chars with uppercase, lowercase, number & special character';
+}
 
 export const donorForgotPasswordSchema = z.object({
   email: z.string().email('Invalid email').toLowerCase(),

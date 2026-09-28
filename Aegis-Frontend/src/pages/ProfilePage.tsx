@@ -1,9 +1,14 @@
 import { useEffect, useState } from 'react';
-import { Lock, Pencil, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Pencil, Sparkles, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
 import { changePassword, updateProfile as updateProfileApi } from '../lib/api';
+import {
+  generateStrongPassword,
+  getPasswordStrength,
+  strongPasswordMessage,
+} from '../utils/passwordStrength';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -25,8 +30,11 @@ export default function ProfilePage() {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [showNext, setShowNext] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [saving, setSaving] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
+  const strength = getPasswordStrength(next);
 
   const userId = user?.id;
 
@@ -108,6 +116,14 @@ export default function ProfilePage() {
     setCurrent('');
     setNext('');
     setConfirm('');
+    setShowNext(false);
+    setShowConfirm(false);
+  };
+
+  const handleGeneratePassword = () => {
+    const generated = generateStrongPassword();
+    setNext(generated);
+    setConfirm(generated);
   };
 
   const handlePasswordUpdate = async () => {
@@ -115,8 +131,8 @@ export default function ProfilePage() {
       toast.error(t('validation.required'));
       return;
     }
-    if (next.length < 4) {
-      toast.error(t('profile.tooShort'));
+    if (getPasswordStrength(next) !== 'strong') {
+      toast.error(strongPasswordMessage());
       return;
     }
     if (next !== confirm) {
@@ -275,20 +291,60 @@ export default function ProfilePage() {
             />
           </Field>
           <Field label={t('profile.newPassword')}>
-            <Input
-              type="password"
-              value={next}
-              onChange={(e) => setNext(e.target.value)}
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <Input
+                type={showNext ? 'text' : 'password'}
+                value={next}
+                onChange={(e) => setNext(e.target.value)}
+                autoComplete="new-password"
+                placeholder="Min. 8 characters"
+              />
+              <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handleGeneratePassword}
+                  aria-label="Generate strong password"
+                  title="Generate strong password (fills both fields)"
+                  className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                >
+                  <Sparkles size={15} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowNext((v) => !v)}
+                  aria-label={showNext ? 'Hide password' : 'Show password'}
+                  className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                >
+                  {showNext ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+            {strength ? (
+              <p className="mt-1 text-[11px] font-semibold text-slate-500">
+                Strength: <strong className={strength === 'strong' ? 'text-emerald-600' : strength === 'medium' ? 'text-amber-600' : 'text-red-600'}>{strength}</strong>
+                {' — '}{strongPasswordMessage()}
+              </p>
+            ) : (
+              <p className="mt-1 text-[11px] text-slate-400">{strongPasswordMessage()}</p>
+            )}
           </Field>
           <Field label={t('profile.confirmPassword')}>
-            <Input
-              type="password"
-              value={confirm}
-              onChange={(e) => setConfirm(e.target.value)}
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <Input
+                type={showConfirm ? 'text' : 'password'}
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirm((v) => !v)}
+                aria-label={showConfirm ? 'Hide password' : 'Show password'}
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+              >
+                {showConfirm ? <EyeOff size={15} /> : <Eye size={15} />}
+              </button>
+            </div>
           </Field>
         </div>
       </Modal>

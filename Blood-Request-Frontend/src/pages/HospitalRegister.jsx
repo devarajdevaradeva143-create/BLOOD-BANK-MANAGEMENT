@@ -12,9 +12,14 @@ import {
   Mail,
   MapPin,
   Phone,
+  Sparkles,
 } from 'lucide-react'
 import AuthSidePanel from '../components/AuthSidePanel'
 import { registerHospital } from '../lib/auth'
+import {
+  generateStrongPassword,
+  getPasswordStrength as getStrengthLabel,
+} from '../utils/passwordStrength'
 
 const HospitalRegister = ({ onSuccess, onLogin }) => {
   const [form, setForm] = useState({
@@ -58,7 +63,9 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
     return score
   }
 
-  const passwordStrength = getPasswordStrength()
+  const strengthLabel = getStrengthLabel(form.password)
+  const passwordStrength =
+    !form.password ? 0 : strengthLabel === 'weak' ? 2 : strengthLabel === 'medium' ? 4 : 5
 
   const strengthMeta =
     passwordStrength === 0
@@ -70,6 +77,12 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
           : passwordStrength === 4
             ? { label: 'Good password', text: 'text-lime-600', bar: 'bg-lime-500' }
             : { label: 'Strong password', text: 'text-emerald-600', bar: 'bg-emerald-500' }
+
+  const handleGeneratePassword = () => {
+    const generated = generateStrongPassword()
+    setForm((f) => ({ ...f, password: generated, confirmPassword: generated }))
+    setError('')
+  }
 
   const inputCls =
     'h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-3 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100'
@@ -335,16 +348,27 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                       value={form.password}
                       onChange={handleChange}
                       placeholder="Min. 8 characters"
-                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100"
+                      className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-16 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                    >
-                      {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                    </button>
+                    <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+                      <button
+                        type="button"
+                        onClick={handleGeneratePassword}
+                        aria-label="Generate strong password"
+                        title="Generate strong password (fills both fields)"
+                        className="rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        <Sparkles size={15} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        className="rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                      >
+                        {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                      </button>
+                    </div>
                   </div>
 
                   {/* Strength */}

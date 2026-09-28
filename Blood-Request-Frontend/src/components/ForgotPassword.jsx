@@ -11,12 +11,17 @@ import {
   Lock,
   Mail,
   RotateCcw,
+  Sparkles,
 } from 'lucide-react'
 import { useLanguage } from '../context/useLanguage'
 import {
   confirmHospitalPasswordReset,
   requestHospitalPasswordReset,
 } from '../lib/auth'
+import {
+  generateStrongPassword,
+  getPasswordStrength,
+} from '../utils/passwordStrength'
 
 const inputCls =
   'h-11 w-full rounded-xl border border-slate-200 bg-slate-50 pl-11 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100'
@@ -36,6 +41,24 @@ export default function ForgotPassword({ email: initialEmail, onBack }) {
   const [error, setError] = useState('')
   const [note, setNote] = useState('')
   const [loading, setLoading] = useState(false)
+
+  const strength = getPasswordStrength(newPassword)
+  const strengthMeta =
+    !strength
+      ? null
+      : strength === 'weak'
+        ? { label: 'Weak password', text: 'text-red-600', bar: 'bg-red-500' }
+        : strength === 'medium'
+          ? { label: 'Medium password', text: 'text-amber-600', bar: 'bg-amber-400' }
+          : { label: 'Strong password', text: 'text-emerald-600', bar: 'bg-emerald-500' }
+  const strengthLevel = !strength ? 0 : strength === 'weak' ? 2 : strength === 'medium' ? 4 : 5
+
+  const handleGeneratePassword = () => {
+    const generated = generateStrongPassword()
+    setNewPassword(generated)
+    setConfirmPassword(generated)
+    setError('')
+  }
 
   const handleSendOtp = async (e) => {
     e.preventDefault()
@@ -252,17 +275,49 @@ export default function ForgotPassword({ email: initialEmail, onBack }) {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="Min. 8 characters"
-                  className={`${inputCls} pr-11`}
+                  className={`${inputCls} pr-20`}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowNew(!showNew)}
-                  aria-label={showNew ? 'Hide password' : 'Show password'}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-                >
-                  {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
+                <div className="absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={handleGeneratePassword}
+                    aria-label="Generate strong password"
+                    title="Generate strong password (fills both fields)"
+                    className="rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                  >
+                    <Sparkles size={18} />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setShowNew(!showNew)}
+                    aria-label={showNew ? 'Hide password' : 'Show password'}
+                    className="rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
+                  >
+                    {showNew ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </div>
+              {strengthMeta ? (
+                <div className="mt-2">
+                  <div className="flex items-center gap-1">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div
+                        key={level}
+                        className={`h-1.5 flex-1 rounded-full transition ${
+                          strengthLevel >= level ? strengthMeta.bar : 'bg-slate-200'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <p className={`mt-1 text-[11px] font-semibold ${strengthMeta.text}`}>
+                    {strengthMeta.label} — use uppercase, number &amp; symbol
+                  </p>
+                </div>
+              ) : (
+                <p className="mt-1.5 text-[11px] text-slate-400">
+                  Use 8+ characters with uppercase, number &amp; symbol
+                </p>
+              )}
             </div>
 
             <div>

@@ -2,6 +2,7 @@ import { asyncHandler } from '../middleware/asyncHandler.js';
 import User from '../models/User.js';
 import { hashPin } from '../utils/passwords.js';
 import { logAudit } from '../middleware/audit.js';
+import { isStrongPassword, strongPasswordMessage } from '../schemas/auth.schema.js';
 
 const ADMIN_ROLES = ['DistrictAdmin', 'SuperAdmin'];
 
@@ -100,9 +101,10 @@ export const createAdmin = asyncHandler(async (req, res) => {
       .json({ message: `role must be one of: ${ADMIN_ROLES.join(', ')}` });
   }
   if (pin.length < 4) {
-    return res
-      .status(400)
-      .json({ message: 'pin must be at least 4 characters' });
+    return res.status(400).json({ message: strongPasswordMessage() });
+  }
+  if (!isStrongPassword(pin)) {
+    return res.status(400).json({ message: strongPasswordMessage() });
   }
 
   const existing = await User.findOne({ staffId });
@@ -187,10 +189,8 @@ export const resetAdminPin = asyncHandler(async (req, res) => {
   if (!newPin) {
     return res.status(400).json({ message: 'newPin is required' });
   }
-  if (newPin.length < 4) {
-    return res
-      .status(400)
-      .json({ message: 'newPin must be at least 4 characters' });
+  if (!isStrongPassword(newPin)) {
+    return res.status(400).json({ message: strongPasswordMessage() });
   }
 
   user.pinHash = await hashPin(newPin);

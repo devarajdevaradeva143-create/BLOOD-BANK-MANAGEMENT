@@ -76,10 +76,10 @@ export interface DemoAccount {
 }
 
 // Seeded via backend/seed.js (`node seed.js`):
-// DIST-001 / 1234 (DistrictAdmin).
+// DIST-001 / Dist@1234 (DistrictAdmin, 8+strong).
 // SUPER001 / Admin@123 (SuperAdmin, frontend demo only).
 export const DEMO_ACCOUNTS: DemoAccount[] = [
-  { role: 'DistrictAdmin', staffId: 'DIST-001', pin: '1234' },
+  { role: 'DistrictAdmin', staffId: 'DIST-001', pin: 'Dist@1234' },
   { role: 'SuperAdmin', staffId: 'SUPER001', pin: 'Admin@123' },
 ];
 

@@ -18,6 +18,7 @@ import {
 } from '../utils/otp.js';
 import { config } from '../config/env.js';
 import { logAudit } from '../middleware/audit.js';
+import { isStrongPassword, strongPasswordMessage } from '../schemas/auth.schema.js';
 
 // Namespaced OTP target so staff reset codes never collide with
 // donor/request mobile OTPs that share the Otp collection.
@@ -243,8 +244,8 @@ export const resetPassword = asyncHandler(async (req, res) => {
   if (!normalizedId || !code || !newPin) {
     return res.status(400).json({ message: 'staffId, code and newPin are required' });
   }
-  if (newPin.length < 4 || newPin.length > 10) {
-    return res.status(400).json({ message: 'newPin must be 4-10 characters' });
+  if (!isStrongPassword(newPin)) {
+    return res.status(400).json({ message: strongPasswordMessage() });
   }
 
   const user = await User.findOne({ staffId: normalizedId });
@@ -342,10 +343,8 @@ export const changePassword = asyncHandler(async (req, res) => {
       .status(400)
       .json({ message: 'currentPin and newPin are required' });
   }
-  if (newPin.length < 4) {
-    return res
-      .status(400)
-      .json({ message: 'newPin must be at least 4 characters' });
+  if (!isStrongPassword(newPin)) {
+    return res.status(400).json({ message: strongPasswordMessage() });
   }
 
   const user = await User.findById(req.user?.id);
