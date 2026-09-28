@@ -25,9 +25,14 @@ const donorSchema = new mongoose.Schema(
     // bcrypt(password + pepper). Absent for legacy donors created before auth.
     passwordHash: { type: String, select: false },
     district: { type: String, trim: true },
+    districtId: { type: String, trim: true, lowercase: true },
     city: { type: String, trim: true },
     pincode: { type: String, trim: true, match: [/^\d{6}$/, 'Invalid pincode'] },
     address: { type: String, trim: true, minlength: 10 },
+    location: {
+      type: { type: String, enum: ['Point'], default: 'Point' },
+      coordinates: { type: [Number], default: undefined },
+    },
     eligibility: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
     consents: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
     status: {
@@ -39,6 +44,8 @@ const donorSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-donorSchema.index({ bloodGroup: 1, district: 1 });
+  donorSchema.index({ bloodGroup: 1, district: 1 });
+  donorSchema.index({ districtId: 1 });
+  donorSchema.index({ location: '2dsphere' });
 
 export default mongoose.models.Donor || mongoose.model('Donor', donorSchema);

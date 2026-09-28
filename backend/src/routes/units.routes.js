@@ -9,6 +9,7 @@ import {
 } from '../schemas/unit.schema.js';
 import {
   listUnits,
+  unitsSummary,
   createUnit,
   updateUnitStatus,
   recordTestResult,
@@ -17,6 +18,7 @@ import {
 const router = Router();
 
 router.get('/', requireAuth, listUnits);
+router.get('/summary', requireAuth, unitsSummary);
 router.post(
   '/',
   requireAuth,

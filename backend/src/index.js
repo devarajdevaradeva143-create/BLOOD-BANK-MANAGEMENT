@@ -19,6 +19,7 @@ import unitsRoutes from './routes/units.routes.js';
 import availabilityRoutes from './routes/availability.routes.js';
 import statsRoutes from './routes/stats.routes.js';
 import chatRoutes from './routes/chat.routes.js';
+import notificationRoutes from './routes/notifications.routes.js';
 
 const app = express();
 
@@ -61,6 +62,7 @@ app.use('/api/units', unitsRoutes);
 app.use('/api/availability', availabilityRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/chat', chatRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // --- 404 + error handler (must be last) ---
 app.use(notFound);

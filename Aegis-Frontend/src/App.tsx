@@ -23,6 +23,8 @@ import SuperAdminMessagesPage from './pages/superadmin/MessagesPage';
 import SuperAdminProfilePage from './pages/superadmin/ProfilePage';
 import SuperAdminSettingsPage from './pages/superadmin/SettingsPage';
 import DashboardPage from './pages/DashboardPage';
+import OverviewPage from './pages/OverviewPage';
+import HospitalsPage from './pages/HospitalsPage';
 import BloodUnitsPage from './pages/BloodUnitsPage';
 import AddUnitPage from './pages/AddUnitPage';
 import TestingPage from './pages/TestingPage';
@@ -31,6 +33,9 @@ import HistoryPage from './pages/HistoryPage';
 import DistrictRequestsPage from './pages/RequestsPage';
 import DistrictDonorsPage from './pages/DonorsPage';
 import DistrictDonationsPage from './pages/DonationsPage';
+import DonorsMapPage from './pages/DonorsMapPage';
+import DistrictReportsPage from './pages/ReportsPage';
+import NotificationsPage from './pages/NotificationsPage';
 import MessagesPage from './pages/MessagesPage';
 import ProfilePage from './pages/ProfilePage';
 import SettingsPage from './pages/SettingsPage';
@@ -66,6 +71,8 @@ export default function App() {
                   <Route element={<Layout />}>
                     <Route index element={<Navigate to="/dashboard" replace />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/overview" element={<OverviewPage />} />
+                    <Route path="/hospitals" element={<HospitalsPage />} />
                     <Route path="/units" element={<BloodUnitsPage />} />
                     <Route path="/units/new" element={<AddUnitPage />} />
                     <Route path="/testing" element={<TestingPage />} />
@@ -74,6 +81,9 @@ export default function App() {
                     <Route path="/requests" element={<DistrictRequestsPage />} />
                     <Route path="/donations" element={<DistrictDonationsPage />} />
                     <Route path="/donors" element={<DistrictDonorsPage />} />
+                    <Route path="/donors-map" element={<DonorsMapPage />} />
+                    <Route path="/reports" element={<DistrictReportsPage />} />
+                    <Route path="/notifications" element={<NotificationsPage />} />
                     <Route path="/messages" element={<MessagesPage />} />
                     <Route path="/profile" element={<ProfilePage />} />
                     <Route path="/settings" element={<SettingsPage />} />

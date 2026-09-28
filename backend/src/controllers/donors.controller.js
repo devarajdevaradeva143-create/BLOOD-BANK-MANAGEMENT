@@ -40,7 +40,7 @@ function escapeRegex(s) {
  * Body: donor fields + { code } (mobile OTP, purpose 'donor').
  */
 export const createDonor = asyncHandler(async (req, res) => {
-  const { mobile, code, otp, otpCode, ...donorData } = req.body;
+  const { mobile, code, otp, otpCode, lat, lng, ...donorData } = req.body;
   const plainCode = code ?? otp ?? otpCode;
 
   if (!mobile) {
@@ -52,8 +52,25 @@ export const createDonor = asyncHandler(async (req, res) => {
 
   await verifyOtpInternal(String(mobile).trim(), String(plainCode).trim(), 'donor');
 
+  const districtRaw = String(donorData.district || '').trim();
+  const districtId =
+    String(donorData.districtId || districtRaw).trim().toLowerCase() || undefined;
+  const latNum = lat === undefined || lat === null || lat === '' ? undefined : Number(lat);
+  const lngNum = lng === undefined || lng === null || lng === '' ? undefined : Number(lng);
+  const hasCoords =
+    Number.isFinite(latNum) &&
+    Number.isFinite(lngNum) &&
+    latNum >= -90 &&
+    latNum <= 90 &&
+    lngNum >= -180 &&
+    lngNum <= 180;
+
   const donor = await Donor.create({
     ...donorData,
+    ...(districtId ? { districtId } : {}),
+    ...(hasCoords
+      ? { location: { type: 'Point', coordinates: [lngNum, latNum] } }
+      : {}),
     mobile: String(mobile).trim(),
     donorId: genDonorId(),
     mobileVerified: true,
@@ -233,9 +250,84 @@ export const resetDonorPassword = asyncHandler(async (req, res) => {
     .json({ message: 'Password reset successful. Please login again.' });
 });
 
+/**
+ * GET /api/donors/map (auth required)
+ * DistrictAdmin-ku avanga district donors mattum — map dots + trip planning ku.
+ * Query: ?bloodGroup=&district=&districtId=&limit= (max 500, default 200)
+ * Returns lightweight rows with address + location.
+ */
+export const listDonorMap = asyncHandler(async (req, res) => {
+  const { bloodGroup, district, districtId } = req.query;
+  const limit = Math.min(
+    500,
+    Math.max(1, Number.parseInt(req.query.limit, 10) || 200)
+  );
+
+  const filter = {};
+  if (bloodGroup) filter.bloodGroup = bloodGroup;
+
+  let adminDistrict = String(req.user?.districtId || '').trim().toLowerCase();
+  if (!adminDistrict && req.user?.id && req.user?.role !== 'Hospital') {
+    try {
+      const me = await User.findById(req.user.id).select('districtId').lean();
+      adminDistrict = String(me?.districtId || '').trim().toLowerCase();
+    } catch {
+      adminDistrict = '';
+    }
+  }
+  if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
+    return res.status(403).json({ message: 'Forbidden: district not assigned' });
+  }
+  if (req.user?.role === 'DistrictAdmin' && adminDistrict) {
+    filter.$or = [
+      { districtId: new RegExp(`^${escapeRegex(adminDistrict)}$`, 'i') },
+      {
+        districtId: { $in: [null, ''] },
+        district: new RegExp(`^${escapeRegex(adminDistrict)}$`, 'i'),
+      },
+    ];
+  } else if (districtId || district) {
+    const slug = String(districtId || district).trim();
+    filter.$or = [
+      { districtId: new RegExp(`^${escapeRegex(slug)}$`, 'i') },
+      {
+        districtId: { $in: [null, ''] },
+        district: new RegExp(`^${escapeRegex(slug)}$`, 'i'),
+      },
+    ];
+  }
+
+  const docs = await Donor.find(filter)
+    .select('donorId fullName bloodGroup mobile district districtId city pincode address status location')
+    .sort({ createdAt: -1 })
+    .limit(limit)
+    .lean();
+
+  const data = docs.map((d) => {
+    const coords = Array.isArray(d.location?.coordinates) ? d.location.coordinates : null;
+    return {
+      donorId: d.donorId,
+      fullName: d.fullName,
+      bloodGroup: d.bloodGroup,
+      mobile: d.mobile,
+      district: d.district,
+      districtId: d.districtId,
+      city: d.city,
+      pincode: d.pincode,
+      address: d.address,
+      status: d.status,
+      lat: coords && Number.isFinite(coords[1]) ? coords[1] : null,
+      lng: coords && Number.isFinite(coords[0]) ? coords[0] : null,
+    };
+  });
+
+  return res.status(200).json({ data, total: data.length, limit });
+});
+
 export default {
   createDonor,
   listDonors,
+  listDonorMap,
   forgotDonorPassword,
   resetDonorPassword,
 };

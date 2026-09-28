@@ -1,5 +1,6 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import BloodUnit from '../models/BloodUnit.js';
+import User from '../models/User.js';
 import { genUnitCode } from '../utils/ids.js';
 import { logAudit } from '../middleware/audit.js';
 
@@ -29,19 +30,77 @@ function actor(req) {
   return req.user?.id || req.user?.staffId || null;
 }
 
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function exactCaseInsensitive(s) {
+  return new RegExp(`^${escapeRegExp(String(s).trim())}$`, 'i');
+}
+
+async function resolveAdminDistrict(req) {
+  let d = String(req.user?.districtId || '').trim().toLowerCase();
+  if (!d && req.user?.id && req.user?.role !== 'Hospital') {
+    try {
+      const me = await User.findById(req.user.id).select('districtId').lean();
+      d = String(me?.districtId || '').trim().toLowerCase();
+    } catch {
+      d = '';
+    }
+  }
+  return d;
+}
+
 /**
  * GET /api/units (auth required at route level)
- * Query: ?bloodGroup=&district=&status=&component=&search=&page=&limit=
+ * Query: ?bloodGroup=&district=&districtId=&status=&component=&testStatus=
+ *   &expiryBefore=&expiryAfter=&search=&page=&limit=
+ * District scope: DistrictAdmin is forced to own district (fail-closed 403
+ * if missing). `districtId` is an alias of `district` (exact,
+ * case-insensitive). Backwards compat: plain `?district=` still works.
  */
 export const listUnits = asyncHandler(async (req, res) => {
-  const { bloodGroup, district, status, component, search } = req.query;
+  const {
+    bloodGroup,
+    district,
+    districtId,
+    status,
+    component,
+    search,
+    testStatus,
+    expiryBefore,
+    expiryAfter,
+  } = req.query;
   const { page, limit, skip } = parsePagination(req.query);
+
+  const adminDistrict = await resolveAdminDistrict(req);
+  if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
+    return res.status(403).json({ message: 'Forbidden: district not assigned' });
+  }
 
   const filter = {};
   if (bloodGroup) filter.bloodGroup = bloodGroup;
-  if (district) filter.district = new RegExp(`^${String(district).trim()}$`, 'i');
+  if (req.user?.role === 'DistrictAdmin') {
+    filter.district = exactCaseInsensitive(adminDistrict);
+  } else {
+    const d = districtId || district;
+    if (d) filter.district = exactCaseInsensitive(d);
+  }
   if (status) filter.status = status;
   if (component) filter.component = component;
+  if (testStatus) filter.testStatus = testStatus;
+  if (expiryBefore || expiryAfter) {
+    filter.expiryDate = {};
+    if (expiryBefore) {
+      const dt = new Date(expiryBefore);
+      if (!Number.isNaN(dt.getTime())) filter.expiryDate.$lte = dt;
+    }
+    if (expiryAfter) {
+      const dt = new Date(expiryAfter);
+      if (!Number.isNaN(dt.getTime())) filter.expiryDate.$gte = dt;
+    }
+    if (Object.keys(filter.expiryDate).length === 0) delete filter.expiryDate;
+  }
   if (search) {
     const q = String(search).trim();
     filter.$or = [
@@ -62,6 +121,82 @@ export const listUnits = asyncHandler(async (req, res) => {
     limit,
     total,
     totalPages: Math.max(1, Math.ceil(total / limit)),
+  });
+});
+
+const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
+
+/**
+ * GET /api/units/summary (auth required at route level)
+ * District-scoped stock summary. DistrictAdmin is forced to own district
+ * (fail-closed 403 if missing); others may pass ?districtId= / ?district=.
+ * Returns { district, byBloodGroup, byStatus, byTestStatus, expired,
+ *   expiringSoon, total }.
+ */
+export const unitsSummary = asyncHandler(async (req, res) => {
+  const adminDistrict = await resolveAdminDistrict(req);
+  if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
+    return res.status(403).json({ message: 'Forbidden: district not assigned' });
+  }
+
+  let district = '';
+  if (req.user?.role === 'DistrictAdmin') {
+    district = adminDistrict;
+  } else {
+    const q = req.query.districtId || req.query.district || adminDistrict;
+    district = String(q || '').trim().toLowerCase();
+  }
+
+  const baseMatch = district ? { district: exactCaseInsensitive(district) } : {};
+  const now = new Date();
+  const today = new Date(now);
+  today.setHours(0, 0, 0, 0);
+  const in30d = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+  const [total, byStatusAgg, byTestAgg, byGroupAgg, expired, expiringSoon] =
+    await Promise.all([
+      BloodUnit.countDocuments(baseMatch),
+      BloodUnit.aggregate([
+        { $match: baseMatch },
+        { $group: { _id: '$status', count: { $sum: 1 } } },
+      ]),
+      BloodUnit.aggregate([
+        { $match: baseMatch },
+        { $group: { _id: '$testStatus', count: { $sum: 1 } } },
+      ]),
+      BloodUnit.aggregate([
+        { $match: { ...baseMatch, status: 'Available' } },
+        { $group: { _id: '$bloodGroup', quantity: { $sum: '$quantity' } } },
+      ]),
+      BloodUnit.countDocuments({ ...baseMatch, expiryDate: { $lt: today } }),
+      BloodUnit.countDocuments({
+        ...baseMatch,
+        expiryDate: { $gte: today, $lte: in30d },
+      }),
+    ]);
+
+  const byStatus = {};
+  for (const r of byStatusAgg) {
+    if (r._id) byStatus[r._id] = r.count;
+  }
+  const byTestStatus = {};
+  for (const r of byTestAgg) {
+    if (r._id) byTestStatus[r._id] = r.count;
+  }
+  const byBloodGroup = {};
+  for (const g of BLOOD_GROUPS) byBloodGroup[g] = 0;
+  for (const r of byGroupAgg) {
+    if (r._id && byBloodGroup[r._id] !== undefined) byBloodGroup[r._id] = r.quantity || 0;
+  }
+
+  return res.status(200).json({
+    district,
+    byBloodGroup,
+    byStatus,
+    byTestStatus,
+    expired,
+    expiringSoon,
+    total,
   });
 });
 
@@ -169,4 +304,4 @@ export const recordTestResult = asyncHandler(async (req, res) => {
   return res.status(200).json({ message: 'Test result recorded', unit });
 });
 
-export default { listUnits, createUnit, updateUnitStatus, recordTestResult };
+export default { listUnits, unitsSummary, createUnit, updateUnitStatus, recordTestResult };

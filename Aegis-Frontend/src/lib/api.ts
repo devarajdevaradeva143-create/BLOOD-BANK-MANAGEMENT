@@ -460,6 +460,37 @@ export async function listDonors(params: ListDonorsParams = {}): Promise<ListDon
   };
 }
 
+export interface ListDonorMapParams {
+  bloodGroup?: string;
+  district?: string;
+  districtId?: string;
+  limit?: number;
+}
+
+export interface ListDonorMapResult {
+  data: any[];
+  total: number;
+  limit?: number;
+}
+
+export async function listDonorMap(params: ListDonorMapParams = {}): Promise<ListDonorMapResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    limit?: number;
+  }>(`/api/donors/map${query}`, { auth: true });
+  return {
+    data: data.data ?? [],
+    total: data.total ?? 0,
+    limit: data.limit,
+  };
+}
+
 export interface ListDonationsParams {
   bloodGroup?: string;
   districtId?: string;
@@ -631,4 +662,257 @@ export async function sendMessage(input: { subject: string; body: string }): Pro
     auth: true,
   });
   return mapServerMessage(data.data);
+}
+
+export interface UnitsSummary {
+  total?: number;
+  byGroup?: Record<string, number>;
+  byStatus?: Record<string, number>;
+  [key: string]: unknown;
+}
+
+export async function listUnitsSummary(): Promise<UnitsSummary> {
+  return apiFetch<UnitsSummary>('/api/units/summary', { auth: true });
+}
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  link?: string;
+  read: boolean;
+  createdAt: string;
+}
+
+export function mapServerNotification(raw: any): AppNotification {
+  const id =
+    (typeof raw?.notificationId === 'string' && raw.notificationId) ||
+    (typeof raw?._id === 'string' && raw._id) ||
+    String(raw?.id ?? '');
+  const read =
+    typeof raw?.read === 'boolean'
+      ? raw.read
+      : typeof raw?.isRead === 'boolean'
+        ? raw.isRead
+        : String(raw?.status ?? '').toLowerCase() === 'read';
+  const link =
+    raw?.link !== undefined && raw?.link !== null && String(raw.link) !== ''
+      ? String(raw.link)
+      : undefined;
+  return {
+    id,
+    type: String(raw?.type ?? 'info'),
+    title: String(raw?.title ?? raw?.subject ?? ''),
+    body: String(raw?.body ?? raw?.message ?? ''),
+    link,
+    read,
+    createdAt:
+      typeof raw?.createdAt === 'string'
+        ? raw.createdAt
+        : raw?.createdAt
+          ? toIsoString(raw.createdAt, new Date().toISOString())
+          : new Date().toISOString(),
+  };
+}
+
+export interface ListNotificationsParams {
+  search?: string;
+  page?: number;
+  limit?: number;
+  unreadOnly?: boolean;
+}
+
+export interface ListNotificationsResult {
+  data: AppNotification[];
+  total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export async function listNotifications(
+  params: ListNotificationsParams = {},
+): Promise<ListNotificationsResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }>(`/api/notifications${query}`, { auth: true });
+  return {
+    data: (data.data ?? []).map(mapServerNotification),
+    total: data.total ?? 0,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
+}
+
+export async function markNotificationRead(id: string): Promise<AppNotification> {
+  const data = await apiFetch<{ notification?: any } | any>(
+    `/api/notifications/${encodeURIComponent(id)}/read`,
+    {
+      method: 'PATCH',
+      auth: true,
+    },
+  );
+  const raw = (data as { notification?: unknown })?.notification ?? data;
+  if (raw && typeof raw === 'object') {
+    try {
+      const mapped = mapServerNotification(raw);
+      if (mapped.id) return { ...mapped, read: true };
+    } catch {
+      /* fall through to synthesized receipt */
+    }
+  }
+  return {
+    id,
+    type: 'info',
+    title: '',
+    body: '',
+    read: true,
+    createdAt: new Date().toISOString(),
+  };
+}
+
+export interface DistrictHospital {
+  id: string;
+  name: string;
+  district: string;
+  license?: string;
+  contact: string;
+  email?: string;
+  address?: string;
+  officer?: string;
+  adminName?: string;
+  status: string;
+}
+
+export interface ListHospitalsParams {
+  district?: string;
+  districtId?: string;
+  search?: string;
+  status?: string;
+  page?: number;
+  limit?: number;
+}
+
+export interface ListHospitalsResult {
+  data: DistrictHospital[];
+  total: number;
+  page?: number;
+  limit?: number;
+  totalPages?: number;
+}
+
+export function mapServerHospital(raw: any): DistrictHospital {
+  const r = (raw ?? {}) as Record<string, unknown>;
+  const str = (v: unknown): string => (typeof v === 'string' ? v : v === null || v === undefined ? '' : String(v));
+  const first = (...vals: unknown[]): string => {
+    for (const v of vals) {
+      const s = str(v);
+      if (s) return s;
+    }
+    return '';
+  };
+  return {
+    id: first(r.id, r._id, r.hospitalId),
+    name: first(r.name, r.hospitalName),
+    district: first(r.district, r.districtId),
+    license: str(r.license) || undefined,
+    contact: first(r.contact, r.mobile, r.phone),
+    email: str(r.email) || undefined,
+    address: str(r.address) || undefined,
+    officer: first(r.officer, r.adminName, r.incharge) || undefined,
+    adminName: str(r.adminName) || undefined,
+    status: str(r.status) || 'approved',
+  };
+}
+
+export async function listHospitals(params: ListHospitalsParams = {}): Promise<ListHospitalsResult> {
+  const qs = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined && value !== null && value !== '') qs.set(key, String(value));
+  }
+  const query = qs.toString() ? `?${qs.toString()}` : '';
+  const data = await apiFetch<{
+    data: any[];
+    total: number;
+    page?: number;
+    limit?: number;
+    totalPages?: number;
+  }>(`/api/hospitals${query}`, { auth: true });
+  return {
+    data: (data.data ?? []).map(mapServerHospital),
+    total: data.total ?? 0,
+    page: data.page,
+    limit: data.limit,
+    totalPages: data.totalPages,
+  };
+}
+
+export interface DistrictActivityItem {
+  id: string;
+  title: string;
+  detail?: string;
+  at: string;
+}
+
+export interface DistrictStats {
+  totalUnits: number;
+  availableUnits: number;
+  totalRequests: number;
+  totalDonations: number;
+  totalHospitals: number;
+  stockByGroup: Record<string, number>;
+  recentActivity: DistrictActivityItem[];
+}
+
+function toNumber(value: unknown): number {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
+export function mapServerDistrictStats(raw: any): DistrictStats {
+  const src = (raw !== null && typeof raw === 'object' && 'data' in raw && (raw as { data: unknown }).data !== undefined
+    ? (raw as { data: any }).data
+    : raw ?? {}) as Record<string, unknown>;
+  const str = (v: unknown): string => (typeof v === 'string' ? v : v === null || v === undefined ? '' : String(v));
+  const stockRaw = (src.stockByGroup ?? src.stock ?? {}) as Record<string, unknown>;
+  const stockByGroup: Record<string, number> = {};
+  for (const [k, v] of Object.entries(stockRaw)) stockByGroup[k] = toNumber(v);
+  const activityRaw = Array.isArray(src.recentActivity)
+    ? (src.recentActivity as unknown[])
+    : Array.isArray(src.recent)
+      ? (src.recent as unknown[])
+      : [];
+  const recentActivity: DistrictActivityItem[] = activityRaw.map((item, index) => {
+    const r = (item ?? {}) as Record<string, unknown>;
+    const id = str(r.id) || str(r._id) || `activity-${index}`;
+    const title = str(r.title) || str(r.message) || str(r.text) || str(r.type) || 'Activity';
+    const detail = str(r.detail) || str(r.body) || str(r.note) || undefined;
+    const at = str(r.at) || str(r.createdAt) || str(r.updatedAt) || str(r.date) || new Date().toISOString();
+    return { id, title, detail, at };
+  });
+  return {
+    totalUnits: toNumber(src.totalUnits ?? src.units),
+    availableUnits: toNumber(src.availableUnits ?? src.available),
+    totalRequests: toNumber(src.totalRequests ?? src.requests),
+    totalDonations: toNumber(src.totalDonations ?? src.donations),
+    totalHospitals: toNumber(src.totalHospitals ?? src.hospitals),
+    stockByGroup,
+    recentActivity,
+  };
+}
+
+export async function getDistrictStats(): Promise<DistrictStats> {
+  const data = await apiFetch<any>('/api/stats/district', { auth: true });
+  return mapServerDistrictStats(data);
 }

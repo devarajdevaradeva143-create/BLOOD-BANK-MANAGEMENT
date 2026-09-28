@@ -11,6 +11,7 @@ import {
 import {
   createDonor,
   listDonors,
+  listDonorMap,
   forgotDonorPassword,
   resetDonorPassword,
 } from '../controllers/donors.controller.js';
@@ -22,6 +23,7 @@ const donorCreateWithOtpSchema = donorCreateSchema.extend({
 const router = Router();
 
 router.post('/', validate(donorCreateWithOtpSchema), createDonor);
+router.get('/map', requireAuth, listDonorMap);
 router.get('/', requireAuth, listDonors);
 // Secure donor password reset (generic responses, hashed OTP, cooldown).
 router.post(

@@ -48,7 +48,7 @@ const NAV_GROUPS: NavGroup[] = [
     labelKey: 'nav.main',
     items: [
       { to: '/dashboard', labelKey: 'nav.dashboard', icon: LayoutDashboard },
-      { labelKey: 'nav.overview', icon: Eye, disabled: true },
+      { to: '/overview', labelKey: 'nav.overview', icon: Eye },
     ],
   },
   {
@@ -66,23 +66,23 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/requests', labelKey: 'nav.requests', icon: ClipboardList },
       { to: '/donations', labelKey: 'nav.donations', icon: Gift },
       { to: '/donors', labelKey: 'nav.donors', icon: HeartHandshake },
-      { labelKey: 'nav.hospitals', icon: Building2, disabled: true },
-      { labelKey: 'nav.districtRecords', icon: Map, disabled: true },
+      { to: '/donors-map', labelKey: 'nav.districtRecords', icon: Map },
+      { to: '/hospitals', labelKey: 'nav.hospitals', icon: Building2 },
     ],
   },
   {
     labelKey: 'nav.reports',
     items: [
-      { labelKey: 'nav.bloodStockReports', icon: BarChart3, disabled: true },
-      { labelKey: 'nav.testingReports', icon: ClipboardCheck, disabled: true },
-      { labelKey: 'nav.expiryReports', icon: FileWarning, disabled: true },
+      { to: '/reports?tab=stock', labelKey: 'nav.bloodStockReports', icon: BarChart3 },
+      { to: '/reports?tab=testing', labelKey: 'nav.testingReports', icon: ClipboardCheck },
+      { to: '/reports?tab=expiry', labelKey: 'nav.expiryReports', icon: FileWarning },
     ],
   },
   {
     labelKey: 'nav.system',
     items: [
       { to: '/messages', labelKey: 'messages.title', icon: MessageSquare },
-      { labelKey: 'nav.notifications', icon: Bell, disabled: true },
+      { to: '/notifications', labelKey: 'nav.notifications', icon: Bell },
       { to: '/profile', labelKey: 'nav.profile', icon: User },
       { to: '/settings', labelKey: 'nav.settings', icon: Settings },
       { labelKey: 'nav.logout', icon: LogOut, action: 'logout' },

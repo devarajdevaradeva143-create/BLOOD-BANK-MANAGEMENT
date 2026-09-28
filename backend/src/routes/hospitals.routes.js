@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authRequired as requireAuth } from '../middleware/auth.js';
+import { requireRole } from '../middleware/roles.js';
 import { validate } from '../middleware/validate.js';
 import { authLimiter } from '../middleware/rateLimit.js';
 import {
@@ -10,6 +11,7 @@ import {
   hospitalUpdateSchema,
 } from '../schemas/auth.schema.js';
 import {
+  listHospitals,
   registerHospital,
   loginHospital,
   refreshHospital,
@@ -22,6 +24,7 @@ import {
 
 const router = Router();
 
+router.get('/', requireAuth, requireRole('DistrictAdmin', 'SuperAdmin'), listHospitals);
 router.post('/register', authLimiter, validate(hospitalRegisterSchema), registerHospital);
 router.post('/login', authLimiter, validate(hospitalLoginSchema), loginHospital);
 router.post('/refresh', refreshHospital);

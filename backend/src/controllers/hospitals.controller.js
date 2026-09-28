@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import Hospital from '../models/Hospital.js';
+import User from '../models/User.js';
 import Otp from '../models/Otp.js';
 import { config } from '../config/env.js';
 import { logAudit } from '../middleware/audit.js';
@@ -57,6 +58,78 @@ function pruneExpiredTokens(hospital) {
     (t) => t && t.expiresAt && new Date(t.expiresAt) > now
   );
 }
+
+function parsePagination(query) {
+  const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
+  const limit = Math.min(
+    100,
+    Math.max(1, Number.parseInt(query.limit, 10) || 20)
+  );
+  return { page, limit, skip: (page - 1) * limit };
+}
+
+/**
+ * GET /api/hospitals (DistrictAdmin/SuperAdmin at route level)
+ * Query: ?districtId=&search=&hospitalType=&page=&limit=
+ * District scope: DistrictAdmin forced to own district (fail-closed 403
+ * if no district); SuperAdmin may filter by ?districtId.
+ */
+export const listHospitals = asyncHandler(async (req, res) => {
+  const { districtId, search, hospitalType } = req.query;
+  const { page, limit, skip } = parsePagination(req.query);
+
+  // Resolve admin district from JWT with DB fallback (do not trust JWT alone).
+  let adminDistrict = String(req.user?.districtId || '').trim().toLowerCase();
+  if (!adminDistrict && req.user?.id && req.user?.role !== 'Hospital') {
+    try {
+      const me = await User.findById(req.user.id).select('districtId').lean();
+      adminDistrict = String(me?.districtId || '').trim().toLowerCase();
+    } catch {
+      adminDistrict = '';
+    }
+  }
+
+  // Fail-closed: DistrictAdmin without a district must not see every district.
+  if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
+    return res.status(403).json({ message: 'Forbidden: district not assigned' });
+  }
+
+  const filter = {};
+  if (req.user?.role === 'DistrictAdmin') {
+    filter.districtId = adminDistrict;
+  } else if (districtId) {
+    filter.districtId = String(districtId).trim().toLowerCase();
+  }
+  if (hospitalType) {
+    filter.hospitalType = String(hospitalType).trim();
+  }
+  if (search) {
+    const q = String(search).trim();
+    filter.$or = [
+      { hospitalName: new RegExp(q, 'i') },
+      { email: new RegExp(q, 'i') },
+      { registrationNumber: new RegExp(q, 'i') },
+      { hospitalId: new RegExp(q, 'i') },
+    ];
+  }
+
+  const [docs, total] = await Promise.all([
+    Hospital.find(filter)
+      .select('-passwordHash -refreshTokens')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
+    Hospital.countDocuments(filter),
+  ]);
+
+  return res.status(200).json({
+    data: docs.map(toSafeHospital),
+    page,
+    limit,
+    total,
+    totalPages: Math.max(1, Math.ceil(total / limit)),
+  });
+});
 
 async function issueSession(hospital, res, req, auditAction) {
   const accessToken = signAccess({ _id: hospital._id, role: 'Hospital', districtId: hospital.districtId });
@@ -337,6 +410,7 @@ export const resetHospitalPassword = asyncHandler(async (req, res) => {
 });
 
 export default {
+  listHospitals,
   registerHospital,
   loginHospital,
   refreshHospital,
