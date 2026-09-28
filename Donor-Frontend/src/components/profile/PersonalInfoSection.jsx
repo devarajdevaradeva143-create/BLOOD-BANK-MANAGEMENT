@@ -14,6 +14,7 @@ export default function PersonalInfoSection({
   editing,
   onChange,
   errors,
+  t,
 }) {
   const handleChange = (field) => (v) => onChange(field, toValue(v));
 
@@ -23,24 +24,24 @@ export default function PersonalInfoSection({
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <h3 className="mb-1 text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
         <User className="h-5 w-5 text-brand-600" />
-        Personal Information
+        {t("profile.section.personalInfo")}
       </h3>
       <p className="mb-6 text-xs text-gray-500 dark:text-slate-400">
-        Email, Mobile, District, Address mattum edit panna mudiyum.
+        {t("profile.section.personalDesc")}
       </p>
       <div className="grid gap-5 sm:grid-cols-2">
         <Input
-          label="Full Name"
+          label={t("profile.field.fullName")}
           id="name"
           value={safe(donor.name)}
           onChange={handleChange("name")}
           error={errors.name}
           disabled
           required
-          placeholder="Enter your full name"
+          placeholder={t("profile.placeholder.name")}
         />
         <Select
-          label="Blood Group"
+          label={t("profile.field.bloodGroup")}
           id="bloodGroup"
           value={safe(donor.bloodGroup)}
           onChange={handleChange("bloodGroup")}
@@ -51,7 +52,7 @@ export default function PersonalInfoSection({
         />
         {/* Email — user edit pannalam */}
         <Input
-          label="Email Address"
+          label={t("profile.field.email")}
           id="email"
           type="email"
           value={safe(donor.email)}
@@ -59,11 +60,11 @@ export default function PersonalInfoSection({
           error={errors.email}
           disabled={!editing}
           required
-          placeholder="you@example.com"
+          placeholder={t("profile.placeholder.email")}
         />
         {/* Contact No — user edit pannalam */}
         <Input
-          label="Mobile Number"
+          label={t("profile.field.mobile")}
           id="phone"
           type="tel"
           value={safe(donor.phone)}
@@ -71,11 +72,11 @@ export default function PersonalInfoSection({
           error={errors.phone}
           disabled={!editing}
           required
-          placeholder="10-digit phone"
+          placeholder={t("profile.placeholder.phone")}
           maxLength={10}
         />
         <Input
-          label="Date of Birth"
+          label={t("profile.field.dob")}
           id="dob"
           type="date"
           value={safe(donor.dob)}
@@ -85,7 +86,7 @@ export default function PersonalInfoSection({
           required
         />
         <Select
-          label="Gender"
+          label={t("profile.field.gender")}
           id="gender"
           value={safe(donor.gender)}
           onChange={handleChange("gender")}
@@ -95,18 +96,18 @@ export default function PersonalInfoSection({
           required
         />
         <Input
-          label="Address"
+          label={t("profile.field.address")}
           id="address"
           value={safe(donor.address)}
           onChange={handleChange("address")}
           error={errors.address}
           disabled={!editing}
           required
-          placeholder="Enter your address"
+          placeholder={t("profile.placeholder.address")}
         />
         {/* District — user edit pannalam */}
         <Select
-          label="District"
+          label={t("profile.field.district")}
           id="district"
           value={safe(donor.district)}
           onChange={handleChange("district")}

@@ -15,7 +15,7 @@ export default function DonationInfoSection({ donor, t }) {
     <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <h3 className="mb-6 text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
         <CalendarDays className="h-5 w-5 text-brand-600" />
-        Donation Information
+        {t("profile.section.donationInfo")}
       </h3>
       <div className="grid gap-5 sm:grid-cols-2">
         <div className="rounded-xl border border-gray-100 bg-gray-50 p-4 dark:border-slate-800 dark:bg-slate-950">
@@ -69,7 +69,7 @@ export default function DonationInfoSection({ donor, t }) {
             {t("profile.eligibility")}
           </div>
           <p className="mt-1 text-base font-semibold text-gray-900 dark:text-white">
-            {safeDonor.isActive ? "Active Donor" : "Inactive"}
+            {safeDonor.isActive ? t("profile.activeDonor") : t("profile.inactiveDonor")}
           </p>
         </div>
       </div>

@@ -12,21 +12,18 @@ import { submitDonationServer } from "../../services/donationStore";
 import {
   TN_DISTRICTS,
   BLOOD_GROUPS,
-  DONATION_CENTERS,
   toDistrictId,
 } from "../../data/constants";
 
 const INITIAL_FORM = {
   donorName: "",
-  donorId: "",
   bloodGroup: "",
-  age: "",
+  age: 18,
   gender: "",
   mobile: "",
   email: "",
   district: "",
-  center: "",
-  date: "",
+  date: localToday(),
   time: "",
   prevDate: "",
   notes: "",
@@ -69,9 +66,8 @@ function buildDonationPayload(formValues, code) {
     // compatibility and local offline cache / Confirmation display.
     date,
     time,
-    donorId: String(formValues.donorId || "").trim(),
+
     email: String(formValues.email || "").trim(),
-    center: formValues.center || "",
   };
 }
 
@@ -120,7 +116,7 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
     const newErrors = {};
 
     if (!form.donorName.trim()) newErrors.donorName = t("donate.validation.name");
-    if (!form.donorId.trim()) newErrors.donorId = t("donate.validation.donorId");
+
     if (!form.bloodGroup) newErrors.bloodGroup = t("donate.validation.bloodGroup");
 
     if (!String(form.age).trim()) {
@@ -140,7 +136,6 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
       newErrors.email = t("donate.validation.email");
 
     if (!form.district) newErrors.district = t("donate.validation.district");
-    if (!form.center) newErrors.center = t("donate.validation.center");
     if (!form.date) newErrors.date = t("donate.validation.date");
     if (!form.time) newErrors.time = t("donate.validation.time");
 
@@ -225,15 +220,7 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
             placeholder={t("donate.field.donorName")}
             required
           />
-          <Input
-            id="donorId"
-            label={t("donate.field.donorId")}
-            value={form.donorId}
-            onChange={(v) => handleChange("donorId", v)}
-            error={errors.donorId}
-            placeholder={t("donate.placeholder.donorId")}
-            required
-          />
+
           <Select
             id="bloodGroup"
             label={t("donate.field.bloodGroup")}
@@ -253,6 +240,8 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
             error={errors.age}
             placeholder={t("donate.placeholder.age")}
             required
+            min={18}
+            max={65}
           />
           <div>
             <label
@@ -331,26 +320,49 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
             placeholder={t("donate.placeholder.select")}
             required
           />
-          <Select
-            id="center"
-            label={t("donate.field.center")}
-            value={form.center}
-            onChange={(v) => handleChange("center", v)}
-            options={DONATION_CENTERS}
-            error={errors.center}
-            placeholder={t("donate.placeholder.select")}
-            required
-          />
-          <Input
-            id="date"
-            type="date"
-            label={t("donate.field.date")}
-            value={form.date}
-            onChange={(v) => handleChange("date", v)}
-            error={errors.date}
-            min={today}
-            required
-          />
+          <div>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300">
+              {t("donate.field.date")}
+            </label>
+            <div className="flex flex-col gap-2">
+              {form.date.split(",").map((d, i) => d.trim() && (
+                <div key={i} className="flex items-center gap-2">
+                  <Input
+                    type="date"
+                    value={d.trim()}
+                    onChange={(v) => {
+                      const dates = form.date.split(",").map((x) => x.trim()).filter(Boolean);
+                      dates[i] = v;
+                      handleChange("date", dates.join(", "));
+                    }}
+                    min={today}
+                    className="flex-1"
+                  />
+                  {form.date.split(",").filter((x) => x.trim()).length > 1 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const dates = form.date.split(",").map((x) => x.trim()).filter(Boolean);
+                        dates.splice(i, 1);
+                        handleChange("date", dates.join(", "));
+                      }}
+                      className="rounded-lg border border-gray-300 bg-white p-2 text-gray-500 hover:bg-gray-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => handleChange("date", form.date ? form.date + ", " : "")}
+                className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
+              >
+                <Plus className="h-4 w-4" />
+                {t("donate.addDate")}
+              </button>
+            </div>
+          </div>
           <Input
             id="time"
             type="time"
@@ -368,8 +380,9 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
             onChange={(v) => handleChange("prevDate", v)}
             error={errors.prevDate}
             max={today}
-            className="sm:col-span-2"
           />
+
+
         </div>
       </SectionCard>
 

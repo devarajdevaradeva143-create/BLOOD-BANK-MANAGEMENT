@@ -34,14 +34,20 @@ export default {
     ta: "விருப்பமான இரத்ததான மையம்",
   },
   "donate.field.date": {
-    en: "Preferred Donation Date",
-    ta: "விருப்பமான தானத் தேதி",
+    en: "Preferred Donation Date (one or more)",
+    ta: "விருப்பமான தானத் தேதி (ஒன்று அல்லது அதற்கு மேற்பட்டவை)",
+  },
+  "donate.placeholder.date": {
+    en: "e.g. 2026-01-15, 2026-01-20, 2026-01-25",
+    ta: "எ.கா. 2026-01-15, 2026-01-20, 2026-01-25",
   },
   "donate.field.time": { en: "Preferred Time", ta: "விருப்பமான நேரம்" },
   "donate.field.prevDate": {
     en: "Previous Donation Date",
     ta: "முந்தைய தானத் தேதி",
   },
+
+
   "donate.field.eligibility": {
     en: "Health / Eligibility Confirmation",
     ta: "உடல்நல / தகுதி உறுதிப்படுத்தல்",
@@ -221,6 +227,10 @@ export default {
     en: "Could not download the certificate. Please try Print instead.",
     ta: "சான்றிதழைப் பதிவிறக்க முடியவில்லை. அச்சிடு முறையைப் பயன்படுத்தவும்.",
   },
+  "donate.confirm.cancelled": { en: "Cancelled", ta: "ரத்து செய்யப்பட்டது" },
+  "donate.confirm.approved": { en: "Approved", ta: "அங்கீகரிக்கப்பட்டது" },
+  "donate.confirm.serverId": { en: "Server Donation ID", ta: "சர்வர் தான அடையாள எண்" },
+  "donate.confirm.offline": { en: "Saved on this device only — the server was unreachable (offline mode).", ta: "இந்த சாதனத்தில் மட்டும் சேமிக்கப்பட்டது — சர்வரை அணுக முடியவில்லை (ஆஃப்லைன் முறை)." },
 
   "donate.remind.title": {
     en: "Next Donation Reminder",
