@@ -119,7 +119,8 @@ export default function DonorRegister() {
     setLoading(true);
 
     setTimeout(() => {
-      const { confirmPassword: _confirmPassword, ...formFields } = form;
+      const { confirmPassword: _confirmPassword, password: _password, ...formFields } = form;
+      void _password;
       let prev = {};
       try {
         const raw = localStorage.getItem("registeredDonor");

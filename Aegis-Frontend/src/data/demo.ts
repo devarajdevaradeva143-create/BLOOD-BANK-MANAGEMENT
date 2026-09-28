@@ -1,10 +1,14 @@
 import type { AuthUser, BloodUnit } from './types';
 
-// Frontend-only demo mode: no backend / DB needed.
-// Demo logins succeed offline and are persisted in localStorage.
+// Frontend-only demo mode: TEMPORARY, kept until user says remove.
+// Set VITE_ENABLE_DEMO=false to hide/remove it in one step.
+// Real logins always hit the backend; demo never touches real data.
 
 export const DEMO_STORAGE_KEY = 'aegis-demo-user';
 export const DEMO_UNITS_KEY = 'aegis-demo-units';
+
+export const DEMO_ENABLED: boolean =
+  (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.VITE_ENABLE_DEMO !== 'false';
 
 export interface DemoCredential {
   role: 'DistrictAdmin' | 'SuperAdmin';
@@ -33,6 +37,7 @@ export function normalizeStaffId(staffId: string): string {
 }
 
 export function findDemoAccount(staffId: string, pin: string): AuthUser | null {
+  if (!DEMO_ENABLED) return null;
   const id = normalizeStaffId(staffId);
   const pinCode = pin.trim();
   const match = DEMO_CREDENTIALS.find((d) => d.staffId === id && d.pin === pinCode);
@@ -40,6 +45,7 @@ export function findDemoAccount(staffId: string, pin: string): AuthUser | null {
 }
 
 export function getStoredDemoUser(): AuthUser | null {
+  if (!DEMO_ENABLED) return null;
   try {
     const raw = localStorage.getItem(DEMO_STORAGE_KEY);
     if (!raw) return null;

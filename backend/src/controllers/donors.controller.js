@@ -74,6 +74,13 @@ export const createDonor = asyncHandler(async (req, res) => {
     mobile: String(mobile).trim(),
     donorId: genDonorId(),
     mobileVerified: true,
+  }).catch((err) => {
+    if (err?.code === 11000) {
+      const e = new Error('Donor already exists');
+      e.statusCode = 409;
+      throw e;
+    }
+    throw err;
   });
 
   logAudit(null, 'donor.create', 'Donor', donor.donorId, req, {
@@ -119,7 +126,7 @@ export const listDonors = asyncHandler(async (req, res) => {
     filter.district = new RegExp(`^${escapeRegex(String(districtId || district).trim())}$`, 'i');
   }
   if (search) {
-    const q = String(search).trim();
+    const q = escapeRegex(String(search).trim());
     filter.$or = [
       { fullName: new RegExp(q, 'i') },
       { donorId: new RegExp(q, 'i') },
@@ -229,8 +236,7 @@ export const resetDonorPassword = asyncHandler(async (req, res) => {
       .json({ message: 'Too many OTP attempts, request a new code' });
   }
   if (!verifyHash(code, doc.codeHash)) {
-    doc.attempts = (doc.attempts || 0) + 1;
-    await doc.save();
+    await Otp.updateOne({ _id: doc._id }, { $inc: { attempts: 1 } });
     return res.status(400).json({ message: 'Invalid or expired OTP' });
   }
 

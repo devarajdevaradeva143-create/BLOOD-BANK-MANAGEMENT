@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { BloodUnit, NewUnitInput, TestResultInput, UnitStatus } from '../data/types';
-import { getStoredDemoUser, loadDemoUnits, saveDemoUnits } from '../data/demo';
+import { getStoredDemoUser, saveDemoUnits } from '../data/demo';
 import { createUnitApi, listUnits, recordTestApi, updateUnitStatusApi } from '../lib/api';
 import { getEffectiveStatus } from '../utils/expiry';
 import { useAuth } from './AuthContext';
@@ -34,31 +34,15 @@ export function UnitProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    // Demo sessions run fully offline on mock data.
-    if (getStoredDemoUser() !== null) {
-      setLoading(true);
-      setError(null);
-      try {
-        setUnits(loadDemoUnits().map(withEffectiveStatus));
-      } finally {
-        setLoading(false);
-      }
-      return;
-    }
+    // Always real backend data — no mock fallback. Failure surfaces as error.
     setLoading(true);
     setError(null);
     try {
       const result = await listUnits({ page: 1, limit: 100 });
       setUnits(result.data.map(withEffectiveStatus));
     } catch (err) {
-      // Offline backend (dev / Pages preview) → fall back to demo data
-      // so the UI stays usable instead of showing an empty error state.
-      try {
-        setUnits(loadDemoUnits().map(withEffectiveStatus));
-        setError(null);
-      } catch {
-        setError(err instanceof Error ? err.message : 'Failed to load blood units');
-      }
+      setUnits([]);
+      setError(err instanceof Error ? err.message : 'Failed to load blood units');
     } finally {
       setLoading(false);
     }

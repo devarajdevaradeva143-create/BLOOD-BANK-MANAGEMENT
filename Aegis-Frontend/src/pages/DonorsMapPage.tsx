@@ -23,16 +23,6 @@ import {
   type MappedDonor,
 } from '../utils/geo';
 
-// Demo fallback — backend illana / offline demo login la map empty ah theriyakoodadhu.
-const DEMO_DONORS: MappedDonor[] = [
-  { donorId: 'DN-101', fullName: 'Karthik Raja', bloodGroup: 'O+', mobile: '9876543210', district: 'Chennai', city: 'Anna Nagar', pincode: '600040', address: '12, 2nd Ave, Anna Nagar, Chennai', status: 'Registered', lat: 13.085, lng: 80.21, mapLat: 13.085, mapLng: 80.21, approx: false },
-  { donorId: 'DN-102', fullName: 'Priya S', bloodGroup: 'B+', mobile: '9876543211', district: 'Chennai', city: 'T Nagar', pincode: '600017', address: '45, GN Chetty Rd, T Nagar, Chennai', status: 'Registered', lat: 13.0418, lng: 80.2344, mapLat: 13.0418, mapLng: 80.2344, approx: false },
-  { donorId: 'DN-103', fullName: 'Mohammed A', bloodGroup: 'A+', mobile: '9876543212', district: 'Chennai', city: 'Velachery', pincode: '600042', address: '7, 100 Feet Rd, Velachery, Chennai', status: 'Donated', lat: 12.9757, lng: 80.2209, mapLat: 12.9757, mapLng: 80.2209, approx: false },
-  { donorId: 'DN-104', fullName: 'Divya R', bloodGroup: 'O-', mobile: '9876543213', district: 'Chennai', city: 'Adyar', pincode: '600020', address: '3, LB Rd, Adyar, Chennai', status: 'Registered', lat: 13.0012, lng: 80.2565, mapLat: 13.0012, mapLng: 80.2565, approx: false },
-  { donorId: 'DN-105', fullName: 'Suresh K', bloodGroup: 'AB+', mobile: '9876543214', district: 'Chennai', city: 'Porur', pincode: '600116', address: '22, Mount Poonamallee Rd, Porur', status: 'Registered', lat: 13.038, lng: 80.156, mapLat: 13.038, mapLng: 80.156, approx: false },
-  { donorId: 'DN-106', fullName: 'Anitha M', bloodGroup: 'B-', mobile: '9876543215', district: 'Chennai', city: 'Tambaram', pincode: '600059', address: '9, GST Rd, Tambaram, Chennai', status: 'Registered', lat: 12.9249, lng: 80.1, mapLat: 12.9249, mapLng: 80.1, approx: false },
-];
-
 const GROUP_COLORS: Record<string, string> = {
   'O+': '#dc2626',
   'O-': '#991b1b',
@@ -108,12 +98,11 @@ export default function DonorsMapPage() {
         });
         if (cancelled) return;
         const mapped = (res.data ?? []).map((d) => toMappedDonor(d, userDistrictSlug || 'chennai'));
-        // Demo fallback: backend empty / offline na sample dots kaatu.
-        setDonors(mapped.length > 0 ? mapped : DEMO_DONORS.filter((d) => !bloodGroup || d.bloodGroup === bloodGroup));
-      } catch {
+        setDonors(mapped);
+      } catch (e) {
         if (cancelled) return;
-        // Offline demo — API fail aanaalum map work aaganum.
-        setDonors(DEMO_DONORS.filter((d) => !bloodGroup || d.bloodGroup === bloodGroup));
+        setDonors([]);
+        setError(e instanceof Error ? e.message : t('donorMap.loading'));
       } finally {
         if (!cancelled) setLoading(false);
       }

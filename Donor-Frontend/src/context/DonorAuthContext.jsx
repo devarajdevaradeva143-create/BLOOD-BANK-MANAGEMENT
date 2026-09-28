@@ -36,7 +36,16 @@ export function DonorAuthProvider({ children }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const login = useCallback((email) => {
+  const login = useCallback((email, isDemo = false) => {
+    // Real website: only the temporary demo login is allowed here.
+    // VITE_ENABLE_DEMO=false disables it in one step (future removal).
+    const demoEnabled = import.meta.env.VITE_ENABLE_DEMO !== "false";
+    if (!isDemo && email !== "demo@lifesaver.com") {
+      return;
+    }
+    if (isDemo && !demoEnabled) {
+      return;
+    }
     try {
       localStorage.setItem(LOGGED_IN_KEY, "true");
     } catch {
@@ -49,10 +58,13 @@ export function DonorAuthProvider({ children }) {
   const logout = useCallback(() => {
     try {
       localStorage.removeItem(LOGGED_IN_KEY);
+      // Real-website hygiene: do not leave PII on shared devices.
+      // registeredDonor/donations/photo stay for UX, but session flag is gone.
     } catch {
       // ignore
     }
     setIsAuthenticated(false);
+    setDonorEmail("");
   }, []);
 
   return (

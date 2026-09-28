@@ -31,6 +31,10 @@ function parsePagination(query) {
   return { page, limit, skip: (page - 1) * limit };
 }
 
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
  * GET /api/admins (SuperAdmin only)
  * Query: ?role=&districtId=&search=&page=&limit=
@@ -48,7 +52,7 @@ export const listAdmins = asyncHandler(async (req, res) => {
     filter.districtId = String(districtId).trim().toLowerCase();
   }
   if (search) {
-    const q = String(search).trim();
+    const q = escapeRegex(String(search).trim());
     filter.$or = [
       { staffId: new RegExp(q, 'i') },
       { name: new RegExp(q, 'i') },

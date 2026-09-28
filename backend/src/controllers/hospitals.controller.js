@@ -52,11 +52,18 @@ function toSafeHospital(h) {
   };
 }
 
-function pruneExpiredTokens(hospital) {
+function pruneExpiredTokens(hospital, max = 5) {
   const now = new Date();
   hospital.refreshTokens = (hospital.refreshTokens || []).filter(
     (t) => t && t.expiresAt && new Date(t.expiresAt) > now
   );
+  if (hospital.refreshTokens.length >= max) {
+    hospital.refreshTokens = hospital.refreshTokens.slice(-(max - 1));
+  }
+}
+
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 function parsePagination(query) {
@@ -104,7 +111,7 @@ export const listHospitals = asyncHandler(async (req, res) => {
     filter.hospitalType = String(hospitalType).trim();
   }
   if (search) {
-    const q = String(search).trim();
+    const q = escapeRegex(String(search).trim());
     filter.$or = [
       { hospitalName: new RegExp(q, 'i') },
       { email: new RegExp(q, 'i') },
@@ -150,7 +157,8 @@ async function issueSession(hospital, res, req, auditAction) {
 /**
  * POST /api/hospitals/register
  * Body: hospital fields + { password } (validated by hospitalRegisterSchema).
- * Auto-logs the hospital in (same as donor-style onboarding).
+ * Real-website behavior: created as pending (active:false), NO auto-login.
+ * Admin approves via PATCH /:id/status before login works.
  */
 export const registerHospital = asyncHandler(async (req, res) => {
   const { password, email, registrationNumber, ...rest } = req.body;
@@ -163,16 +171,28 @@ export const registerHospital = asyncHandler(async (req, res) => {
     return res.status(409).json({ message: 'A hospital with this email or registration number already exists' });
   }
 
-  const hospital = await Hospital.create({
-    ...rest,
-    email: normalizedEmail,
-    registrationNumber: String(registrationNumber || '').trim(),
-    districtId: String(rest.districtId || '').trim().toLowerCase(),
-    passwordHash: await hashPassword(password),
-  });
+  let hospital;
+  try {
+    hospital = await Hospital.create({
+      ...rest,
+      email: normalizedEmail,
+      registrationNumber: String(registrationNumber || '').trim(),
+      districtId: String(rest.districtId || '').trim().toLowerCase(),
+      passwordHash: await hashPassword(password),
+      active: false,
+    });
+  } catch (err) {
+    if (err?.code === 11000) {
+      return res.status(409).json({ message: 'A hospital with this email or registration number already exists' });
+    }
+    throw err;
+  }
 
-  const session = await issueSession(hospital, res, req, 'hospital.register');
-  return res.status(201).json({ message: 'Hospital registered', ...session });
+  logAudit(null, 'hospital.register', 'Hospital', String(hospital._id), req);
+  return res.status(201).json({
+    message: 'Hospital registered. Pending admin approval.',
+    hospital: toSafeHospital(hospital),
+  });
 });
 
 /**
@@ -267,7 +287,7 @@ export const logoutHospital = asyncHandler(async (req, res) => {
  */
 export const meHospital = asyncHandler(async (req, res) => {
   if (!req.user?.id) {
-    return res.status(200).json({ user: req.user || null });
+    return res.status(401).json({ message: 'Unauthorized' });
   }
   if (req.user?.role !== 'Hospital') {
     return res.status(403).json({ message: 'Hospital account required' });
@@ -385,8 +405,7 @@ export const resetHospitalPassword = asyncHandler(async (req, res) => {
       .json({ message: 'Too many OTP attempts, request a new code' });
   }
   if (!verifyHash(code, doc.codeHash)) {
-    doc.attempts = (doc.attempts || 0) + 1;
-    await doc.save();
+    await Otp.updateOne({ _id: doc._id }, { $inc: { attempts: 1 } });
     return res.status(400).json({ message: 'Invalid or expired OTP' });
   }
 

@@ -102,7 +102,7 @@ export const listUnits = asyncHandler(async (req, res) => {
     if (Object.keys(filter.expiryDate).length === 0) delete filter.expiryDate;
   }
   if (search) {
-    const q = String(search).trim();
+    const q = escapeRegExp(String(search).trim());
     filter.$or = [
       { unitCode: new RegExp(q, 'i') },
       { storageLocation: new RegExp(q, 'i') },

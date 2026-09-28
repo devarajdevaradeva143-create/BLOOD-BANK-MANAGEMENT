@@ -104,6 +104,8 @@ interface ServerUser {
   role: 'DistrictAdmin' | 'SuperAdmin';
   designation?: string | null;
   districtId?: string | null;
+  email?: string | null;
+  phone?: string | null;
 }
 
 function mapServerUser(user: ServerUser): AuthUser {
@@ -113,6 +115,28 @@ function mapServerUser(user: ServerUser): AuthUser {
     role: user.role,
     designation: user.designation ?? '',
     districtId: user.districtId ?? undefined,
+    email: user.email ?? undefined,
+    phone: user.phone ?? undefined,
+  };
+}
+
+export interface PublicStats {
+  donors: number;
+  requests: number;
+  fulfilledUnits: number;
+  livesSupported: number;
+  availableUnits: number;
+}
+
+export async function getPublicStats(): Promise<PublicStats> {
+  const data = await apiFetch<Partial<PublicStats>>('/api/stats');
+  const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : 0);
+  return {
+    donors: num(data.donors),
+    requests: num(data.requests),
+    fulfilledUnits: num(data.fulfilledUnits),
+    livesSupported: num(data.livesSupported),
+    availableUnits: num(data.availableUnits),
   };
 }
 
@@ -1278,9 +1302,10 @@ export async function changePassword(input: {
   currentPassword: string;
   newPassword: string;
 }): Promise<void> {
+  // Backend contract is { currentPin, newPin } — map here so callers stay clean.
   await apiFetch<{ message?: string }>('/api/auth/change-password', {
     method: 'POST',
-    body: input,
+    body: { currentPin: input.currentPassword, newPin: input.newPassword },
     auth: true,
   });
 }

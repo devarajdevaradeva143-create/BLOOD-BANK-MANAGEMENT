@@ -29,6 +29,7 @@ router.post(
 router.patch(
   '/:id/status',
   requireAuth,
+  requireRole('DistrictAdmin', 'SuperAdmin'),
   validate(unitStatusSchema),
   updateUnitStatus
 );

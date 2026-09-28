@@ -180,7 +180,7 @@ export default function AddUnitPage() {
                   name="unitId"
                   value={form.unitId}
                   onChange={(e) => setField('unitId', e.target.value)}
-                  placeholder="BU-101"
+                  placeholder="e.g. BU-001"
                   autoComplete="off"
                   error={errors.unitId}
                 />
@@ -300,7 +300,7 @@ export default function AddUnitPage() {
                   name="collectionStaff"
                   value={form.collectionStaff}
                   onChange={(e) => setField('collectionStaff', e.target.value)}
-                  placeholder="e.g. Nurse Kavitha R."
+                  placeholder="e.g. Collection staff name"
                   autoComplete="off"
                   error={errors.collectionStaff}
                 />

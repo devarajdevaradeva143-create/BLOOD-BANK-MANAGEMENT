@@ -1,11 +1,13 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router';
-import { Building2, Clock, Droplet, Eye, EyeOff, LockKeyhole, MapPin, User } from 'lucide-react';
+import { Droplet, Eye, EyeOff, HeartHandshake, LockKeyhole, MapPin, PackageCheck, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import AuthSidePanel from '../components/layout/AuthSidePanel';
+import { getPublicStats, type PublicStats } from '../lib/api';
+import { DISTRICTS } from '../data/constants';
 import { DEMO_ACCOUNTS } from '../data/constants';
 import type { DemoAccount } from '../data/constants';
 import type { TranslationKey } from '../i18n/translations';
@@ -28,9 +30,29 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState<DemoAccount['role'] | null>(null);
+  const [liveStats, setLiveStats] = useState<PublicStats | null>(null);
+
+  // Public network stats for the side panel — backend reachable na live numbers,
+  // illana neutral placeholder. No hardcoded marketing figures.
+  useEffect(() => {
+    let cancelled = false;
+    getPublicStats()
+      .then((s) => {
+        if (!cancelled) setLiveStats(s);
+      })
+      .catch(() => {
+        if (!cancelled) setLiveStats(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   if (user?.role === 'SuperAdmin') return <Navigate to="/superadmin/dashboard" replace />;
   if (user) return <Navigate to="/dashboard" replace />;
+
+  const fmt = (n: number | undefined) =>
+    typeof n === 'number' ? n.toLocaleString('en-IN') : '—';
 
   const attemptLogin = async (id: string, pinCode: string) => {
     const account = await login(id, pinCode, remember);
@@ -88,14 +110,14 @@ export default function LoginPage() {
         headline={t('app.tagline')}
         description={t('login.subtitle')}
         stats={[
-          { icon: MapPin, value: '38', label: 'Districts Covered' },
-          { icon: Building2, value: '120+', label: 'Hospitals Network' },
-          { icon: Droplet, value: '50K+', label: 'Units Managed / Year' },
-          { icon: Clock, value: '24/7', label: 'Emergency Issue' },
+          { icon: MapPin, value: String(DISTRICTS.length), label: 'Districts Covered' },
+          { icon: Droplet, value: fmt(liveStats?.availableUnits), label: 'Units Available' },
+          { icon: HeartHandshake, value: fmt(liveStats?.livesSupported), label: 'Lives Supported' },
+          { icon: PackageCheck, value: fmt(liveStats?.fulfilledUnits), label: 'Requests Fulfilled' },
         ]}
         features={[
-          'NABH & Drugs Licence certified blood banks',
-          '100% screened units • –80°C cold-chain FFP storage',
+          'District-scoped admin access with secure PIN login',
+          'Donor map with home-collection trip planning',
           'Tamil + English support for district admins',
         ]}
         helplineLabel="Emergency Helpline"

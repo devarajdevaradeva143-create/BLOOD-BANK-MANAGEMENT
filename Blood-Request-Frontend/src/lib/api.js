@@ -1,4 +1,8 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const _rawBase = import.meta.env.VITE_API_URL || 'http://localhost:5000'
+const API_BASE = String(_rawBase).trim().replace(/\/+$/, '')
+if (!import.meta.env.VITE_API_URL && import.meta.env.PROD) {
+  console.warn('[api] VITE_API_URL is missing — falling back to localhost (prod build misconfigured)')
+}
 
 const TOKEN_KEY = 'hospitalAccessToken'
 

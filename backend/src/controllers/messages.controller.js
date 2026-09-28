@@ -13,6 +13,10 @@ function parsePagination(query) {
   return { page, limit, skip: (page - 1) * limit };
 }
 
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function resolveAdminDistrict(req) {
   let d = String(req.user?.districtId || '').trim().toLowerCase();
   if (!d && req.user?.id && req.user?.role !== 'Hospital') {
@@ -80,7 +84,7 @@ export const listMessages = asyncHandler(async (req, res) => {
   }
 
   if (search) {
-    const q = String(search).trim();
+    const q = escapeRegex(String(search).trim());
     filter.$or = [
       { subject: new RegExp(q, 'i') },
       { body: new RegExp(q, 'i') },

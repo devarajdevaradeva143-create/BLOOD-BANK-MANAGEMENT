@@ -123,14 +123,6 @@ export default function SettingsPage() {
           </div>
         </Card>
 
-        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-800/50">
-          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
-            {t('settings.demoData')}
-          </p>
-          <p className="mt-1 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-            {t('settings.demoDataHint')}
-          </p>
-        </div>
       </div>
     </div>
   );

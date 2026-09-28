@@ -3,6 +3,7 @@ import { Lock, Pencil, User } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
+import { changePassword, updateProfile as updateProfileApi } from '../lib/api';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Card, CardHeader } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -10,18 +11,8 @@ import { Modal } from '../components/ui/Modal';
 import { Badge } from '../components/ui/Badge';
 import { Field, Input } from '../components/ui/Input';
 
-function defaultEmail(id: string): string {
-  return `${id.toLowerCase()}@lifesaver.in`;
-}
-
-function defaultPhone(id: string): string {
-  if (id === 'DIST-001') return '+91 98400 00002';
-  if (id === 'SUPER001') return '+91 98400 00001';
-  return '+91 98400 00000';
-}
-
 export default function ProfilePage() {
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { user, updateProfile } = useAuth();
 
   const [editing, setEditing] = useState(false);
@@ -34,21 +25,24 @@ export default function ProfilePage() {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const userId = user?.id;
 
   useEffect(() => {
     setName(user?.name ?? '');
-    setEmail(user?.email ?? (user ? defaultEmail(user.id) : ''));
-    setPhone(user?.phone ?? (user ? defaultPhone(user.id) : ''));
+    setEmail(user?.email ?? '');
+    setPhone(user?.phone ?? '');
     setErrors({});
     setEditing(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  const emailValue = email || (user ? defaultEmail(user.id) : '');
-  const phoneValue = phone || (user ? defaultPhone(user.id) : '');
-  const lastLogin = new Date().toLocaleString(locale === 'ta' ? 'ta-IN' : 'en-IN');
+  const emailValue = email || user?.email || '';
+  const phoneValue = phone || user?.phone || '';
+  const emailDisplay = emailValue || t('details.noValue');
+  const phoneDisplay = phoneValue || t('details.noValue');
   const initials = user?.name?.trim()?.charAt(0)?.toUpperCase() || '?';
   const roleLabel =
     user?.role === 'DistrictAdmin'
@@ -59,21 +53,21 @@ export default function ProfilePage() {
 
   const startEdit = () => {
     setName(user?.name ?? '');
-    setEmail(user?.email ?? (user ? defaultEmail(user.id) : ''));
-    setPhone(user?.phone ?? (user ? defaultPhone(user.id) : ''));
+    setEmail(user?.email ?? '');
+    setPhone(user?.phone ?? '');
     setErrors({});
     setEditing(true);
   };
 
   const cancelEdit = () => {
     setName(user?.name ?? '');
-    setEmail(user?.email ?? (user ? defaultEmail(user.id) : ''));
-    setPhone(user?.phone ?? (user ? defaultPhone(user.id) : ''));
+    setEmail(user?.email ?? '');
+    setPhone(user?.phone ?? '');
     setErrors({});
     setEditing(false);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const nextErrors: { name?: string; email?: string; phone?: string } = {};
     if (!name.trim()) {
       nextErrors.name = t('validation.required');
@@ -92,9 +86,21 @@ export default function ProfilePage() {
     setErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
-    updateProfile({ name: name.trim(), email: emailValue.trim(), phone: phoneValue.trim() });
-    toast.success(t('profile.editSuccess'));
-    setEditing(false);
+    setSaving(true);
+    try {
+      const updated = await updateProfileApi({
+        name: name.trim(),
+        email: emailValue.trim(),
+        phone: phoneValue.trim(),
+      });
+      updateProfile({ name: updated.name, email: updated.email, phone: updated.phone });
+      toast.success(t('profile.editSuccess'));
+      setEditing(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('profile.invalidEmail'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const closeModal = () => {
@@ -104,12 +110,12 @@ export default function ProfilePage() {
     setConfirm('');
   };
 
-  const handlePasswordUpdate = () => {
+  const handlePasswordUpdate = async () => {
     if (!current.trim() || !next.trim() || !confirm.trim()) {
       toast.error(t('validation.required'));
       return;
     }
-    if (next.length < 8) {
+    if (next.length < 4) {
       toast.error(t('profile.tooShort'));
       return;
     }
@@ -117,8 +123,16 @@ export default function ProfilePage() {
       toast.error(t('profile.mismatch'));
       return;
     }
-    toast.success(t('profile.updated'));
-    closeModal();
+    setChangingPassword(true);
+    try {
+      await changePassword({ currentPassword: current, newPassword: next });
+      toast.success(t('profile.updated'));
+      closeModal();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t('login.errorInvalid'));
+    } finally {
+      setChangingPassword(false);
+    }
   };
 
   const row = (label: string, value: string) => (
@@ -141,10 +155,10 @@ export default function ProfilePage() {
             <div className="flex flex-wrap items-center gap-2">
               {editing ? (
                 <>
-                  <Button variant="outline" size="sm" onClick={cancelEdit}>
+                  <Button variant="outline" size="sm" onClick={cancelEdit} disabled={saving}>
                     {t('profile.cancel')}
                   </Button>
-                  <Button size="sm" onClick={handleSave}>
+                  <Button size="sm" onClick={handleSave} loading={saving}>
                     {t('profile.save')}
                   </Button>
                 </>
@@ -229,11 +243,10 @@ export default function ProfilePage() {
           <div className="mt-4 divide-y divide-slate-100 border-t border-slate-100 dark:divide-slate-800 dark:border-slate-800">
             {row(t('profile.name'), user?.name || '—')}
             {row(t('profile.staffId'), user?.id || '—')}
-            {row(t('profile.email'), user?.email || (user ? defaultEmail(user.id) : '—'))}
-            {row(t('profile.phone'), user?.phone || (user ? defaultPhone(user.id) : '—'))}
+            {row(t('profile.email'), emailDisplay)}
+            {row(t('profile.phone'), phoneDisplay)}
             {row(t('profile.role'), roleLabel)}
             {row(t('profile.designation'), user?.designation || '—')}
-            {row(t('profile.lastLogin'), lastLogin)}
           </div>
         )}
       </Card>
@@ -245,10 +258,10 @@ export default function ProfilePage() {
         subtitle={t('profile.subtitle')}
         footer={
           <>
-            <Button variant="outline" onClick={closeModal}>
+            <Button variant="outline" onClick={closeModal} disabled={changingPassword}>
               {t('common.cancel')}
             </Button>
-            <Button onClick={handlePasswordUpdate}>{t('profile.update')}</Button>
+            <Button onClick={handlePasswordUpdate} loading={changingPassword}>{t('profile.update')}</Button>
           </>
         }
       >

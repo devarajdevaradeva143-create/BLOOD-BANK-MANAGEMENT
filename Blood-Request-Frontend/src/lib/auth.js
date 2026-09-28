@@ -14,6 +14,11 @@ const LOCAL_SESSION_KEY = 'hospitalLocalSession'
 
 const DEMO_CREDENTIALS = { email: 'demo@hospital.com', password: 'Demo@1234' }
 
+// Demo login is TEMPORARY — kept until user says remove.
+// Set VITE_ENABLE_DEMO=false to hide/remove it in one step.
+// Real logins always hit the backend; no offline bypass for real accounts.
+export const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO !== 'false'
+
 /** Backend unreachable (DNS/refused/offline) — fetch throws TypeError, never ApiError. */
 function isNetworkError(err) {
   return !(err instanceof ApiError)
@@ -64,37 +69,19 @@ function localSignIn(user) {
 }
 
 function localLoginUser({ email, password }) {
-  const registered = readJSON(REGISTERED_KEY)
-  if (registered && registered.email === email && registered.password === password) {
-    return localSignIn({
-      email,
-      hospitalName: registered.hospitalName || '',
-      phone: registered.phone || '',
-    })
+  // Real website: no offline bypass for real accounts.
+  // Only the temporary demo account may sign in offline.
+  if (!DEMO_ENABLED) {
+    throw new Error('Backend unreachable. Please try again when online.')
   }
   if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
     return localSignIn({
       email: DEMO_CREDENTIALS.email,
-      hospitalName: 'Demo Hospital',
+      hospitalName: 'Demo Hospital (Demo Mode — no real data)',
       phone: '9876543210',
     })
   }
-  if (!registered) {
-    throw new Error('No account found. Please register first.')
-  }
-  throw new Error('Invalid email or password.')
-}
-
-function localRegisterHospital(form) {
-  const { confirmPassword, password, ...rest } = form
-  void confirmPassword
-  const record = { hospitalType: 'Private', ...rest, password }
-  try {
-    localStorage.setItem(REGISTERED_KEY, JSON.stringify(record))
-  } catch {
-    throw new Error('Could not save the account on this device.')
-  }
-  return localLoginUser({ email: record.email, password })
+  throw new Error('Backend unreachable. Please try again when online.')
 }
 
 export function getCurrentUser() {
@@ -128,9 +115,9 @@ export function setRememberedEmail(email, remember) {
 }
 
 /**
- * POST /api/hospitals/register — creates the account AND logs in
- * (backend returns { user, accessToken } + refresh cookie).
- * Backend unreachable-na local-ah register panni offline session create pannum.
+ * POST /api/hospitals/register — creates a PENDING account (no auto-login).
+ * Real-website behavior: backend returns 201 { hospital } and the account
+ * needs admin approval before login works.
  */
 export async function registerHospital(form) {
   const { confirmPassword, password, ...rest } = form
@@ -142,16 +129,11 @@ export async function registerHospital(form) {
       body: { ...rest, hospitalType: rest.hospitalType || 'Private', password },
     })
   } catch (err) {
-    if (isNetworkError(err)) {
-      setLocalSession(false)
-      return localRegisterHospital(form)
-    }
     throw new Error(toUserMessage(err, 'Registration failed. Please try again.'))
   }
+  // Pending approval — no session issued. Clear any stale demo session.
   setLocalSession(false)
-  if (data?.accessToken) setAccessToken(data.accessToken)
-  writeUser(data?.user || null)
-  return data?.user || null
+  return data
 }
 
 export async function loginUser({ email, password }) {
@@ -162,7 +144,13 @@ export async function loginUser({ email, password }) {
       body: { email, password },
     })
   } catch (err) {
-    if (isNetworkError(err)) {
+    // Demo offline fallback only — real accounts never bypass the backend.
+    if (
+      isNetworkError(err) &&
+      DEMO_ENABLED &&
+      email === DEMO_CREDENTIALS.email &&
+      password === DEMO_CREDENTIALS.password
+    ) {
       setLocalSession(false)
       return localLoginUser({ email, password })
     }
@@ -175,6 +163,9 @@ export async function loginUser({ email, password }) {
 }
 
 export async function demoLogin() {
+  if (!DEMO_ENABLED) {
+    throw new Error('Demo login is disabled.')
+  }
   try {
     return await loginUser(DEMO_CREDENTIALS)
   } catch (err) {

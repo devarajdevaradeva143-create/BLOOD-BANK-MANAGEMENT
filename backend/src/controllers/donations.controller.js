@@ -21,6 +21,10 @@ function parsePagination(query) {
   return { page, limit, skip: (page - 1) * limit };
 }
 
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function findDonationByIdOrDonationId(id) {
   const key = String(id || '').trim();
   let doc = await Donation.findOne({ donationId: key });
@@ -107,7 +111,7 @@ export const listDonations = asyncHandler(async (req, res) => {
   }
   if (status) filter.status = status;
   if (search) {
-    const q = String(search).trim();
+    const q = escapeRegex(String(search).trim());
     filter.$or = [
       { donorName: new RegExp(q, 'i') },
       { donationId: new RegExp(q, 'i') },

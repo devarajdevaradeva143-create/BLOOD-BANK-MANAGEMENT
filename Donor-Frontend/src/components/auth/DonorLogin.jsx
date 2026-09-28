@@ -17,6 +17,8 @@ import { useDonorAuth } from "../../context/DonorAuthContext";
 import { useLanguage } from "../../i18n/LanguageContext";
 
 const DEMO_DONOR = { email: "demo@lifesaver.com", password: "demo123" };
+// Demo login is TEMPORARY — VITE_ENABLE_DEMO=false sets it off in one step.
+const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO !== "false";
 
 const BENEFITS = [
   { key: "save", Icon: Droplet },
@@ -66,24 +68,12 @@ export default function DonorLogin() {
     setLoading(true);
 
     setTimeout(() => {
-      let registeredDonor = null;
-      try {
-        registeredDonor = JSON.parse(
-          localStorage.getItem("registeredDonor")
-        );
-      } catch {
-        registeredDonor = null;
-      }
-
-      const matchesRegistered =
-        registeredDonor &&
-        String(registeredDonor.email).trim().toLowerCase() === trimmedEmail &&
-        registeredDonor.password === password;
       const matchesDemo =
+        DEMO_ENABLED &&
         trimmedEmail === DEMO_DONOR.email && password === DEMO_DONOR.password;
 
-      if (matchesRegistered || matchesDemo) {
-        login(trimmedEmail);
+      if (matchesDemo) {
+        login(trimmedEmail, true);
         const from = location.state?.from?.pathname ?? "/";
         navigate(from, { replace: true });
       } else {
@@ -112,6 +102,7 @@ export default function DonorLogin() {
   };
 
   const handleDemoLogin = () => {
+    if (!DEMO_ENABLED) return;
     setEmail(DEMO_DONOR.email);
     setPassword(DEMO_DONOR.password);
     setError("");
@@ -259,12 +250,14 @@ export default function DonorLogin() {
             </button>
           </form>
 
+          {DEMO_ENABLED && (
           <div className={s["demo-hint"]}>
-            <span>{t("login.demo.label")}: {t("login.demo.value")}</span>
+            <span>{t("login.demo.label")}: {t("login.demo.value")} (Demo Mode — no real data)</span>
             <button type="button" className={s["demo-login-btn"]} onClick={handleDemoLogin}>
               {t("login.demo.autofill")}
             </button>
           </div>
+          )}
 
           <div className={s["or-divider"]}>
             <span></span>

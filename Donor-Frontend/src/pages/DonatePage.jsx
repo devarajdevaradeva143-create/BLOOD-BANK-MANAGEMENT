@@ -39,8 +39,8 @@ export default function DonatePage() {
         : null;
     const offline = Boolean(payload._offline);
 
-    // Server statuses: pending | approved | cancelled. Anything else (or no
-    // server at all in offline mode) keeps the previous local behaviour.
+    // Server statuses: pending | approved | cancelled.
+    // Real website: never fake-approve offline submissions.
     const VALID_STATUSES = ["pending", "approved", "cancelled"];
     const rawServerStatus = server
       ? String(server.status ?? server.donationStatus ?? "pending").toLowerCase()
@@ -48,7 +48,7 @@ export default function DonatePage() {
     const serverStatus = VALID_STATUSES.includes(rawServerStatus)
       ? rawServerStatus
       : "pending";
-    const status = offline ? "approved" : serverStatus;
+    const status = offline ? "pending" : serverStatus;
 
     const donationId = server
       ? server.donationId ?? server.id ?? server._id ?? null

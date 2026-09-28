@@ -25,6 +25,10 @@ function parsePagination(query) {
   return { page, limit, skip: (page - 1) * limit };
 }
 
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function resolveAdminDistrict(req) {
   let d = String(req.user?.districtId || '').trim().toLowerCase();
   if (!d && req.user?.id && req.user?.role !== 'Hospital') {
@@ -63,7 +67,7 @@ export const listBloodBanks = asyncHandler(async (req, res) => {
     filter.status = String(status).trim();
   }
   if (search) {
-    const q = String(search).trim();
+    const q = escapeRegex(String(search).trim());
     filter.$or = [
       { name: new RegExp(q, 'i') },
       { bankId: new RegExp(q, 'i') },

@@ -22,6 +22,10 @@ function parsePagination(query) {
   return { page, limit, skip: (page - 1) * limit };
 }
 
+function escapeRegex(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 async function findRequestByIdOrRequestId(id) {
   const key = String(id || '').trim();
   let doc = await BloodRequest.findOne({ requestId: key });
@@ -192,7 +196,7 @@ export const listRequests = asyncHandler(async (req, res) => {
   }
   if (status) filter.status = status;
   if (search) {
-    const q = String(search).trim();
+    const q = escapeRegex(String(search).trim());
     filter.$or = [
       { patientName: new RegExp(q, 'i') },
       { requestId: new RegExp(q, 'i') },

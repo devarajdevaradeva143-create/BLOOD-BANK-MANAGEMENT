@@ -45,11 +45,15 @@ function toSafeUser(user) {
   };
 }
 
-function pruneExpiredTokens(user) {
+function pruneExpiredTokens(user, max = 5) {
   const now = new Date();
   user.refreshTokens = (user.refreshTokens || []).filter(
     (t) => t && t.expiresAt && new Date(t.expiresAt) > now
   );
+  // Cap sessions: keep only the newest `max` tokens to avoid unbounded growth.
+  if (user.refreshTokens.length >= max) {
+    user.refreshTokens = user.refreshTokens.slice(-(max - 1));
+  }
 }
 
 /**
@@ -167,11 +171,11 @@ export const logout = asyncHandler(async (req, res) => {
  */
 export const me = asyncHandler(async (req, res) => {
   if (!req.user?.id) {
-    return res.status(200).json({ user: req.user || null });
+    return res.status(401).json({ message: 'Unauthorized' });
   }
   const user = await User.findById(req.user.id).select('-pinHash -refreshTokens');
   if (!user) {
-    return res.status(200).json({ user: req.user });
+    return res.status(401).json({ message: 'Unauthorized' });
   }
   return res.status(200).json({ user: toSafeUser(user) });
 });
@@ -239,6 +243,9 @@ export const resetPassword = asyncHandler(async (req, res) => {
   if (!normalizedId || !code || !newPin) {
     return res.status(400).json({ message: 'staffId, code and newPin are required' });
   }
+  if (newPin.length < 4 || newPin.length > 10) {
+    return res.status(400).json({ message: 'newPin must be 4-10 characters' });
+  }
 
   const user = await User.findOne({ staffId: normalizedId });
   if (!user || user.active === false) {
@@ -263,8 +270,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
       .json({ message: 'Too many OTP attempts, request a new code' });
   }
   if (!verifyHash(code, doc.codeHash)) {
-    doc.attempts = (doc.attempts || 0) + 1;
-    await doc.save();
+    await Otp.updateOne({ _id: doc._id }, { $inc: { attempts: 1 } });
     return res.status(400).json({ message: 'Invalid or expired OTP' });
   }
 

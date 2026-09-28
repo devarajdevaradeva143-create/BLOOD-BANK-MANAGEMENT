@@ -44,13 +44,13 @@ app.use(cookieParser());
 app.use(morgan(config.isProd ? 'combined' : 'dev'));
 app.use(mongoSanitize());
 
-// --- Global rate limit ---
-app.use(globalLimiter);
-
-// --- Health check (Render + uptime monitors) ---
+// --- Health check (Render + uptime monitors) — before rate limiter ---
 app.get('/healthz', (_req, res) => {
   res.status(200).json({ ok: true, env: config.env, time: new Date().toISOString() });
 });
+
+// --- Global rate limit ---
+app.use(globalLimiter);
 
 // --- API routers ---
 app.use('/api/auth', authRoutes);
@@ -86,6 +86,7 @@ connectDB()
 
 process.on('unhandledRejection', (err) => {
   console.error('Unhandled rejection:', err);
+  if (config.isProd) process.exit(1);
 });
 
 export default app;

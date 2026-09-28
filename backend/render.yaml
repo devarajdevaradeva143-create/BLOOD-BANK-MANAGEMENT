@@ -9,8 +9,8 @@ services:
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 5000
+      # NOTE: do NOT hardcode PORT — Render injects a dynamic $PORT.
+      # Backend reads process.env.PORT via src/config/env.js.
       - key: MONGO_URI
         sync: false
       - key: JWT_ACCESS_SECRET
@@ -27,6 +27,18 @@ services:
         value: log
       - key: OTP_PROVIDER_KEY
         sync: false
+      - key: OTP_TTL_MINUTES
+        value: 5
+      - key: OTP_COOLDOWN_SECONDS
+        value: 60
+      - key: PIN_PEPPER
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: GEMINI_MODEL
+        value: gemini-1.5-flash
+      - key: CHAT_MAX_TOKENS
+        value: 1024
       - key: SEED_DISTRICT_ADMIN_ID
         sync: false
       - key: SEED_DISTRICT_ADMIN_PIN

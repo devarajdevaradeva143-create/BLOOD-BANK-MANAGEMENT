@@ -52,8 +52,7 @@ export async function verifyOtpInternal(mobile, code, purpose) {
     throw otpError('Too many OTP attempts, request a new code', 429);
   }
   if (!verifyHash(plainCode, doc.codeHash)) {
-    doc.attempts = (doc.attempts || 0) + 1;
-    await doc.save();
+    await Otp.updateOne({ _id: doc._id }, { $inc: { attempts: 1 } });
     throw otpError('Invalid or expired OTP', 400);
   }
 

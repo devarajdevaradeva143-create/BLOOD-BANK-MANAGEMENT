@@ -166,14 +166,10 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
       setOtpError("");
       setOtpOpen(true);
     } catch (err) {
-      if (isNetworkError(err)) {
-        // Backend unreachable — fall back to the existing local-only save.
-        onSubmit({ ...form, eligibility, _offline: true });
-      } else {
-        setFormError(
-          err && err.message ? err.message : "Could not send OTP. Please try again."
-        );
-      }
+      // Real website: no offline fake success. Show the real error.
+      setFormError(
+        err && err.message ? err.message : "Could not send OTP. Please try again."
+      );
     } finally {
       setSubmitting(false);
     }
@@ -190,15 +186,10 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
       // OTP verified server-side — never keep the code in local state.
       onSubmit({ ...form, eligibility, _server: serverRes || {} });
     } catch (err) {
-      if (isNetworkError(err)) {
-        // Submit failed only because the backend is unreachable.
-        setOtpOpen(false);
-        onSubmit({ ...form, eligibility, _offline: true });
-      } else {
-        setOtpError(
-          err && err.message ? err.message : "Invalid OTP. Please try again."
-        );
-      }
+      // Real website: offline must fail visibly, never fake-approved.
+      setOtpError(
+        err && err.message ? err.message : "Invalid OTP. Please try again."
+      );
     } finally {
       setOtpVerifying(false);
     }
