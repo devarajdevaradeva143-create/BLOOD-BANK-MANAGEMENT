@@ -157,15 +157,15 @@ export const createBulkRequests = asyncHandler(async (req, res) => {
 /**
  * GET /api/requests  (auth required at route level)
  * Query: ?bloodGroup=&districtId=&status=&search=&page=&limit=
- * District scope: admin-ku districtId irundha andha district request mattum
- * dhaan theriyum (query-va override panni force pannuvom).
- * Hospital role: sodha hospital request mattum (hospitalId filter).
+ * District scope: admin sees only requests from their assigned district
+ * (can override via query param to force a different district).
+ * Hospital role: sees only their own requests (hospitalId filter).
  */
 export const listRequests = asyncHandler(async (req, res) => {
   const { bloodGroup, districtId, district, status, search, requestType, groupId } = req.query;
   const { page, limit, skip } = parsePagination(req.query);
 
-  // Admin district-ah DB-la irundhu resolve pannu (JWT-ah namba vendaam).
+  // Resolve admin district from DB (don't trust JWT).
   let adminDistrict = String(req.user?.districtId || '').trim().toLowerCase();
   if (!adminDistrict && req.user?.id && req.user?.role !== 'Hospital') {
     try {
@@ -176,7 +176,7 @@ export const listRequests = asyncHandler(async (req, res) => {
     }
   }
 
-  // DistrictAdmin-ku district illana fail-closed — ella district-um kaata koodadhu.
+  // DistrictAdmin without district fails closed — cannot see any district.
   if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
     return res.status(403).json({ message: 'Forbidden: district not assigned' });
   }
@@ -186,10 +186,10 @@ export const listRequests = asyncHandler(async (req, res) => {
   if (requestType) filter.requestType = requestType;
   if (groupId) filter.groupId = String(groupId).trim();
   if (req.user?.role === 'Hospital' && req.user?.id) {
-    // Hospital-ku sodha hospital request mattum — vera hospital patha mudiyadhu.
+    // Hospital sees only their own requests — cannot see other hospitals.
     filter.hospitalId = String(req.user.id);
   } else if (adminDistrict) {
-    // District admin-ku avanga district mattum — vera district patha mudiyadhu.
+    // District admin sees only their own district — cannot see other districts.
     filter.districtId = adminDistrict;
   } else if (districtId || district) {
     filter.districtId = String(districtId || district).trim().toLowerCase();
@@ -222,7 +222,7 @@ export const listRequests = asyncHandler(async (req, res) => {
 /**
  * PATCH /api/requests/:id/status
  * DistrictAdmin/SuperAdmin: full transitions (route level) + cross-district block.
- * Hospital: sodha hospital-oda submitted request-ah cancel panna mattum.
+ * Hospital: can only cancel their own submitted requests.
  * Body: { status } — validated by requestStatusSchema.
  */
 export const updateRequestStatus = asyncHandler(async (req, res) => {
@@ -234,7 +234,7 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
     return res.status(404).json({ message: 'Request not found' });
   }
 
-  // Hospital-ku sodha request-ah submitted-la irundha cancel panna mattum.
+  // Hospital can only cancel their own requests that are in submitted status.
   if (req.user?.role === 'Hospital') {
     if (String(doc.hospitalId || '') !== String(req.user?.id || '')) {
       return res.status(403).json({ message: 'Forbidden: request belongs to another hospital' });
@@ -253,7 +253,7 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
     return res.status(200).json({ message: 'Request cancelled', request: doc });
   }
 
-  // Vera district request-ah approve panna mudiyadhu.
+  // Cannot approve requests from other districts.
   let adminDistrict = String(req.user?.districtId || '').trim().toLowerCase();
   if (!adminDistrict && req.user?.id) {
     try {

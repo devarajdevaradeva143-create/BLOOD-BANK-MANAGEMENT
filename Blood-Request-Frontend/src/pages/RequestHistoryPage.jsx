@@ -21,7 +21,8 @@ import {
 import { Link, useNavigate } from 'react-router-dom'
 import { cancelRequest, computeStats, getRequests } from '../lib/requests'
 import { toUserMessage } from '../lib/api'
-import { getDistrictName } from '../data/districts'
+import { useLanguage } from '../context/useLanguage'
+import { districts, getDistrictName } from '../data/districts'
 
 const PAGE_LIMIT = 20
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-']
@@ -37,29 +38,41 @@ function cap(value) {
   return text.charAt(0).toUpperCase() + text.slice(1)
 }
 
-function formatDate(value) {
+function formatDate(value, lang) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
-  return date.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+  return date.toLocaleDateString(lang === 'ta' ? 'ta-IN' : 'en-GB', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  })
 }
 
-function formatTime(value) {
+function formatTime(value, lang) {
   if (!value) return '—'
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return '—'
-  return date.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })
+  return date.toLocaleTimeString(lang === 'ta' ? 'ta-IN' : 'en-GB', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
 
-function requiredLabel(request) {
-  const day = formatDate(request.requiredDate)
+function requiredLabel(request, lang) {
+  const day = formatDate(request.requiredDate, lang)
   const time = request.requiredTime ? String(request.requiredTime) : ''
   return time ? `${day} · ${time}` : day
 }
 
-function districtLabel(request) {
-  if (request.districtName) return String(request.districtName)
-  if (request.districtId) return getDistrictName(request.districtId) || String(request.districtId)
+function districtLabel(request, lang) {
+  const name = request.districtName
+  if (name) {
+    const match = districts.find((d) => d.en === name || d.ta === name || d.id === name)
+    if (match) return lang === 'ta' ? match.ta : match.en
+    return String(name)
+  }
+  if (request.districtId) return getDistrictName(request.districtId, lang) || String(request.districtId)
   return '—'
 }
 
@@ -67,13 +80,13 @@ function typeLabel(request) {
   return request.category || request.requestType || '—'
 }
 
-function StatusPill({ status }) {
+function StatusPill({ status, t }) {
   const s = String(status ?? '').toLowerCase()
   if (s === 'approved') {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
         <BadgeCheck className="h-3.5 w-3.5" aria-hidden="true" />
-        Approved
+        {t('hist.statusApproved')}
       </span>
     )
   }
@@ -81,7 +94,7 @@ function StatusPill({ status }) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold text-blue-700 dark:bg-blue-950 dark:text-blue-300">
         <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
-        Fulfilled
+        {t('hist.statusFulfilled')}
       </span>
     )
   }
@@ -89,40 +102,52 @@ function StatusPill({ status }) {
     return (
       <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-[11px] font-semibold text-red-700 dark:bg-red-950 dark:text-red-300">
         <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
-        Cancelled
+        {t('hist.statusCancelled')}
       </span>
     )
   }
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-amber-100 px-2.5 py-1 text-[11px] font-semibold text-amber-700 dark:bg-amber-950 dark:text-amber-300">
       <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-      Submitted
+      {t('hist.statusSubmitted')}
     </span>
   )
 }
 
-function PriorityPill({ priority }) {
+function PriorityPill({ priority, t }) {
   const tone =
     priority === 'critical'
       ? 'bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300'
       : priority === 'high'
         ? 'bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
         : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'
+  const text =
+    priority === 'critical' ? t('hist.priorityCritical') : priority === 'high' ? t('hist.priorityHigh') : cap(priority)
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${tone}`}
     >
       {priority === 'critical' ? <Siren className="h-3.5 w-3.5" aria-hidden="true" /> : null}
-      {cap(priority)}
+      {text}
     </span>
   )
 }
 
-function TypeBadge({ request }) {
+function TypeBadge({ request, t }) {
   const label = typeLabel(request)
   const emergency =
     String(request.requestType ?? '').toLowerCase() === 'emergency' ||
     String(request.category ?? '').toLowerCase() === 'emergency'
+  const category = String(request.category ?? '').toLowerCase()
+  const text = emergency
+    ? t('hist.typeEmergency')
+    : category === 'routine'
+      ? t('hist.typeRoutine')
+      : category === 'surgery'
+        ? t('hist.typeSurgery')
+        : category === 'icu'
+          ? t('hist.typeIcu')
+          : cap(label)
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize ${
@@ -132,7 +157,7 @@ function TypeBadge({ request }) {
       }`}
     >
       {emergency ? <Siren className="h-3.5 w-3.5" aria-hidden="true" /> : null}
-      {cap(label)}
+      {text}
     </span>
   )
 }
@@ -181,11 +206,15 @@ function StatPill({ label, value, tone }) {
   )
 }
 
-function CancelAction({ request, cancelling, onCancel }) {
+function CancelAction({ request, cancelling, onCancel, t }) {
   if (String(request.status ?? '').toLowerCase() !== 'submitted') {
     return (
       <span className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 dark:text-slate-500">
-        {request.status === 'cancelled' ? 'Cancelled' : request.status === 'fulfilled' ? 'Fulfilled' : 'Approved'}
+        {request.status === 'cancelled'
+          ? t('hist.statusCancelled')
+          : request.status === 'fulfilled'
+            ? t('hist.statusFulfilled')
+            : t('hist.statusApproved')}
       </span>
     )
   }
@@ -197,12 +226,13 @@ function CancelAction({ request, cancelling, onCancel }) {
       className="inline-flex items-center gap-1.5 rounded-xl bg-red-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition duration-200 hover:bg-red-700 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
     >
       <XCircle className="h-3.5 w-3.5" aria-hidden="true" />
-      {cancelling ? 'Cancelling…' : 'Cancel'}
+      {cancelling ? t('hist.cancelling') : t('hist.cancel')}
     </button>
   )
 }
 
 export default function RequestHistoryPage() {
+  const { lang, t } = useLanguage()
   const navigate = useNavigate()
   const [requests, setRequests] = useState([])
   const [total, setTotal] = useState(0)
@@ -217,6 +247,9 @@ export default function RequestHistoryPage() {
   const [retryKey, setRetryKey] = useState(0)
   const [cancellingId, setCancellingId] = useState(null)
   const [stats, setStats] = useState({ total: 0, approved: 0, pending: 0, fulfilled: 0, cancelled: 0, emergency: 0 })
+
+  const fill = (template, values) =>
+    Object.entries(values).reduce((acc, [k, v]) => acc.replace(`{${k}}`, v), template)
 
   // Search input -> debounced server query (400ms), reset to page 1.
   useEffect(() => {
@@ -266,7 +299,7 @@ export default function RequestHistoryPage() {
           navigate('/hospital/login')
           return
         }
-        setError(toUserMessage(err, 'Could not load request history.'))
+        setError(toUserMessage(err, t('hist.errLoad')))
         setRequests([])
         setTotal(0)
       } finally {
@@ -338,13 +371,13 @@ export default function RequestHistoryPage() {
         pending: Math.max(0, (prev.pending ?? 0) - 1),
         cancelled: (prev.cancelled ?? 0) + 1,
       }))
-      toast.success('Request cancelled')
+      toast.success(t('hist.toastCancelled'))
     } catch (err) {
       if (err?.status === 401) {
         navigate('/hospital/login')
         return
       }
-      toast.error(toUserMessage(err, 'Could not cancel this request.'))
+      toast.error(toUserMessage(err, t('hist.errCancel')))
     } finally {
       setCancellingId(null)
     }
@@ -373,24 +406,24 @@ export default function RequestHistoryPage() {
             </span>
             <div>
               <h1 className="text-lg font-bold uppercase tracking-wide sm:text-xl">
-                Request History
+                {t('hist.title')}
               </h1>
               <p className="text-xs text-red-100 sm:text-sm">
-                All blood requests raised by this hospital
+                {t('hist.subtitle')}
               </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 text-xs font-bold text-white">
               <Hash className="h-3.5 w-3.5" aria-hidden="true" />
-              {total} Total
+              {fill(t('hist.totalBadge'), { count: total })}
             </span>
             <Link
               to="/hospital/home"
               className="inline-flex items-center gap-1.5 rounded-xl bg-white px-4 py-2 text-xs font-semibold text-red-700 shadow-sm transition duration-200 hover:bg-red-50 active:scale-[0.98]"
             >
               <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />
-              Back to Profile
+              {t('hist.backToProfile')}
             </Link>
           </div>
         </div>
@@ -400,8 +433,8 @@ export default function RequestHistoryPage() {
         <div className="mb-4 border-b border-slate-200 pb-4 dark:border-slate-800">
           <SectionHeader
             icon={Filter}
-            title="Filter Requests"
-            subtitle="Search by request id, patient, status, type or blood group"
+            title={t('hist.filterTitle')}
+            subtitle={t('hist.filterSubtitle')}
           />
         </div>
         <div className="grid gap-3 lg:grid-cols-[1fr_auto_auto_auto_auto]">
@@ -414,9 +447,9 @@ export default function RequestHistoryPage() {
               type="text"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by request id or patient..."
+              placeholder={t('hist.searchPh')}
               className="input-base !pl-10"
-              aria-label="Search requests"
+              aria-label={t('hist.searchAria')}
             />
           </div>
           <div className="relative">
@@ -427,13 +460,13 @@ export default function RequestHistoryPage() {
                 setPage(1)
               }}
               className="input-base appearance-none pr-9"
-              aria-label="Filter by status"
+              aria-label={t('hist.filterStatusAria')}
             >
-              <option value="all">All Statuses</option>
-              <option value="submitted">Submitted</option>
-              <option value="approved">Approved</option>
-              <option value="fulfilled">Fulfilled</option>
-              <option value="cancelled">Cancelled</option>
+              <option value="all">{t('hist.allStatuses')}</option>
+              <option value="submitted">{t('hist.statusSubmitted')}</option>
+              <option value="approved">{t('hist.statusApproved')}</option>
+              <option value="fulfilled">{t('hist.statusFulfilled')}</option>
+              <option value="cancelled">{t('hist.statusCancelled')}</option>
             </select>
             <ChevronDown
               className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400 dark:text-slate-500"

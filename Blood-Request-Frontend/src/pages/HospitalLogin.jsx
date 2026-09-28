@@ -15,8 +15,10 @@ import {
 import AuthSidePanel from '../components/AuthSidePanel'
 import ForgotPassword from '../components/ForgotPassword'
 import { demoLogin, getRememberedEmail, loginUser, setRememberedEmail } from '../lib/auth'
+import { useLanguage } from '../context/useLanguage'
 
 const HospitalLogin = ({ onLogin, onRegister }) => {
+  const { t } = useLanguage()
   const [view, setView] = useState('login')
   const [email, setEmail] = useState(getRememberedEmail)
   const [password, setPassword] = useState('')
@@ -32,7 +34,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
     setNotice('')
 
     if (!email || !password) {
-      setError('Please enter your email and password.')
+      setError(t('login.errRequired'))
       return
     }
 
@@ -40,12 +42,12 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
     try {
       await loginUser({ email, password })
       setRememberedEmail(email, remember)
-      toast.success('Logged in successfully!')
+      toast.success(t('login.toastSuccess'))
       if (onLogin) {
         onLogin()
       }
     } catch (err) {
-      setError(err.message || 'Invalid email or password.')
+      setError(err.message || t('login.errInvalid'))
     } finally {
       setLoading(false)
     }
@@ -58,12 +60,12 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
     setLoading(true)
     try {
       await demoLogin()
-      toast.success('Logged in with demo account!')
+      toast.success(t('login.toastDemo'))
       if (onLogin) {
         onLogin()
       }
     } catch (err) {
-      setError(err.message || 'Demo login failed. Please try again.')
+      setError(err.message || t('login.errDemoFailed'))
     } finally {
       setLoading(false)
     }
@@ -122,13 +124,13 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
               {/* Heading */}
               <div className="mt-4 text-center">
                 <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-600">
-                  Welcome back
+                  {t('login.welcomeBack')}
                 </p>
                 <h2 className="mt-1 text-2xl font-bold text-[#102a43]">
-                  Hospital Login
+                  {t('login.title')}
                 </h2>
                 <p className="mt-1 text-[13px] text-[#627b95]">
-                  Sign in to manage blood requests for your hospital
+                  {t('login.subtitle')}
                 </p>
               </div>
 
@@ -140,7 +142,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                     htmlFor="login-email"
                     className="mb-1.5 block text-xs font-semibold text-[#17324d]"
                   >
-                    Email Address
+                    {t('login.email')}
                   </label>
                   <div className="relative">
                     <Mail
@@ -167,7 +169,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                     htmlFor="login-password"
                     className="mb-1.5 block text-xs font-semibold text-[#17324d]"
                   >
-                    Password
+                    {t('login.password')}
                   </label>
                   <div className="relative">
                     <Lock
@@ -180,7 +182,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                       autoComplete="current-password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter your password"
+                      placeholder={t('login.phPassword')}
                       className={`h-11 w-full rounded-xl border bg-slate-50 pl-11 pr-11 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100 ${
                         error ? 'border-red-300' : 'border-slate-200'
                       }`}
@@ -188,7 +190,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      aria-label={showPassword ? 'Hide password' : 'Show password'}
+                      aria-label={showPassword ? t('login.hidePassword') : t('login.showPassword')}
                       className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                     >
                       {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -205,7 +207,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                       onChange={(e) => setRemember(e.target.checked)}
                       className="h-4 w-4 rounded accent-red-600"
                     />
-                    Remember me
+                    {t('login.rememberMe')}
                   </label>
                   <button
                     type="button"
@@ -216,7 +218,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                     }}
                     className="text-xs font-semibold text-red-600 transition hover:text-red-700 hover:underline"
                   >
-                    Forgot password?
+                    {t('login.forgot')}
                   </button>
                 </div>
 
@@ -245,11 +247,11 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                   {loading ? (
                     <>
                       <LoaderCircle size={18} className="animate-spin" />
-                      Signing in…
+                      {t('login.signingIn')}
                     </>
                   ) : (
                     <>
-                      Sign In
+                      {t('login.signIn')}
                       <ArrowRight size={18} />
                     </>
                   )}
@@ -260,7 +262,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
               <div className="my-5 flex items-center gap-3">
                 <div className="h-px flex-1 bg-slate-200" />
                 <span className="rounded-full bg-slate-100 px-3 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                  or
+                  {t('login.or')}
                 </span>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
@@ -273,7 +275,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                 className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-red-200 bg-red-50/60 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50 disabled:opacity-60"
               >
                 <Sparkles size={17} />
-                Explore Demo Account
+                {t('login.exploreDemo')}
               </button>
               <p className="mt-2.5 text-center">
                 <code className="rounded-md bg-slate-100 px-2.5 py-1 font-mono text-[11px] text-slate-600">
@@ -283,12 +285,12 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
 
               {/* Register */}
               <div className="mt-6 rounded-xl bg-slate-50 px-4 py-3 text-center text-[13px] text-slate-600">
-                New hospital?{' '}
+                {t('login.newHospital')}{' '}
                 <button
                   onClick={onRegister}
                   className="font-bold text-red-600 transition hover:text-red-700 hover:underline"
                 >
-                  Register here
+                  {t('login.registerHere')}
                 </button>
               </div>
             </div>

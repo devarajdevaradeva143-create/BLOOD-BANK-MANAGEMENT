@@ -15,6 +15,7 @@ import {
   Sparkles,
 } from 'lucide-react'
 import AuthSidePanel from '../components/AuthSidePanel'
+import { useLanguage } from '../context/useLanguage'
 import { registerHospital } from '../lib/auth'
 import {
   generateStrongPassword,
@@ -22,6 +23,7 @@ import {
 } from '../utils/passwordStrength'
 
 const HospitalRegister = ({ onSuccess, onLogin }) => {
+  const { t } = useLanguage()
   const [form, setForm] = useState({
     hospitalName: '',
     registrationNumber: '',
@@ -71,12 +73,12 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
     passwordStrength === 0
       ? null
       : passwordStrength <= 2
-        ? { label: 'Weak password', text: 'text-red-600', bar: 'bg-red-500' }
+        ? { label: t('reg.strengthWeak'), text: 'text-red-600', bar: 'bg-red-500' }
         : passwordStrength === 3
-          ? { label: 'Fair password', text: 'text-amber-600', bar: 'bg-amber-400' }
+          ? { label: t('reg.strengthFair'), text: 'text-amber-600', bar: 'bg-amber-400' }
           : passwordStrength === 4
-            ? { label: 'Good password', text: 'text-lime-600', bar: 'bg-lime-500' }
-            : { label: 'Strong password', text: 'text-emerald-600', bar: 'bg-emerald-500' }
+            ? { label: t('reg.strengthGood'), text: 'text-lime-600', bar: 'bg-lime-500' }
+            : { label: t('reg.strengthStrong'), text: 'text-emerald-600', bar: 'bg-emerald-500' }
 
   const handleGeneratePassword = () => {
     const generated = generateStrongPassword()
@@ -103,47 +105,47 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
       !form.password ||
       !form.confirmPassword
     ) {
-      setError('Please fill in all fields.')
+      setError(t('reg.errAllFields'))
       return
     }
 
     if (!/^\S+@\S+\.\S+$/.test(form.email)) {
-      setError('Please enter a valid email address.')
+      setError(t('reg.errEmailInvalid'))
       return
     }
 
     if (!/^[0-9]{10}$/.test(form.phone)) {
-      setError('Phone number must contain 10 digits.')
+      setError(t('reg.errPhone'))
       return
     }
 
     if (form.password.length < 8) {
-      setError('Password must contain at least 8 characters.')
+      setError(t('reg.errPwLength'))
       return
     }
 
     if (!/[A-Z]/.test(form.password)) {
-      setError('Password must contain at least one uppercase letter.')
+      setError(t('reg.errPwUpper'))
       return
     }
 
     if (!/[a-z]/.test(form.password)) {
-      setError('Password must contain at least one lowercase letter.')
+      setError(t('reg.errPwLower'))
       return
     }
 
     if (!/[0-9]/.test(form.password)) {
-      setError('Password must contain at least one number.')
+      setError(t('reg.errPwNumber'))
       return
     }
 
     if (!/[^A-Za-z0-9]/.test(form.password)) {
-      setError('Password must contain at least one special character.')
+      setError(t('reg.errPwSpecial'))
       return
     }
 
     if (form.password !== form.confirmPassword) {
-      setError('Passwords do not match.')
+      setError(t('reg.errPwMismatch'))
       return
     }
 
@@ -154,12 +156,12 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
       const { confirmPassword, ...payload } = form
       void confirmPassword
       await registerHospital(payload)
-      toast.success('Registration successful!')
+      toast.success(t('reg.toastSuccess'))
       if (onSuccess) {
         onSuccess()
       }
     } catch (err) {
-      setError(err.message || 'Registration failed. Please try again.')
+      setError(err.message || t('reg.errFailed'))
     } finally {
       setLoading(false)
     }
@@ -199,13 +201,13 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
             {/* Heading */}
             <div className="mt-2 text-center">
               <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-red-600">
-                Join the network
+                {t('reg.badge')}
               </p>
               <h2 className="mt-1 text-2xl font-bold text-[#102a43]">
-                Hospital Registration
+                {t('reg.title')}
               </h2>
               <p className="mt-1 text-xs text-[#627b95]">
-                Create your hospital account to request blood units
+                {t('reg.subtitle')}
               </p>
             </div>
 
@@ -217,7 +219,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                   <Building2 size={13} />
                 </span>
                 <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                  Hospital Information
+                  {t('reg.hospitalInfo')}
                 </h3>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
@@ -227,7 +229,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                 {/* Hospital Name */}
                 <div>
                   <label htmlFor="reg-hospital-name" className={labelCls}>
-                    Hospital Name
+                    {t('reg.hospitalName')}
                   </label>
                   <div className="relative">
                     <Building2 size={16} className={iconCls} />
@@ -236,7 +238,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                       name="hospitalName"
                       value={form.hospitalName}
                       onChange={handleChange}
-                      placeholder="e.g. Govt. General Hospital"
+                      placeholder={t('reg.phHospitalName')}
                       className={inputCls}
                     />
                   </div>
@@ -245,14 +247,14 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                 {/* Registration Number */}
                 <div>
                   <label htmlFor="reg-number" className={labelCls}>
-                    Registration No.
+                    {t('reg.registrationNo')}
                   </label>
                   <input
                     id="reg-number"
                     name="registrationNumber"
                     value={form.registrationNumber}
                     onChange={handleChange}
-                    placeholder="e.g. TN-REG-12345"
+                    placeholder={t('reg.phRegNo')}
                     className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 px-3 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100"
                   />
                 </div>
@@ -263,7 +265,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                 {/* Email */}
                 <div>
                   <label htmlFor="reg-email" className={labelCls}>
-                    Email Address
+                    {t('reg.email')}
                   </label>
                   <div className="relative">
                     <Mail size={16} className={iconCls} />
@@ -283,7 +285,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                 {/* Phone */}
                 <div>
                   <label htmlFor="reg-phone" className={labelCls}>
-                    Phone Number
+                    {t('reg.phone')}
                   </label>
                   <div className="relative">
                     <Phone size={16} className={iconCls} />
@@ -295,7 +297,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                       maxLength={10}
                       value={form.phone}
                       onChange={handleChange}
-                      placeholder="10-digit mobile number"
+                      placeholder={t('reg.phPhone')}
                       className={inputCls}
                     />
                   </div>
@@ -305,7 +307,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
               {/* Address */}
               <div>
                 <label htmlFor="reg-address" className={labelCls}>
-                  Hospital Address
+                  {t('reg.address')}
                 </label>
                 <div className="relative">
                   <MapPin size={16} className={iconCls} />
@@ -314,7 +316,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                     name="address"
                     value={form.address}
                     onChange={handleChange}
-                    placeholder="Street, area, district"
+                    placeholder={t('reg.phAddress')}
                     className={inputCls}
                   />
                 </div>
@@ -326,7 +328,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                   <Lock size={13} />
                 </span>
                 <h3 className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                  Account Security
+                  {t('reg.accountSecurity')}
                 </h3>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
@@ -336,7 +338,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                 {/* Password */}
                 <div>
                   <label htmlFor="reg-password" className={labelCls}>
-                    Password
+                    {t('reg.password')}
                   </label>
                   <div className="relative">
                     <Lock size={16} className={iconCls} />
@@ -347,15 +349,15 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                       name="password"
                       value={form.password}
                       onChange={handleChange}
-                      placeholder="Min. 8 characters"
+                      placeholder={t('reg.phPassword')}
                       className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-16 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100"
                     />
                     <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
                       <button
                         type="button"
                         onClick={handleGeneratePassword}
-                        aria-label="Generate strong password"
-                        title="Generate strong password (fills both fields)"
+                        aria-label={t('reg.generatePassword')}
+                        title={t('reg.generatePasswordTitle')}
                         className="rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                       >
                         <Sparkles size={15} />
@@ -363,7 +365,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                        aria-label={showPassword ? t('reg.hidePassword') : t('reg.showPassword')}
                         className="rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                       >
                         {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
@@ -385,12 +387,12 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                         ))}
                       </div>
                       <p className={`mt-1 text-[11px] font-semibold ${strengthMeta.text}`}>
-                        {strengthMeta.label} — use uppercase, number &amp; symbol
+                        {t('reg.strengthHint').replace('{label}', strengthMeta.label)}
                       </p>
                     </div>
                   ) : (
                     <p className="mt-1.5 text-[11px] text-slate-400">
-                      Use 8+ characters with uppercase, number &amp; symbol
+                      {t('reg.strengthEmpty')}
                     </p>
                   )}
                 </div>
@@ -398,7 +400,7 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                 {/* Confirm */}
                 <div>
                   <label htmlFor="reg-confirm" className={labelCls}>
-                    Confirm Password
+                    {t('reg.confirmPassword')}
                   </label>
                   <div className="relative">
                     <Lock size={16} className={iconCls} />
@@ -409,13 +411,15 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                       name="confirmPassword"
                       value={form.confirmPassword}
                       onChange={handleChange}
-                      placeholder="Repeat your password"
+                      placeholder={t('reg.phConfirmPassword')}
                       className="h-9 w-full rounded-xl border border-slate-200 bg-slate-50 pl-10 pr-10 text-[13px] text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-red-500 focus:bg-white focus:ring-4 focus:ring-red-100"
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                      aria-label={
+                        showConfirmPassword ? t('reg.hidePassword') : t('reg.showPassword')
+                      }
                       className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600"
                     >
                       {showConfirmPassword ? (
@@ -434,8 +438,8 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                       }`}
                     >
                       {form.password === form.confirmPassword
-                        ? 'Passwords match'
-                        : 'Passwords do not match'}
+                        ? t('reg.match')
+                        : t('reg.notMatch')}
                     </p>
                   )}
                 </div>
@@ -458,11 +462,11 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
                 {loading ? (
                   <>
                     <LoaderCircle size={17} className="animate-spin" />
-                    Creating account…
+                    {t('reg.creating')}
                   </>
                 ) : (
                   <>
-                    Create Account
+                    {t('reg.createAccount')}
                     <ArrowRight size={16} />
                   </>
                 )}
@@ -471,12 +475,12 @@ const HospitalRegister = ({ onSuccess, onLogin }) => {
 
             {/* Login */}
             <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-center text-[13px] text-slate-600">
-              Already have an account?{' '}
+              {t('reg.haveAccount')}{' '}
               <button
                 onClick={onLogin}
                 className="font-bold text-red-600 transition hover:text-red-700 hover:underline"
               >
-                Sign in
+                {t('reg.signIn')}
               </button>
             </div>
             </div>

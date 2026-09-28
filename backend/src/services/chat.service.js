@@ -49,12 +49,12 @@ export function fallbackReply(text, lang = 'en', page = 'donor') {
 
   const outOfScopeDonor = has(
     'request', 'requestid', 'request id', 'req-', 'availab', 'stock', 'emergency',
-    '108', 'hospital', 'patient', 'district', 'கோரிக்கை', 'கோரு', 'இருப்பு', 'அவசர', 'மருத்துவமனை', 'நோயாளி'
+    '108', 'hospital', 'patient', 'district',     'request', 'availab', 'stock', 'emergency', 'hospital', 'patient'
   );
   const outOfScopeRequest = has(
     'eligib', 'donate', 'donor', 'donation process',
     'how long does the donation', 'weight', '50 kg',
-    'தகுதி', 'தானம்', 'செயல்முறை', 'எடை', 'வயது'
+    'eligib', 'donate', 'donor', 'process', 'weight', 'age'
   );
 
   if (isDonor && outOfScopeDonor && !has('donor', 'eligib', 'தகுதி', 'தானம்')) {

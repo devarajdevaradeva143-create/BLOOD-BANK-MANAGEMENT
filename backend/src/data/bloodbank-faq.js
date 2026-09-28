@@ -27,9 +27,9 @@ DONOR FAQ:
 - Contact: Helpline +91-44-4000-1234, Emergency donor helpline 104.
 
 TAMIL (தமிழ்):
-- தகுதி: 18-65 வயது, >=50 கிலோ, கடந்த 90 நாட்களில் தானம் இல்லை, காய்ச்சல்/தொற்று இல்லை. இறுதி முடிவு மருத்துவரிடம். சந்தேகம்: 104.
-- செயல்முறை: பதிவு -> பரிசோதனை -> 8-10 நிமிட தானம் -> 10-15 நிமிட ஓய்வு -> 90 நாட்களுக்குப் பின் அடுத்த தானம்.
-- பதிவு: Eligibility சரிபார்த்து Register பக்கத்தில் OTP உடன் பதிவு (~2 நிமிடம்).
+- Eligibility: 18-65 yrs, >=50 kg, no donation in last 90 days, no fever/infection. Final decision by medical staff. Doubt: 104.
+- Process: Registration -> Screening -> 8-10 min donation -> 10-15 min rest -> Next donation after 90 days.
+- Register: Check Eligibility then Register page with OTP (~2 min).
 `.trim();
 
 export const REQUEST_KNOWLEDGE = `
@@ -52,8 +52,8 @@ REQUEST FAQ:
 - Contact: Helpline +91-44-4000-1234, help@lifesaverbloodbank.in, Emergency 108.
 
 TAMIL (தமிழ்):
-- கோரிக்கை: Request பக்கத்தில் நோயாளி/மருத்துவமனை/இரத்தக்குழு/அலகுகள் (1-50) நிரப்பி, Availability-ல் இருப்பு சரிபார்த்து, OTP-உடன் சமர்ப்பித்து requestId பெறவும்.
-- அவசரம்: emergency கோரிக்கை + 108 + மருத்துவமனை இரத்த வங்கியை அழைக்கவும். தேவை ஆவணங்கள்: மருத்துவர் கடிதம், அனுமதி சான்று, அடையாள அட்டை.
+- Request: Fill Request page (patient/hospital/blood group/units 1-50), check availability, submit with OTP to get requestId.
+- Emergency: Emergency request + 108 + call hospital blood bank. Required documents: doctor letter, admission proof, photo ID.
 `.trim();
 
 export const BLOODBANK_KNOWLEDGE = `${DONOR_KNOWLEDGE}\n\n${REQUEST_KNOWLEDGE}`;

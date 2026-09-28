@@ -34,6 +34,7 @@ import { getRegisteredHospital } from '../lib/auth'
 import { requestOtp, submitBulkRequest, toUserMessage } from '../lib/api'
 import { BLOOD_GROUPS, GENDERS, MAX_AGE, MAX_UNITS, MIN_UNITS } from '../data/constants'
 import { districts } from '../data/districts'
+import { useLanguage } from '../context/useLanguage'
 
 const DRAFT_KEY = 'bloodtrack-draft-v1'
 
@@ -151,24 +152,218 @@ function InfoTile({ icon: Icon, label, value }) {
   )
 }
 
-const NAV = [
-  { id: 'sec-1', label: 'Hospital' },
-  { id: 'sec-2', label: 'Request' },
-  { id: 'sec-3', label: 'Patients' },
-  { id: 'sec-4', label: 'Doctor' },
-  { id: 'sec-5', label: 'Summary' },
-  { id: 'sec-6', label: 'Documents' },
-  { id: 'sec-7', label: 'Submit' },
-]
+const HOSPITAL_FORM_STRINGS = {
+  en: {
+    title: 'Hospital Blood Request',
+    subtitle: 'BloodTrack enterprise workflow • Multi-patient transfusion request',
+    newRequest: 'New Request',
+    hospitalDetails: 'Hospital Details',
+    hospitalDetailsDesc: 'Auto-filled from your registered hospital profile',
+    autoFilled: 'Auto-filled',
+    hospitalId: 'Hospital ID',
+    hospitalName: 'Hospital Name',
+    district: 'District',
+    bloodBankDept: 'Blood Bank Department',
+    bloodBankDeptValue: 'Blood Bank & Transfusion Medicine',
+    currentDate: 'Current Date',
+    currentTime: 'Current Time',
+    requestInfo: 'Request Information',
+    requestInfoDesc: 'Define the type, priority and schedule of this request',
+    requestType: 'Request Type',
+    priority: 'Priority',
+    districtLabel: 'District — request goes to this district admin',
+    selectDistrict: 'Select district',
+    hospitalAddressSuggests: 'Hospital address suggests: {name} — please confirm and select.',
+    requiredDate: 'Required Date',
+    requiredTime: 'Required Time',
+    patientRequirement: 'Patient Blood Requirement',
+    patientRequirementDesc: 'Add one card per patient requiring transfusion',
+    patient: 'Patient',
+    patientId: 'Patient ID',
+    patientName: 'Patient Name',
+    fullName: 'Full name',
+    age: 'Age',
+    years: 'Years',
+    gender: 'Gender',
+    selectGender: 'Select gender',
+    bloodGroup: 'Blood Group',
+    selectGroup: 'Select group',
+    bloodComponent: 'Blood Component',
+    selectComponent: 'Select component',
+    unitsRequired: 'Units Required',
+    wardDepartment: 'Ward / Department',
+    selectWard: 'Select ward',
+    diagnosisReason: 'Diagnosis / Reason',
+    diagnosisHint: 'Clinical indication for transfusion',
+    diagnosisPlaceholder: 'e.g. Severe anaemia due to GI bleed',
+    doctorDetails: 'Doctor Details',
+    doctorName: 'Doctor Name',
+    doctorNamePlaceholder: 'Dr. full name',
+    doctorId: 'Doctor ID',
+    doctorIdPlaceholder: 'e.g. DR-1024',
+    department: 'Department',
+    selectDepartment: 'Select department',
+    contactNumber: 'Contact Number',
+    contactPlaceholder: '10-digit mobile',
+    addAnotherPatient: 'Add Another Patient',
+    summary: 'Blood Requirement Summary',
+    summaryDesc: 'Consolidated requirement across all patients',
+    totalUnits: 'total units',
+    unitsRequiredCol: 'Units Required',
+    totalUnitsRequired: 'Total Units Required',
+    noRequirements: 'No requirements yet',
+    noRequirementsHint: 'Add blood group and units in the patient cards to see the summary.',
+    supportingDocs: 'Supporting Documents',
+    supportingDocsDesc: 'Attach reports to speed up verification',
+    replace: 'Replace',
+    remove: 'Remove',
+    browseFile: 'Browse file',
+    supportedFormats: 'Supported: PDF, JPG, PNG, WEBP • Max 5 MB per file.',
+    finalConfirmation: 'Final Confirmation',
+    finalConfirmationDesc: 'Review the request and submit to the blood bank',
+    confirmText: 'I confirm that the patient details, blood requirement and documents above are accurate and this request is authorised by the requesting doctor on behalf of the hospital.',
+    unitsForPatients: '{units} unit{s} for {patients} patient{s}',
+    priorityLabel: '{type} • {priority} priority',
+    saveDraft: 'Save as Draft',
+    submitting: 'Submitting…',
+    submitRequest: 'Submit Blood Request',
+    requestedBy: 'Requested by {doctor} • {hospital}',
+    draftRestored: 'Draft restored from your last session',
+    draftSaved: 'Draft saved successfully',
+    draftError: 'Could not save the draft',
+    fixFields: 'Please fix {count} highlighted field(s)',
+    otpSent: 'OTP sent',
+    otpResent: 'OTP resent',
+    requestSubmitted: 'Blood request submitted successfully',
+    groupCopied: 'Group ID copied',
+    submittedTitle: 'Blood Request Submitted',
+    submittedDesc: 'The blood bank team has been notified and will respond based on priority.',
+    patients: 'Patients',
+    patientCount: '{count} patient(s)',
+    totalUnitsLabel: 'Total Units',
+    unitCount: '{count} unit(s)',
+    districtAdmin: 'District Admin',
+    required: 'Required',
+    submitAnother: 'Submit Another Request',
+    removePatient: 'Remove patient {index}',
+  },
+  ta: {
+    title: 'மருத்துவமனை இரத்த கோரிக்கை',
+    subtitle: 'BloodTrack என்டர்பிரிஸ் வொர்க்ஃப்ளோ • பல நோயாளி இரத்த மாற்று கோரிக்கை',
+    newRequest: 'புதிய கோரிக்கை',
+    hospitalDetails: 'மருத்துவமனை விவரங்கள்',
+    hospitalDetailsDesc: 'உங்கள் பதிவு செய்யப்பட்ட மருத்துவமனை சுயவிவரத்தில் இருந்து தானாக நிரப்பப்பட்டது',
+    autoFilled: 'தானாக நிரப்பப்பட்டது',
+    hospitalId: 'மருத்துவமனை ஐடி',
+    hospitalName: 'மருத்துவமனை பெயர்',
+    district: 'மாவட்டம்',
+    bloodBankDept: 'இரத்த வங்கி துறை',
+    bloodBankDeptValue: 'இரத்த வங்கி & இரத்த மாற்று மருத்துவம்',
+    currentDate: 'தற்போதைய தேதி',
+    currentTime: 'தற்போதைய நேரம்',
+    requestInfo: 'கோரிக்கை தகவல்',
+    requestInfoDesc: 'இந்த கோரிக்கையின் வகை, முன்னுரிமை மற்றும் அட்டவணையை வரையறுக்கவும்',
+    requestType: 'கோரிக்கை வகை',
+    priority: 'முன்னுரிமை',
+    districtLabel: 'மாவட்டம் — கோரிக்கை இந்த மாவட்ட நிர்வாகிக்கு செல்லும்',
+    selectDistrict: 'மாவட்டத்தைத் தேர்ந்தெடுக்கவும்',
+    hospitalAddressSuggests: 'மருத்துவமனை முகவரி பரிந்துரை: {name} — உறுதிப்படுத்தி தேர்ந்தெடுக்கவும்.',
+    requiredDate: 'தேவையான தேதி',
+    requiredTime: 'தேவையான நேரம்',
+    patientRequirement: 'நோயாளி இரத்த தேவை',
+    patientRequirementDesc: 'இரத்த மாற்று தேவைப்படும் ஒவ்வொரு நோயாளிக்கும் ஒரு அட்டை சேர்க்கவும்',
+    patient: 'நோயாளி',
+    patientId: 'நோயாளி ஐடி',
+    patientName: 'நோயாளி பெயர்',
+    fullName: 'முழு பெயர்',
+    age: 'வயது',
+    years: 'ஆண்டுகள்',
+    gender: 'பாலினம்',
+    selectGender: 'பாலினத்தைத் தேர்ந்தெடுக்கவும்',
+    bloodGroup: 'இரத்தக் குழு',
+    selectGroup: 'குழுவைத் தேர்ந்தெடுக்கவும்',
+    bloodComponent: 'இரத்த கூறு',
+    selectComponent: 'கூறைத் தேர்ந்தெடுக்கவும்',
+    unitsRequired: 'தேவையான அலகுகள்',
+    wardDepartment: 'வார்டு / துறை',
+    selectWard: 'வார்டைத் தேர்ந்தெடுக்கவும்',
+    diagnosisReason: 'நோயறிவு / காரணம்',
+    diagnosisHint: 'இரத்த மாற்றுக்கான மருத்துவ குறிப்பு',
+    diagnosisPlaceholder: 'எ.கா. GI கசிவு காரணமாக கடுமையான இரத்த சோர்வு',
+    doctorDetails: 'மருத்துவர் விவரங்கள்',
+    doctorName: 'மருத்துவர் பெயர்',
+    doctorNamePlaceholder: 'மருத்துவர் முழு பெயர்',
+    doctorId: 'மருத்துவர் ஐடி',
+    doctorIdPlaceholder: 'எ.கா. DR-1024',
+    department: 'துறை',
+    selectDepartment: 'துறையைத் தேர்ந்தெடுக்கவும்',
+    contactNumber: 'தொடர்பு எண்',
+    contactPlaceholder: '10 இலக்க கைபேசி',
+    addAnotherPatient: 'மற்றொரு நோயாளியைச் சேர்',
+    summary: 'இரத்த தேவை சுருக்கம்',
+    summaryDesc: 'அனைத்து நோயாளிகளிலும் ஒருங்கிணைந்த தேவை',
+    totalUnits: 'மொத்த அலகுகள்',
+    unitsRequiredCol: 'தேவையான அலகுகள்',
+    totalUnitsRequired: 'மொத்த தேவையான அலகுகள்',
+    noRequirements: 'இன்னும் தேவைகள் இல்லை',
+    noRequirementsHint: 'சுருக்கத்தைக் காண நோயாளி அட்டைகளில் இரத்தக் குழு மற்றும் அலகுகளைச் சேர்க்கவும்.',
+    supportingDocs: 'ஆதரவு ஆவணங்கள்',
+    supportingDocsDesc: 'சரிபார்ப்பை விரைவுபடுத்த அறிக்கைகளை இணைக்கவும்',
+    replace: 'மாற்று',
+    remove: 'நீக்கு',
+    browseFile: 'கோப்பைத் தேடு',
+    supportedFormats: 'ஆதரவு: PDF, JPG, PNG, WEBP • கோப்பு ஒன்றுக்கு 5 MB வரை.',
+    finalConfirmation: 'இறுதி உறுதிப்படுத்தல்',
+    finalConfirmationDesc: 'கோரிக்கையை மதிப்பாய்வு செய்து இரத்த வங்கிக்கு சமர்ப்பிக்கவும்',
+    confirmText: 'நோயாளி விவரங்கள், இரத்த தேவை மற்றும் மேலே உள்ள ஆவணங்கள் சரியானவை என்பதையும், இந்த கோரிக்கை மருத்துவமனை சார்ந்து கோரும் மருத்துவரால் அங்கீகரிக்கப்பட்டது என்பதையும் உறுதிப்படுத்துகிறேன்.',
+    unitsForPatients: '{patients} நோயாளிக்கு {units} அலகு{s}',
+    priorityLabel: '{type} • {priority} முன்னுரிமை',
+    saveDraft: 'வரைவு சேமி',
+    submitting: 'சமர்ப்பிக்கப்படுகிறது…',
+    submitRequest: 'இரத்த கோரிக்கையைச் சமர்ப்பி',
+    requestedBy: '{doctor} மூலம் கோரப்பட்டது • {hospital}',
+    draftRestored: 'உங்கள் கடைசி அமர்வில் இருந்து வரைவு மீட்கப்பட்டது',
+    draftSaved: 'வரைவு வெற்றிகரமாக சேமிக்கப்பட்டது',
+    draftError: 'வரைவை சேமிக்க முடியவில்லை',
+    fixFields: 'தயவுசெய்து {count} முன்னிலைப்படுத்தப்பட்ட புலம்(களை) சரிசெய்யவும்',
+    otpSent: 'OTP அனுப்பப்பட்டது',
+    otpResent: 'OTP மீண்டும் அனுப்பப்பட்டது',
+    requestSubmitted: 'இரத்த கோரிக்கை வெற்றிகரமாக சமர்ப்பிக்கப்பட்டது',
+    groupCopied: 'குழு ஐடி நகலெடுக்கப்பட்டது',
+    submittedTitle: 'இரத்த கோரிக்கை சமர்ப்பிக்கப்பட்டது',
+    submittedDesc: 'இரத்த வங்கி குழுவிடம் தெரிவிக்கப்பட்டது மற்றும் முன்னுரிமையின் அடிப்படையில் பதிலளிக்கும்.',
+    patients: 'நோயாளிகள்',
+    patientCount: '{count} நோயாளி(கள்)',
+    totalUnitsLabel: 'மொத்த அலகுகள்',
+    unitCount: '{count} அலகு(கள்)',
+    districtAdmin: 'மாவட்ட நிர்வாகி',
+    required: 'தேவையானது',
+    submitAnother: 'மற்றொரு கோரிக்கையைச் சமர்ப்பி',
+    removePatient: 'நோயாளி {index} ஐ நீக்கு',
+  },
+}
 
 export default function HospitalRequestForm() {
+  const { lang } = useLanguage()
+  const s = HOSPITAL_FORM_STRINGS[lang] || HOSPITAL_FORM_STRINGS.en
+
+  const NAV = [
+    { id: 'sec-1', label: s.hospitalDetails },
+    { id: 'sec-2', label: s.requestInfo },
+    { id: 'sec-3', label: s.patientRequirement },
+    { id: 'sec-4', label: s.doctorDetails },
+    { id: 'sec-5', label: s.summary },
+    { id: 'sec-6', label: s.supportingDocs },
+    { id: 'sec-7', label: s.finalConfirmation },
+  ]
+
   const [draft] = useState(readDraft)
   const draftShownRef = useRef(false)
   const seqRef = useRef(draft?.patients?.length || 1)
 
   const hospital = useMemo(() => getRegisteredHospital(), [])
-  // Hospital address-la irundhu default district-ah kandupidi — aana user
-  // select panna district dhaan final (andha district admin-ku tha pogum).
+  // Detect default district from hospital address — but user-selected
+  // district is final (goes to that district admin).
   const hospitalDistrict = useMemo(() => {
     const addr = (hospital?.address || '').toLowerCase()
     const hit = districts.find((d) => addr.includes(d.en.toLowerCase()))
@@ -208,7 +403,7 @@ export default function HospitalRequestForm() {
   useEffect(() => {
     if (draft && !draftShownRef.current && !submitted) {
       draftShownRef.current = true
-      toast('Draft restored from your last session', { icon: '📝' })
+      toast(s.draftRestored, { icon: '📝' })
     }
   }, [draft, submitted])
 
@@ -281,7 +476,7 @@ export default function HospitalRequestForm() {
   function validate() {
     const next = {}
 
-    // District select pannalum — select panna district admin-ku tha pogum.
+    // District is required — request goes to the selected district admin.
     if (!form.districtId) next.districtId = 'District is required'
     if (!form.requiredDate) next.requiredDate = 'Required date is required'
     if (!form.requiredTime) next.requiredTime = 'Required time is required'
@@ -319,9 +514,9 @@ export default function HospitalRequestForm() {
     const payload = { form, patients, doctor, savedAt: new Date().toISOString() }
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(payload))
-      toast.success('Draft saved successfully')
+      toast.success(s.draftSaved)
     } catch {
-      toast.error('Could not save the draft')
+      toast.error(s.draftError)
     }
   }
 
@@ -362,7 +557,7 @@ export default function HospitalRequestForm() {
     setServerError('')
 
     if (Object.keys(next).length) {
-      toast.error(`Please fix ${Object.keys(next).length} highlighted field(s)`)
+      toast.error(s.fixFields.replace('{count}', Object.keys(next).length))
       return
     }
 
@@ -409,7 +604,7 @@ export default function HospitalRequestForm() {
       } catch {
         /* ignore */
       }
-      toast.success('Blood request submitted successfully')
+      toast.success(s.requestSubmitted)
       window.scrollTo({ top: 0, behavior: 'smooth' })
     } catch (err) {
       setOtpError(toUserMessage(err, 'Submission failed. Check the OTP and try again.'))
@@ -422,7 +617,7 @@ export default function HospitalRequestForm() {
     setOtpError('')
     try {
       await requestOtp(patients[0]?.doctorContact?.trim() || '')
-      toast.success('OTP resent')
+      toast.success(s.otpResent)
     } catch (err) {
       setOtpError(toUserMessage(err, 'Could not resend OTP.'))
     }
@@ -449,7 +644,7 @@ export default function HospitalRequestForm() {
 
   function copyId() {
     navigator.clipboard?.writeText(submitted.groupId)
-    toast.success('Group ID copied')
+    toast.success(s.groupCopied)
   }
 
   if (submitted) {
@@ -460,10 +655,8 @@ export default function HospitalRequestForm() {
             <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-white/15 ring-4 ring-white/20">
               <CircleCheck className="h-9 w-9" aria-hidden="true" />
             </div>
-            <h2 className="mt-4 text-2xl font-bold">Blood Request Submitted</h2>
-            <p className="mt-1 text-sm text-red-100">
-              The blood bank team has been notified and will respond based on priority.
-            </p>
+              <h2 className="mt-4 text-2xl font-bold">{s.submittedTitle}</h2>
+            <p className="mt-1 text-sm text-red-100">{s.submittedDesc}</p>
             <button
               type="button"
               onClick={copyId}
@@ -476,13 +669,13 @@ export default function HospitalRequestForm() {
           </div>
 
           <div className="grid gap-4 px-6 py-6 sm:grid-cols-2">
-            <InfoTile icon={Users} label="Patients" value={`${submitted.patients} patient(s)`} />
-            <InfoTile icon={Droplets} label="Total Units" value={`${submitted.totalUnits} unit(s)`} />
-            <InfoTile icon={Table2} label="District Admin" value={submitted.districtName || submitted.districtId || '—'} />
-            <InfoTile icon={Siren} label="Priority" value={submitted.priority.toUpperCase()} />
+                <InfoTile icon={Users} label={s.patients} value={s.patientCount.replace('{count}', submitted.patients)} />
+            <InfoTile icon={Droplets} label={s.totalUnitsLabel} value={s.unitCount.replace('{count}', submitted.totalUnits)} />
+            <InfoTile icon={Table2} label={s.districtAdmin} value={submitted.districtName || submitted.districtId || '—'} />
+            <InfoTile icon={Siren} label={s.priority} value={submitted.priority.toUpperCase()} />
             <InfoTile
               icon={CalendarDays}
-              label="Required"
+              label={s.required}
               value={`${submitted.requiredDate} • ${submitted.requiredTime}`}
             />
           </div>
@@ -492,8 +685,8 @@ export default function HospitalRequestForm() {
               <table className="w-full text-left text-sm">
                 <thead>
                   <tr className="border-b border-slate-200 text-xs uppercase tracking-wide text-slate-500 dark:border-slate-700 dark:text-slate-400">
-                    <th className="py-2 font-semibold">Blood Group</th>
-                    <th className="py-2 text-right font-semibold">Units</th>
+                    <th className="py-2 font-semibold">{s.bloodGroup}</th>
+                    <th className="py-2 text-right font-semibold">{s.unitsRequiredCol}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -511,7 +704,7 @@ export default function HospitalRequestForm() {
           <div className="border-t border-slate-200 px-6 py-5 dark:border-slate-800">
             <button type="button" onClick={handleNewRequest} className="btn-primary w-full sm:w-auto">
               <Plus className="h-4 w-4" aria-hidden="true" />
-              Submit Another Request
+                {s.submitAnother}
             </button>
           </div>
         </div>
@@ -529,16 +722,14 @@ export default function HospitalRequestForm() {
                 <Droplets className="h-6 w-6" aria-hidden="true" />
               </span>
               <div>
-                <h1 className="text-xl font-bold sm:text-2xl">Hospital Blood Request</h1>
-                <p className="mt-1 text-sm text-red-100">
-                  BloodTrack enterprise workflow • Multi-patient transfusion request
-                </p>
+                <h1 className="text-xl font-bold sm:text-2xl">{s.title}</h1>
+                <p className="mt-1 text-sm text-red-100">{s.subtitle}</p>
               </div>
             </div>
             <div className="flex flex-col items-start gap-2 sm:items-end">
               <span className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold ring-1 ring-white/25">
                 <Hash className="h-3.5 w-3.5" aria-hidden="true" />
-                New Request
+                {s.newRequest}
               </span>
               <span className="inline-flex items-center gap-2 rounded-lg bg-white/15 px-3 py-1.5 text-xs font-semibold ring-1 ring-white/25">
                 <Clock className="h-3.5 w-3.5" aria-hidden="true" />
@@ -566,21 +757,21 @@ export default function HospitalRequestForm() {
         id="sec-1"
         step="1"
         icon={Building2}
-        title="Hospital Details"
-        description="Auto-filled from your registered hospital profile"
+        title={s.hospitalDetails}
+        description={s.hospitalDetailsDesc}
         badge={
           <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/60 dark:text-emerald-300">
-            Auto-filled
+            {s.autoFilled}
           </span>
         }
       >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          <InfoTile icon={Hash} label="Hospital ID" value={hospital?.registrationNumber || 'Not registered'} />
-          <InfoTile icon={Building2} label="Hospital Name" value={hospital?.hospitalName || 'Not registered'} />
-          <InfoTile icon={Table2} label="District" value={district} />
-          <InfoTile icon={Droplets} label="Blood Bank Department" value="Blood Bank & Transfusion Medicine" />
-          <InfoTile icon={CalendarDays} label="Current Date" value={dateLabel} />
-          <InfoTile icon={Clock} label="Current Time" value={timeLabel} />
+          <InfoTile icon={Hash} label={s.hospitalId} value={hospital?.registrationNumber || 'Not registered'} />
+          <InfoTile icon={Building2} label={s.hospitalName} value={hospital?.hospitalName || 'Not registered'} />
+          <InfoTile icon={Table2} label={s.district} value={district} />
+          <InfoTile icon={Droplets} label={s.bloodBankDept} value={s.bloodBankDeptValue} />
+          <InfoTile icon={CalendarDays} label={s.currentDate} value={dateLabel} />
+          <InfoTile icon={Clock} label={s.currentTime} value={timeLabel} />
         </div>
       </Section>
 
@@ -588,12 +779,12 @@ export default function HospitalRequestForm() {
         id="sec-2"
         step="2"
         icon={ClipboardList}
-        title="Request Information"
-        description="Define the type, priority and schedule of this request"
+        title={s.requestInfo}
+        description={s.requestInfoDesc}
       >
         <div className="space-y-6">
           <div>
-            <p className="label-base">Request Type</p>
+            <p className="label-base">{s.requestType}</p>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {REQUEST_TYPES.map((type) => {
                 const active = form.requestType === type.id
@@ -628,7 +819,7 @@ export default function HospitalRequestForm() {
           </div>
 
           <div>
-            <p className="label-base">Priority</p>
+            <p className="label-base">{s.priority}</p>
             <div className="grid gap-3 sm:grid-cols-3">
               {PRIORITIES.map((level) => {
                 const active = form.priority === level.id
@@ -656,7 +847,7 @@ export default function HospitalRequestForm() {
 
           <div>
             <FormField
-              label="District — indha district admin-ku tha request pogum"
+              label={s.districtLabel}
               htmlFor="req-district"
               required
               error={errors.districtId}
@@ -667,7 +858,7 @@ export default function HospitalRequestForm() {
                 onChange={(e) => setFormField('districtId', e.target.value)}
                 className={`input-base ${errors.districtId ? 'input-error' : ''}`}
               >
-                <option value="">Select district</option>
+                <option value="">{s.selectDistrict}</option>
                 {districts.map((d) => (
                   <option key={d.id} value={d.id}>
                     {d.en}
@@ -677,13 +868,13 @@ export default function HospitalRequestForm() {
             </FormField>
             {hospitalDistrict && !form.districtId && (
               <p className="mt-1.5 text-xs text-slate-500 dark:text-slate-400">
-                Hospital address prakaram: {hospitalDistrict.en} — confirm panni select pannunga.
+                {s.hospitalAddressSuggests.replace('{name}', hospitalDistrict.en)}
               </p>
             )}
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField label="Required Date" htmlFor="req-date" required error={errors.requiredDate}>
+            <FormField label={s.requiredDate} htmlFor="req-date" required error={errors.requiredDate}>
               <input
                 id="req-date"
                 type="date"
@@ -692,7 +883,7 @@ export default function HospitalRequestForm() {
                 className={`input-base ${errors.requiredDate ? 'input-error' : ''}`}
               />
             </FormField>
-            <FormField label="Required Time" htmlFor="req-time" required error={errors.requiredTime}>
+            <FormField label={s.requiredTime} htmlFor="req-time" required error={errors.requiredTime}>
               <input
                 id="req-time"
                 type="time"
@@ -709,8 +900,8 @@ export default function HospitalRequestForm() {
         id="sec-3"
         step="3"
         icon={Users}
-        title="Patient Blood Requirement"
-        description="Add one card per patient requiring transfusion"
+        title={s.patientRequirement}
+        description={s.patientRequirementDesc}
         badge={
           <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
             {patients.length} patient{patients.length > 1 ? 's' : ''}
@@ -728,7 +919,7 @@ export default function HospitalRequestForm() {
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-red-600 text-xs font-bold text-white shadow-sm shadow-red-600/30">
                     {index + 1}
                   </span>
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">Patient {index + 1}</p>
+                  <p className="text-sm font-bold text-slate-900 dark:text-white">{s.patient} {index + 1}</p>
                   <span className="inline-flex items-center gap-1 rounded-md bg-white px-2 py-1 text-[11px] font-semibold text-slate-500 ring-1 ring-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:ring-slate-700">
                     <Hash className="h-3 w-3" aria-hidden="true" />
                     {patient.pid}
@@ -738,7 +929,7 @@ export default function HospitalRequestForm() {
                   type="button"
                   onClick={() => removePatient(index)}
                   disabled={patients.length === 1}
-                  aria-label={`Remove patient ${index + 1}`}
+                  aria-label={s.removePatient.replace('{index}', index + 1)}
                   className="flex h-8 w-8 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-400 transition hover:border-red-300 hover:text-red-600 disabled:cursor-not-allowed disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:hover:border-red-900"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -746,7 +937,7 @@ export default function HospitalRequestForm() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <FormField label="Patient ID" htmlFor={`pid-${index}`}>
+                <FormField label={s.patientId} htmlFor={`pid-${index}`}>
                   <input
                     id={`pid-${index}`}
                     value={patient.pid}
@@ -754,17 +945,17 @@ export default function HospitalRequestForm() {
                     className="input-base"
                   />
                 </FormField>
-                <FormField label="Patient Name" htmlFor={`pname-${index}`} required error={errors[`patient.${index}.name`]}>
+                <FormField label={s.patientName} htmlFor={`pname-${index}`} required error={errors[`patient.${index}.name`]}>
                   <input
                     id={`pname-${index}`}
                     type="text"
                     value={patient.name}
                     onChange={(e) => setPatient(index, 'name', e.target.value)}
-                    placeholder="Full name"
+                    placeholder={s.fullName}
                     className={`input-base ${errors[`patient.${index}.name`] ? 'input-error' : ''}`}
                   />
                 </FormField>
-                <FormField label="Age" htmlFor={`page-${index}`} required error={errors[`patient.${index}.age`]}>
+                <FormField label={s.age} htmlFor={`page-${index}`} required error={errors[`patient.${index}.age`]}>
                   <input
                     id={`page-${index}`}
                     type="number"
@@ -772,18 +963,18 @@ export default function HospitalRequestForm() {
                     max={MAX_AGE}
                     value={patient.age}
                     onChange={(e) => setPatient(index, 'age', e.target.value)}
-                    placeholder="Years"
+                    placeholder={s.years}
                     className={`input-base ${errors[`patient.${index}.age`] ? 'input-error' : ''}`}
                   />
                 </FormField>
-                <FormField label="Gender" htmlFor={`pgender-${index}`} required error={errors[`patient.${index}.gender`]}>
+                <FormField label={s.gender} htmlFor={`pgender-${index}`} required error={errors[`patient.${index}.gender`]}>
                   <select
                     id={`pgender-${index}`}
                     value={patient.gender}
                     onChange={(e) => setPatient(index, 'gender', e.target.value)}
                     className={`input-base ${errors[`patient.${index}.gender`] ? 'input-error' : ''}`}
                   >
-                    <option value="">Select gender</option>
+                    <option value="">{s.selectGender}</option>
                     {GENDERS.map((g) => (
                       <option key={g} value={g}>
                         {g.charAt(0).toUpperCase() + g.slice(1)}
@@ -791,14 +982,14 @@ export default function HospitalRequestForm() {
                     ))}
                   </select>
                 </FormField>
-                <FormField label="Blood Group" htmlFor={`pgroup-${index}`} required error={errors[`patient.${index}.bloodGroup`]}>
+                <FormField label={s.bloodGroup} htmlFor={`pgroup-${index}`} required error={errors[`patient.${index}.bloodGroup`]}>
                   <select
                     id={`pgroup-${index}`}
                     value={patient.bloodGroup}
                     onChange={(e) => setPatient(index, 'bloodGroup', e.target.value)}
                     className={`input-base ${errors[`patient.${index}.bloodGroup`] ? 'input-error' : ''}`}
                   >
-                    <option value="">Select group</option>
+                    <option value="">{s.selectGroup}</option>
                     {BLOOD_GROUPS.map((g) => (
                       <option key={g} value={g}>
                         {g}
@@ -806,14 +997,14 @@ export default function HospitalRequestForm() {
                     ))}
                   </select>
                 </FormField>
-                <FormField label="Blood Component" htmlFor={`pcomp-${index}`} required error={errors[`patient.${index}.component`]}>
+                <FormField label={s.bloodComponent} htmlFor={`pcomp-${index}`} required error={errors[`patient.${index}.component`]}>
                   <select
                     id={`pcomp-${index}`}
                     value={patient.component}
                     onChange={(e) => setPatient(index, 'component', e.target.value)}
                     className={`input-base ${errors[`patient.${index}.component`] ? 'input-error' : ''}`}
                   >
-                    <option value="">Select component</option>
+                    <option value="">{s.selectComponent}</option>
                     {COMPONENTS.map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -821,7 +1012,7 @@ export default function HospitalRequestForm() {
                     ))}
                   </select>
                 </FormField>
-                <FormField label="Units Required" htmlFor={`punits-${index}`} required error={errors[`patient.${index}.units`]}>
+                <FormField label={s.unitsRequired} htmlFor={`punits-${index}`} required error={errors[`patient.${index}.units`]}>
                   <input
                     id={`punits-${index}`}
                     type="number"
@@ -832,14 +1023,14 @@ export default function HospitalRequestForm() {
                     className={`input-base ${errors[`patient.${index}.units`] ? 'input-error' : ''}`}
                   />
                 </FormField>
-                <FormField label="Ward / Department" htmlFor={`pward-${index}`} required error={errors[`patient.${index}.ward`]}>
+                <FormField label={s.wardDepartment} htmlFor={`pward-${index}`} required error={errors[`patient.${index}.ward`]}>
                   <select
                     id={`pward-${index}`}
                     value={patient.ward}
                     onChange={(e) => setPatient(index, 'ward', e.target.value)}
                     className={`input-base ${errors[`patient.${index}.ward`] ? 'input-error' : ''}`}
                   >
-                    <option value="">Select ward</option>
+                    <option value="">{s.selectWard}</option>
                     {WARDS.map((w) => (
                       <option key={w} value={w}>
                         {w}
@@ -849,18 +1040,18 @@ export default function HospitalRequestForm() {
                 </FormField>
                 <div className="sm:col-span-2 lg:col-span-4">
                   <FormField
-                    label="Diagnosis / Reason"
+                    label={s.diagnosisReason}
                     htmlFor={`pdx-${index}`}
                     required
                     error={errors[`patient.${index}.diagnosis`]}
-                    hint="Clinical indication for transfusion"
+                    hint={s.diagnosisHint}
                   >
                     <input
                       id={`pdx-${index}`}
                       type="text"
                       value={patient.diagnosis}
                       onChange={(e) => setPatient(index, 'diagnosis', e.target.value)}
-                      placeholder="e.g. Severe anaemia due to GI bleed"
+                      placeholder={s.diagnosisPlaceholder}
                       className={`input-base ${errors[`patient.${index}.diagnosis`] ? 'input-error' : ''}`}
                     />
                   </FormField>
@@ -872,39 +1063,39 @@ export default function HospitalRequestForm() {
                     <Stethoscope size={13} />
                   </span>
                   <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                    Doctor Details
+                    {s.doctorDetails}
                   </h4>
                   <div className="h-px flex-1 bg-slate-200" />
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                  <FormField label="Doctor Name" htmlFor={`doc-name-${index}`} required error={errors[`patient.${index}.doctorName`]}>
+                  <FormField label={s.doctorName} htmlFor={`doc-name-${index}`} required error={errors[`patient.${index}.doctorName`]}>
                     <input
                       id={`doc-name-${index}`}
                       type="text"
                       value={patient.doctorName}
                       onChange={(e) => setPatient(index, 'doctorName', e.target.value)}
-                      placeholder="Dr. full name"
+                      placeholder={s.doctorNamePlaceholder}
                       className={`input-base ${errors[`patient.${index}.doctorName`] ? 'input-error' : ''}`}
                     />
                   </FormField>
-                  <FormField label="Doctor ID" htmlFor={`doc-id-${index}`} required error={errors[`patient.${index}.doctorId`]}>
+                  <FormField label={s.doctorId} htmlFor={`doc-id-${index}`} required error={errors[`patient.${index}.doctorId`]}>
                     <input
                       id={`doc-id-${index}`}
                       type="text"
                       value={patient.doctorId}
                       onChange={(e) => setPatient(index, 'doctorId', e.target.value)}
-                      placeholder="e.g. DR-1024"
+                      placeholder={s.doctorIdPlaceholder}
                       className={`input-base ${errors[`patient.${index}.doctorId`] ? 'input-error' : ''}`}
                     />
                   </FormField>
-                  <FormField label="Department" htmlFor={`doc-dept-${index}`} required error={errors[`patient.${index}.doctorDepartment`]}>
+                  <FormField label={s.department} htmlFor={`doc-dept-${index}`} required error={errors[`patient.${index}.doctorDepartment`]}>
                     <select
                       id={`doc-dept-${index}`}
                       value={patient.doctorDepartment}
                       onChange={(e) => setPatient(index, 'doctorDepartment', e.target.value)}
                       className={`input-base ${errors[`patient.${index}.doctorDepartment`] ? 'input-error' : ''}`}
                     >
-                      <option value="">Select department</option>
+                      <option value="">{s.selectDepartment}</option>
                       {DEPARTMENTS.map((d) => (
                         <option key={d} value={d}>
                           {d}
@@ -912,7 +1103,7 @@ export default function HospitalRequestForm() {
                       ))}
                     </select>
                   </FormField>
-                  <FormField label="Contact Number" htmlFor={`doc-contact-${index}`} required error={errors[`patient.${index}.doctorContact`]}>
+                  <FormField label={s.contactNumber} htmlFor={`doc-contact-${index}`} required error={errors[`patient.${index}.doctorContact`]}>
                     <div className="relative">
                       <Phone
                         className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400"
@@ -924,7 +1115,7 @@ export default function HospitalRequestForm() {
                         maxLength={10}
                         value={patient.doctorContact}
                         onChange={(e) => setPatient(index, 'doctorContact', e.target.value.replace(/\D/g, ''))}
-                        placeholder="10-digit mobile"
+                        placeholder={s.contactPlaceholder}
                         className={`input-base pl-9 ${errors[`patient.${index}.doctorContact`] ? 'input-error' : ''}`}
                       />
                     </div>
@@ -936,7 +1127,7 @@ export default function HospitalRequestForm() {
 
           <button type="button" onClick={addPatient} className="btn-secondary w-full border-dashed sm:w-auto">
             <Plus className="h-4 w-4" aria-hidden="true" />
-            Add Another Patient
+            {s.addAnotherPatient}
           </button>
         </div>
       </Section>
@@ -945,11 +1136,11 @@ export default function HospitalRequestForm() {
         id="sec-5"
         step="5"
         icon={Table2}
-        title="Blood Requirement Summary"
-        description="Consolidated requirement across all patients"
+        title={s.summary}
+        description={s.summaryDesc}
         badge={
           <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-[11px] font-semibold text-red-700 dark:border-red-900 dark:bg-red-950/60 dark:text-red-300">
-            {totalUnits} total units
+            {totalUnits} {s.totalUnits}
           </span>
         }
       >
@@ -958,9 +1149,9 @@ export default function HospitalRequestForm() {
             <table className="w-full min-w-[480px] text-sm">
               <thead>
                 <tr className="bg-slate-50 text-left text-xs uppercase tracking-wide text-slate-500 dark:bg-slate-900/70 dark:text-slate-400">
-                  <th className="px-4 py-3 font-semibold">Blood Group</th>
-                  <th className="px-4 py-3 font-semibold">Units Required</th>
-                  <th className="px-4 py-3 text-right font-semibold">Total Units</th>
+                  <th className="px-4 py-3 font-semibold">{s.bloodGroup}</th>
+                  <th className="px-4 py-3 font-semibold">{s.unitsRequiredCol}</th>
+                  <th className="px-4 py-3 text-right font-semibold">{s.totalUnits}</th>
                 </tr>
               </thead>
               <tbody>
@@ -984,7 +1175,7 @@ export default function HospitalRequestForm() {
               <tfoot>
                 <tr className="border-t-2 border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/70">
                   <td className="px-4 py-3 text-sm font-bold text-slate-900 dark:text-white" colSpan={2}>
-                    Total Units Required
+                    {s.totalUnitsRequired}
                   </td>
                   <td className="px-4 py-3 text-right text-base font-bold text-red-600 dark:text-red-400">
                     {totalUnits}
@@ -996,10 +1187,8 @@ export default function HospitalRequestForm() {
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 py-10 text-center dark:border-slate-700">
             <Table2 className="h-8 w-8 text-slate-300 dark:text-slate-600" aria-hidden="true" />
-            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">No requirements yet</p>
-            <p className="text-xs text-slate-400 dark:text-slate-500">
-              Add blood group and units in the patient cards to see the summary.
-            </p>
+            <p className="text-sm font-semibold text-slate-500 dark:text-slate-400">{s.noRequirements}</p>
+            <p className="text-xs text-slate-400 dark:text-slate-500">{s.noRequirementsHint}</p>
           </div>
         )}
       </Section>
@@ -1008,8 +1197,8 @@ export default function HospitalRequestForm() {
         id="sec-6"
         step="6"
         icon={FileUp}
-        title="Supporting Documents"
-        description="Attach reports to speed up verification"
+        title={s.supportingDocs}
+        description={s.supportingDocsDesc}
       >
         <div className="grid gap-4 sm:grid-cols-3">
           {DOCUMENTS.map((doc) => {
@@ -1056,14 +1245,14 @@ export default function HospitalRequestForm() {
                         htmlFor={`doc-${doc.key}`}
                         className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                       >
-                        Replace
+                        {s.replace}
                       </label>
                       <button
                         type="button"
                         onClick={() => setDocs((prev) => ({ ...prev, [doc.key]: null }))}
                         className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300"
                       >
-                        Remove
+                        {s.remove}
                       </button>
                     </div>
                   </div>
@@ -1072,7 +1261,7 @@ export default function HospitalRequestForm() {
                     htmlFor={`doc-${doc.key}`}
                     className="mt-3 inline-block cursor-pointer rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-red-600 dark:bg-slate-700 dark:hover:bg-red-600"
                   >
-                    Browse file
+                    {s.browseFile}
                   </label>
                 )}
               </div>
@@ -1080,7 +1269,7 @@ export default function HospitalRequestForm() {
           })}
         </div>
         <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
-          Supported: PDF, JPG, PNG, WEBP • Max 5 MB per file.
+          {s.supportedFormats}
         </p>
       </Section>
 
@@ -1088,8 +1277,8 @@ export default function HospitalRequestForm() {
         id="sec-7"
         step="7"
         icon={BadgeCheck}
-        title="Final Confirmation"
-        description="Review the request and submit to the blood bank"
+        title={s.finalConfirmation}
+        description={s.finalConfirmationDesc}
       >
         <div className="space-y-5">
           <label
@@ -1111,8 +1300,7 @@ export default function HospitalRequestForm() {
               className="mt-0.5 h-4.5 w-4.5 shrink-0 accent-red-600"
             />
             <span className="text-sm text-slate-700 dark:text-slate-300">
-              I confirm that the patient details, blood requirement and documents above are accurate and this request
-              is authorised by the requesting doctor on behalf of the hospital.
+              {s.confirmText}
             </span>
           </label>
 
@@ -1137,11 +1325,10 @@ export default function HospitalRequestForm() {
               </span>
               <div>
                 <p className="text-sm font-bold text-slate-900 dark:text-white">
-                  {totalUnits} unit{totalUnits === 1 ? '' : 's'} for {patients.length} patient
-                  {patients.length === 1 ? '' : 's'}
+                  {s.unitsForPatients.replace('{units}', totalUnits).replace('{patients}', patients.length).replace('{s}', totalUnits === 1 ? '' : 's')}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {form.requestType.toUpperCase()} • {form.priority.toUpperCase()} priority
+                  {s.priorityLabel.replace('{type}', form.requestType.toUpperCase()).replace('{priority}', form.priority.toUpperCase())}
                 </p>
               </div>
             </div>
@@ -1149,15 +1336,15 @@ export default function HospitalRequestForm() {
             <div className="flex flex-col gap-2 sm:flex-row">
               <button type="button" onClick={handleSaveDraft} className="btn-secondary">
                 <Save className="h-4 w-4" aria-hidden="true" />
-                Save as Draft
+                {s.saveDraft}
               </button>
               <button type="submit" disabled={submitting} className="btn-primary">
                 {submitting ? (
-                  'Submitting…'
+                  s.submitting
                 ) : (
                   <>
                     <Send className="h-4 w-4" aria-hidden="true" />
-                    Submit Blood Request
+                    {s.submitRequest}
                   </>
                 )}
               </button>
@@ -1168,7 +1355,7 @@ export default function HospitalRequestForm() {
 
       <p className="pb-4 text-center text-xs text-slate-400 dark:text-slate-500">
         <UserRound className="mr-1 inline h-3.5 w-3.5" aria-hidden="true" />
-        Requested by {patients[0]?.doctorName || '—'} • {hospital?.hospitalName || 'Hospital'}
+        {s.requestedBy.replace('{doctor}', patients[0]?.doctorName || '—').replace('{hospital}', hospital?.hospitalName || 'Hospital')}
       </p>
 
       {otpOpen && (

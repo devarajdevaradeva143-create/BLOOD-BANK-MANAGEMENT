@@ -74,15 +74,15 @@ export const createDonation = asyncHandler(async (req, res) => {
 /**
  * GET /api/donations  (auth required at route level)
  * Query: ?bloodGroup=&districtId=&district=&status=&search=&page=&limit=
- * District scope: admin-ku districtId irundha andha district donation mattum
- * dhaan theriyum (query-va override panni force pannuvom).
- * Hospital role: sodha hospital donation mattum (hospitalId filter).
+ * District scope: admin sees only donations from their assigned district
+ * (can override via query param to force a different district).
+ * Hospital role: sees only their own donations (hospitalId filter).
  */
 export const listDonations = asyncHandler(async (req, res) => {
   const { bloodGroup, districtId, district, status, search } = req.query;
   const { page, limit, skip } = parsePagination(req.query);
 
-  // Admin district-ah DB-la irundhu resolve pannu (JWT-ah namba vendaam).
+  // Resolve admin district from DB (don't trust JWT).
   let adminDistrict = String(req.user?.districtId || '').trim().toLowerCase();
   if (!adminDistrict && req.user?.id && req.user?.role !== 'Hospital') {
     try {
@@ -93,7 +93,7 @@ export const listDonations = asyncHandler(async (req, res) => {
     }
   }
 
-  // DistrictAdmin-ku district illana fail-closed — ella district-um kaata koodadhu.
+  // DistrictAdmin without district fails closed — cannot see any district.
   if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
     return res.status(403).json({ message: 'Forbidden: district not assigned' });
   }
