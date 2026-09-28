@@ -2,19 +2,22 @@ import { useState } from "react";
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   Droplet,
+  Languages,
   LogIn,
   LogOut,
   Menu,
+  Moon,
+  Sun,
   X,
   User,
 } from "lucide-react";
+import { useTheme } from "../context/ThemeContext";
 import { useDonorAuth } from "../context/DonorAuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
-import LanguageToggle from "./LanguageToggle";
-import ThemeToggle from "./ThemeToggle";
 
 export default function Navbar() {
-  const { t } = useLanguage();
+  const { theme, toggleTheme } = useTheme();
+  const { lang, toggleLang, t } = useLanguage();
   const { isAuthenticated, logout } = useDonorAuth();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -74,8 +77,29 @@ export default function Navbar() {
         </div>
 
         <div className="flex h-10 items-center gap-2 sm:gap-3">
-          <LanguageToggle />
-          <ThemeToggle />
+          <button
+            type="button"
+            onClick={toggleLang}
+            aria-label={lang === "en" ? t("nav.switchToTamil") : t("nav.switchToEnglish")}
+            title={lang === "en" ? t("nav.switchToTamil") : t("nav.switchToEnglish")}
+            className="flex h-9 items-center justify-center gap-1.5 rounded-lg px-2.5 text-xs font-bold text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+          >
+            <Languages className="h-4 w-4" aria-hidden="true" />
+            {lang === "en" ? "Tamil" : "EN"}
+          </button>
+
+          <button
+            type="button"
+            onClick={toggleTheme}
+            aria-label={t("nav.toggleTheme")}
+            className="flex h-9 w-9 items-center justify-center rounded-lg text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" aria-hidden="true" />
+            ) : (
+              <Moon className="h-5 w-5" aria-hidden="true" />
+            )}
+          </button>
           {isAuthenticated ? (
             <>
               <Link

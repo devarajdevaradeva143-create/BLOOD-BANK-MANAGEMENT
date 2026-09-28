@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { User, CalendarDays, HeartPulse, Loader2 } from "lucide-react";
+import { User, CalendarDays, HeartPulse, Loader2, Plus, X } from "lucide-react";
 import Card from "../ui/Card";
 import Input from "../ui/Input";
 import Select from "../ui/Select";
