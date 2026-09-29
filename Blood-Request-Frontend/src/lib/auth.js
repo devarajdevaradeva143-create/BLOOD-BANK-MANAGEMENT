@@ -1,5 +1,4 @@
 import {
-  ApiError,
   apiFetch,
   clearAccessToken,
   getAccessToken,
@@ -8,18 +7,7 @@ import {
 } from './api.js'
 
 const USER_KEY = 'hospitalUser'
-const DEMO_CREDENTIALS = { email: 'demo@hospital.com', password: 'Demo@1234' }
-export const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO !== 'false'
 const REMEMBER_KEY = 'hospitalRememberedEmail'
-const REGISTERED_KEY = 'registeredHospital'
-const LOCAL_SESSION_KEY = 'hospitalLocalSession'
-
-
-
-/** Backend unreachable (DNS/refused/offline) — fetch throws TypeError, never ApiError. */
-function isNetworkError(err) {
-  return !(err instanceof ApiError)
-}
 
 function readJSON(key) {
   try {
@@ -40,64 +28,11 @@ function writeUser(user) {
 }
 
 export function isLoggedIn() {
-  if (getAccessToken()) return true
-  try {
-    return localStorage.getItem(LOCAL_SESSION_KEY) === 'true'
-  } catch {
-    return false
-  }
-}
-
-function setLocalSession(on) {
-  try {
-    if (on) localStorage.setItem(LOCAL_SESSION_KEY, 'true')
-    else localStorage.removeItem(LOCAL_SESSION_KEY)
-  } catch {
-    /* ignore */
-  }
-}
-
-/* ---------- Offline fallback (backend unreachable) ---------- */
-
-function localSignIn(user) {
-  setLocalSession(true)
-  writeUser({ ...user, _offline: true })
-  return { ...user, _offline: true }
-}
-
-function localLoginUser({ email, password }) {
-  if (!DEMO_ENABLED) {
-    throw new Error('Backend unreachable. Please try again when online.')
-  }
-  if (email === DEMO_CREDENTIALS.email && password === DEMO_CREDENTIALS.password) {
-    return localSignIn({
-      email: DEMO_CREDENTIALS.email,
-      hospitalName: 'Life Saver Blood Bank',
-      phone: '9876543210',
-    })
-  }
-  throw new Error('Backend unreachable. Please try again when online.')
+  return !!getAccessToken()
 }
 
 export function getCurrentUser() {
-  const user = readJSON(USER_KEY)
-  if (user && user.hospitalName === 'Demo Hospital (Demo Mode — no real data)') {
-    user.hospitalName = 'Life Saver Blood Bank'
-    writeUser(user)
-  }
-  return user
-}
-
-/** Compat alias — profile now comes from the backend session. */
-export async function demoLogin() {
-  if (!DEMO_ENABLED) {
-    throw new Error('Demo login is disabled.')
-  }
-  return await loginUser(DEMO_CREDENTIALS)
-}
-
-export function getDemoCredentials() {
-  return { ...DEMO_CREDENTIALS }
+  return readJSON(USER_KEY)
 }
 
 export function getRegisteredHospital() {
@@ -142,8 +77,7 @@ export async function registerHospital(form) {
   } catch (err) {
     throw new Error(toUserMessage(err, 'Registration failed. Please try again.'))
   }
-  // Pending approval — no session issued. Clear any stale demo session.
-  setLocalSession(false)
+  // Pending approval — no session is issued at registration time.
   return data
 }
 
@@ -155,18 +89,8 @@ export async function loginUser({ email, password }) {
       body: { email, password },
     })
   } catch (err) {
-    if (
-      isNetworkError(err) &&
-      DEMO_ENABLED &&
-      email === DEMO_CREDENTIALS.email &&
-      password === DEMO_CREDENTIALS.password
-    ) {
-      setLocalSession(false)
-      return localLoginUser({ email, password })
-    }
     throw new Error(toUserMessage(err, 'Invalid email or password.'))
   }
-  setLocalSession(false)
   if (data?.accessToken) setAccessToken(data.accessToken)
   writeUser(data?.user || null)
   return data?.user || null
@@ -179,7 +103,12 @@ export async function logoutUser() {
     /* best-effort — still clear local session below */
   }
   clearAccessToken()
-  setLocalSession(false)
+  // Drop the legacy offline-demo session key (no longer read anywhere).
+  try {
+    localStorage.removeItem('hospitalLocalSession')
+  } catch {
+    /* ignore */
+  }
   writeUser(null)
 }
 

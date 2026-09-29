@@ -10,11 +10,10 @@ import {
   Lock,
   Mail,
   ShieldCheck,
-  Sparkles,
 } from 'lucide-react'
 import AuthSidePanel from '../components/AuthSidePanel'
 import ForgotPassword from '../components/ForgotPassword'
-import { demoLogin, getRememberedEmail, loginUser, setRememberedEmail } from '../lib/auth'
+import { getRememberedEmail, loginUser, setRememberedEmail } from '../lib/auth'
 import { useLanguage } from '../context/useLanguage'
 
 const HospitalLogin = ({ onLogin, onRegister }) => {
@@ -53,23 +52,6 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
     }
   }
 
-
-  const handleDemoLogin = async () => {
-    setError('')
-    setNotice('')
-    setLoading(true)
-    try {
-      await demoLogin()
-      toast.success(t('login.toastDemo'))
-      if (onLogin) {
-        onLogin()
-      }
-    } catch (err) {
-      setError(err.message || t('login.errDemoFailed'))
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const handleForgotBack = (returnedEmail, successMessage) => {
     if (returnedEmail) setEmail(returnedEmail)
@@ -266,22 +248,6 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                 </span>
                 <div className="h-px flex-1 bg-slate-200" />
               </div>
-
-              {/* Demo Login */}
-              <button
-                type="button"
-                onClick={handleDemoLogin}
-                disabled={loading}
-                className="flex h-11 w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-red-200 bg-red-50/60 text-sm font-semibold text-red-700 transition hover:border-red-300 hover:bg-red-50 disabled:opacity-60"
-              >
-                <Sparkles size={17} />
-                {t('login.exploreDemo')}
-              </button>
-              <p className="mt-2.5 text-center">
-                <code className="rounded-md bg-slate-100 px-2.5 py-1 font-mono text-[11px] text-slate-600">
-                  demo@hospital.com / Demo@1234
-                </code>
-              </p>
 
               {/* Register */}
               <div className="mt-6 rounded-xl bg-slate-50 px-4 py-3 text-center text-[13px] text-slate-600">

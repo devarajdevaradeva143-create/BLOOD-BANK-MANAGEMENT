@@ -10,6 +10,18 @@ export const forgotPasswordSchema = z.object({
   staffId: z.string().min(1, 'staffId is required'),
 });
 
+// Shared 8+strong rule used for donor/hospital passwords AND staff PINs
+// (real-website policy: everywhere passwords are created).
+// NOTE: declared before every schema that references it (TDZ — a const used
+// above its declaration crashes the whole module at import time).
+export const strongPassword = z
+  .string()
+  .min(8, 'password must be at least 8 characters')
+  .regex(/[A-Z]/, 'password must contain an uppercase letter')
+  .regex(/[a-z]/, 'password must contain a lowercase letter')
+  .regex(/[0-9]/, 'password must contain a number')
+  .regex(/[^A-Za-z0-9]/, 'password must contain a special character');
+
 export const resetPasswordSchema = z.object({
   staffId: z.string().min(1, 'staffId is required'),
   code: z.string().length(6, 'code must be 6 characters'),
@@ -17,15 +29,6 @@ export const resetPasswordSchema = z.object({
 });
 
 // Donor password reset — identifier is email (Donor.email, lowercase).
-// Shared 8+strong rule used for donor/hospital passwords AND staff PINs
-// (real-website policy: everywhere passwords are created).
-const strongPassword = z
-  .string()
-  .min(8, 'password must be at least 8 characters')
-  .regex(/[A-Z]/, 'password must contain an uppercase letter')
-  .regex(/[a-z]/, 'password must contain a lowercase letter')
-  .regex(/[0-9]/, 'password must contain a number')
-  .regex(/[^A-Za-z0-9]/, 'password must contain a special character');
 
 export function isStrongPassword(v) {
   const s = String(v || '');
@@ -50,6 +53,12 @@ export const donorResetPasswordSchema = z.object({
   email: z.string().email('Invalid email').toLowerCase(),
   code: z.string().length(6, 'code must be 6 characters'),
   newPassword: strongPassword,
+});
+
+// Donor login — email + password (Donor-Frontend, real account).
+export const donorLoginSchema = z.object({
+  email: z.string().email('Invalid email').toLowerCase(),
+  password: z.string().min(1, 'password is required'),
 });
 
 // Hospital auth — email + password model (Blood-request-frontend).

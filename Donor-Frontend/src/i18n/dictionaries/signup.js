@@ -135,6 +135,22 @@ export default {
     ta: "ஏற்கனவே கணக்கு உள்ளதா?",
   },
   "signup.login": { en: "Login", ta: "உள்நுழைய" },
+  "signup.otp.title": {
+    en: "Verify your mobile",
+    ta: "உங்கள் கைபேசியை உறுதிசெய்யவும்",
+  },
+  "signup.otp.description": {
+    en: "Enter the 6-digit code sent to",
+    ta: "அனுப்பப்பட்ட 6 இலக்கக் குறியீட்டை உள்ளிடவும்",
+  },
+  "signup.otp.sent": {
+    en: "OTP sent! Check the backend console (dev) for the 6-digit code — valid for 5 minutes.",
+    ta: "OTP அனுப்பப்பட்டது! 6 இலக்க குறியீட்டிற்கு backend console-ஐப் பார்க்கவும் — 5 நிமிடங்கள் செல்லும்.",
+  },
+  "signup.otp.error": {
+    en: "Could not send the OTP. Please try again.",
+    ta: "OTP-ஐ அனுப்ப முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  },
   "signup.badge": {
     en: "New Donor Registration",
     ta: "புதிய இரத்ததானர் பதிவு",

@@ -12,6 +12,11 @@ dist
 dist-ssr
 *.local
 
+# dotenv env files (separate repo safety)
+.env
+.env.*
+!.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

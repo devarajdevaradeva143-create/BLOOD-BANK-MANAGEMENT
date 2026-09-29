@@ -141,6 +141,10 @@ export default {
     en: "Invalid email or password. Please register first if you don't have an account.",
     ta: "மின்னஞ்சல் அல்லது கடவுச்சொல் தவறு. கணக்கு இல்லையெனில் முதலில் பதிவு செய்யவும்.",
   },
+  "login.error.network": {
+    en: "Unable to reach the server. Please check that the backend is running.",
+    ta: "சேவையகத்தை அணுக முடியவில்லை. Backend இயங்குகிறதா எனச் சரிபார்க்கவும்.",
+  },
   "login.submit": { en: "Login", ta: "உள்நுழைய" },
   "login.submitting": { en: "Logging in...", ta: "உள்நுழைகிறது..." },
   "login.or": { en: "OR", ta: "அல்லது" },
@@ -149,12 +153,6 @@ export default {
     ta: "கணக்கு இல்லையா?",
   },
   "login.register": { en: "Register", ta: "பதிவு செய்யவும்" },
-  "login.demo.label": { en: "Demo login", ta: "டெமோ உள்நுழைவு" },
-  "login.demo.value": {
-    en: "demo@lifesaver.com / demo123",
-    ta: "demo@lifesaver.com / demo123",
-  },
-  "login.demo.autofill": { en: "Autofill", ta: "தானாக நிரப்பு" },
   "login.portal": { en: "Donor Portal", ta: "இரத்ததானர் குழு" },
   "login.stats.donors.value": { en: "12,500+", ta: "12,500+" },
   "login.stats.donors.label": {

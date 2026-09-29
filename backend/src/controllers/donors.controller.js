@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import Donor from '../models/Donor.js';
 import User from '../models/User.js';
@@ -5,7 +6,13 @@ import Otp from '../models/Otp.js';
 import { genDonorId } from '../utils/ids.js';
 import { logAudit } from '../middleware/audit.js';
 import { verifyOtpInternal } from './otp.controller.js';
-import { hashPassword } from '../utils/passwords.js';
+import { comparePassword, hashPassword } from '../utils/passwords.js';
+import {
+  signAccess,
+  signRefresh,
+  setRefreshCookie,
+  clearRefreshCookie,
+} from '../utils/jwt.js';
 import { config } from '../config/env.js';
 import {
   genOtp,
@@ -21,6 +28,41 @@ function donorResetTarget(email) {
 
 const GENERIC_DONOR_FORGOT = 'If an account exists, an OTP has been sent';
 const MAX_RESET_ATTEMPTS = 5;
+const REFRESH_EXPIRES_MS = 7 * 24 * 60 * 60 * 1000;
+
+/** Public-safe donor shape — never exposes passwordHash / refreshTokens. */
+function toSafeDonor(d) {
+  if (!d) return null;
+  return {
+    id: String(d._id),
+    donorId: d.donorId,
+    fullName: d.fullName,
+    email: d.email || '',
+    mobile: d.mobile,
+    bloodGroup: d.bloodGroup || '',
+    dob: d.dob ? new Date(d.dob).toISOString().slice(0, 10) : '',
+    age: d.age ?? null,
+    gender: d.gender || '',
+    district: d.district || '',
+    districtId: d.districtId || '',
+    city: d.city || '',
+    pincode: d.pincode || '',
+    address: d.address || '',
+    status: d.status,
+    role: 'Donor',
+    createdAt: d.createdAt,
+  };
+}
+
+function pruneExpiredTokens(donor, max = 5) {
+  const now = new Date();
+  donor.refreshTokens = (donor.refreshTokens || []).filter(
+    (t) => t && t.expiresAt && new Date(t.expiresAt) > now
+  );
+  if (donor.refreshTokens.length >= max) {
+    donor.refreshTokens = donor.refreshTokens.slice(-(max - 1));
+  }
+}
 
 function parsePagination(query) {
   const page = Math.max(1, Number.parseInt(query.page, 10) || 1);
@@ -40,7 +82,7 @@ function escapeRegex(s) {
  * Body: donor fields + { code } (mobile OTP, purpose 'donor').
  */
 export const createDonor = asyncHandler(async (req, res) => {
-  const { mobile, code, otp, otpCode, lat, lng, ...donorData } = req.body;
+  const { mobile, code, otp, otpCode, lat, lng, password, ...donorData } = req.body;
   const plainCode = code ?? otp ?? otpCode;
 
   if (!mobile) {
@@ -48,6 +90,9 @@ export const createDonor = asyncHandler(async (req, res) => {
   }
   if (!plainCode) {
     return res.status(400).json({ message: 'OTP code is required' });
+  }
+  if (!password) {
+    return res.status(400).json({ message: 'password is required' });
   }
 
   await verifyOtpInternal(String(mobile).trim(), String(plainCode).trim(), 'donor');
@@ -65,12 +110,24 @@ export const createDonor = asyncHandler(async (req, res) => {
     lngNum >= -180 &&
     lngNum <= 180;
 
+  const normalizedEmail = String(donorData.email || '').trim().toLowerCase();
+  const emailTaken = normalizedEmail
+    ? await Donor.exists({ email: normalizedEmail })
+    : false;
+  if (emailTaken) {
+    return res
+      .status(409)
+      .json({ message: 'An account with this email already exists' });
+  }
+
   const donor = await Donor.create({
     ...donorData,
     ...(districtId ? { districtId } : {}),
     ...(hasCoords
       ? { location: { type: 'Point', coordinates: [lngNum, latNum] } }
       : {}),
+    email: normalizedEmail,
+    passwordHash: await hashPassword(password),
     mobile: String(mobile).trim(),
     donorId: genDonorId(),
     mobileVerified: true,
@@ -87,7 +144,7 @@ export const createDonor = asyncHandler(async (req, res) => {
     mobile: donor.mobile,
   });
 
-  return res.status(201).json({ message: 'Donor registered', donor });
+  return res.status(201).json({ message: 'Donor registered', donor: toSafeDonor(donor) });
 });
 
 /**
@@ -135,7 +192,11 @@ export const listDonors = asyncHandler(async (req, res) => {
   }
 
   const [data, total] = await Promise.all([
-    Donor.find(filter).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Donor.find(filter)
+      .select('-passwordHash -refreshTokens')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
     Donor.countDocuments(filter),
   ]);
 
@@ -152,8 +213,6 @@ export const listDonors = asyncHandler(async (req, res) => {
  * POST /api/donors/forgot-password
  * Body: { email } — generic response, hashed OTP, cooldown + TTL.
  * Real-time: code is logged server-side in non-production (OTP_PROVIDER=log).
- * NOTE: OTP is issued for any valid email (even local-only demo accounts)
- * so the Donor-Frontend (localStorage auth) can verify server-side.
  * Response is always generic to avoid user enumeration.
  */
 export const forgotDonorPassword = asyncHandler(async (req, res) => {
@@ -205,9 +264,8 @@ export const forgotDonorPassword = asyncHandler(async (req, res) => {
 /**
  * POST /api/donors/reset-password
  * Body: { email, code, newPassword } — verifies OTP server-side, then
- * stores bcrypt hash when a backend Donor exists. Local-only demo accounts
- * (Donor-Frontend localStorage) still get server-side OTP verification;
- * the frontend syncs its local copy after success.
+ * stores the bcrypt hash. When no Donor exists the OTP still validates
+ * (generic flow) but nothing is written; the response stays identical.
  */
 export const resetDonorPassword = asyncHandler(async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
@@ -246,6 +304,8 @@ export const resetDonorPassword = asyncHandler(async (req, res) => {
   const donor = await Donor.findOne({ email });
   if (donor) {
     donor.passwordHash = await hashPassword(newPassword);
+    // Password change revokes every existing session.
+    donor.refreshTokens = [];
     await donor.save();
     logAudit(null, 'donor.reset_password', 'Donor', donor.donorId, req);
   } else {
@@ -254,6 +314,136 @@ export const resetDonorPassword = asyncHandler(async (req, res) => {
   return res
     .status(200)
     .json({ message: 'Password reset successful. Please login again.' });
+});
+
+/**
+ * POST /api/donors/login
+ * Body: { email, password } — real donor account (Donor-Frontend).
+ * Issues an access JWT + rotating httpOnly refresh cookie.
+ */
+export const loginDonor = asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+  const normalizedEmail = String(email || '').trim().toLowerCase();
+
+  const donor = await Donor.findOne({ email: normalizedEmail }).select(
+    '+passwordHash'
+  );
+  if (!donor || !donor.passwordHash) {
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
+
+  const ok = await comparePassword(password, donor.passwordHash);
+  if (!ok) {
+    return res.status(401).json({ message: 'Invalid email or password' });
+  }
+
+  const accessToken = signAccess({ _id: donor._id, role: 'Donor' });
+  const refreshToken = signRefresh({ _id: donor._id, role: 'Donor' });
+
+  pruneExpiredTokens(donor);
+  donor.refreshTokens.push({
+    tokenHash: hashValue(refreshToken),
+    expiresAt: new Date(Date.now() + REFRESH_EXPIRES_MS),
+  });
+  await donor.save();
+
+  setRefreshCookie(res, refreshToken);
+  logAudit(String(donor._id), 'donor.login', 'Donor', donor.donorId, req);
+  return res.status(200).json({ user: toSafeDonor(donor), accessToken });
+});
+
+/**
+ * POST /api/donors/refresh — rotates the refresh cookie, returns a new
+ * access token (and a fresh profile so the client stays in sync).
+ */
+export const refreshDonor = asyncHandler(async (req, res) => {
+  const token = req.cookies?.refreshToken;
+  if (!token) {
+    return res.status(401).json({ message: 'Missing refresh token' });
+  }
+
+  let payload;
+  try {
+    payload = jwt.verify(token, config.jwt.refreshSecret);
+  } catch {
+    return res.status(401).json({ message: 'Invalid or expired refresh token' });
+  }
+  if (payload.role !== 'Donor') {
+    return res.status(401).json({ message: 'Invalid refresh token' });
+  }
+
+  const tokenHash = hashValue(token);
+  const donor = await Donor.findOne({
+    _id: payload.id,
+    'refreshTokens.tokenHash': tokenHash,
+  });
+  if (!donor) {
+    clearRefreshCookie(res);
+    return res.status(401).json({ message: 'Invalid refresh token' });
+  }
+
+  donor.refreshTokens = (donor.refreshTokens || []).filter(
+    (t) => t.tokenHash !== tokenHash && new Date(t.expiresAt) > new Date()
+  );
+
+  const accessToken = signAccess({ _id: donor._id, role: 'Donor' });
+  const refreshToken = signRefresh({ _id: donor._id, role: 'Donor' });
+  pruneExpiredTokens(donor);
+  donor.refreshTokens.push({
+    tokenHash: hashValue(refreshToken),
+    expiresAt: new Date(Date.now() + REFRESH_EXPIRES_MS),
+  });
+  await donor.save();
+
+  setRefreshCookie(res, refreshToken);
+  return res.status(200).json({ user: toSafeDonor(donor), accessToken });
+});
+
+/**
+ * POST /api/donors/logout — clears cookie + drops the presented session.
+ */
+export const logoutDonor = asyncHandler(async (req, res) => {
+  const token = req.cookies?.refreshToken;
+  if (token) {
+    try {
+      const payload = jwt.verify(token, config.jwt.refreshSecret);
+      await Donor.updateOne(
+        { _id: payload.id },
+        { $pull: { refreshTokens: { tokenHash: hashValue(token) } } }
+      );
+    } catch {
+      try {
+        await Donor.updateMany(
+          { 'refreshTokens.tokenHash': hashValue(token) },
+          { $pull: { refreshTokens: { tokenHash: hashValue(token) } } }
+        );
+      } catch {
+        // ignore — cookie is cleared regardless
+      }
+    }
+  }
+
+  clearRefreshCookie(res);
+  return res.status(200).json({ message: 'Logged out' });
+});
+
+/**
+ * GET /api/donors/me — current donor profile (auth required, Donor only).
+ */
+export const meDonor = asyncHandler(async (req, res) => {
+  if (!req.user?.id) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+  if (req.user?.role !== 'Donor') {
+    return res.status(403).json({ message: 'Donor account required' });
+  }
+  const donor = await Donor.findById(req.user.id).select(
+    '-passwordHash -refreshTokens'
+  );
+  if (!donor) {
+    return res.status(404).json({ message: 'Donor not found' });
+  }
+  return res.status(200).json({ user: toSafeDonor(donor) });
 });
 
 /**
@@ -334,6 +524,10 @@ export default {
   createDonor,
   listDonors,
   listDonorMap,
+  loginDonor,
+  refreshDonor,
+  logoutDonor,
+  meDonor,
   forgotDonorPassword,
   resetDonorPassword,
 };

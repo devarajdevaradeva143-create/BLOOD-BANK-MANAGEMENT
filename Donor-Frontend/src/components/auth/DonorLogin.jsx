@@ -15,10 +15,8 @@ import s from "./DonorLogin.module.css";
 import ForgotPassword from "./ForgotPassword";
 import { useDonorAuth } from "../../context/DonorAuthContext";
 import { useLanguage } from "../../i18n/LanguageContext";
-
-const DEMO_DONOR = { email: "demo@lifesaver.com", password: "demo123" };
-// Demo login is TEMPORARY — VITE_ENABLE_DEMO=false sets it off in one step.
-const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO !== "false";
+import { loginDonor } from "../../lib/api";
+import { saveLocalDonor } from "../../services/authApi";
 
 const BENEFITS = [
   { key: "save", Icon: Droplet },
@@ -45,7 +43,7 @@ export default function DonorLogin() {
   const [loading, setLoading] = useState(false);
   const [view, setView] = useState("login");
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setNote("");
@@ -66,22 +64,24 @@ export default function DonorLogin() {
     }
 
     setLoading(true);
-
-    setTimeout(() => {
-      const matchesDemo =
-        DEMO_ENABLED &&
-        trimmedEmail === DEMO_DONOR.email && password === DEMO_DONOR.password;
-
-      if (matchesDemo) {
-        login(trimmedEmail, true);
-        const from = location.state?.from?.pathname ?? "/";
-        navigate(from, { replace: true });
-      } else {
+    try {
+      const data = await loginDonor(trimmedEmail, password);
+      if (data?.user) saveLocalDonor(data.user);
+      login(trimmedEmail);
+      const from = location.state?.from?.pathname ?? "/";
+      navigate(from, { replace: true });
+    } catch (err) {
+      const message = String(err?.message || "");
+      if (message.includes("Unable to reach server")) {
+        setError(t("login.error.network"));
+      } else if (message.includes("Invalid email or password")) {
         setError(t("login.error.invalid"));
+      } else {
+        setError(message || t("login.error.invalid"));
       }
-
+    } finally {
       setLoading(false);
-    }, 600);
+    }
   };
 
   const handleForgotPassword = () => {
@@ -99,14 +99,6 @@ export default function DonorLogin() {
 
   const handleRegister = () => {
     navigate("/register");
-  };
-
-  const handleDemoLogin = () => {
-    if (!DEMO_ENABLED) return;
-    setEmail(DEMO_DONOR.email);
-    setPassword(DEMO_DONOR.password);
-    setError("");
-    setNote("");
   };
 
   return (
@@ -249,15 +241,6 @@ export default function DonorLogin() {
               )}
             </button>
           </form>
-
-          {DEMO_ENABLED && (
-          <div className={s["demo-hint"]}>
-            <span>{t("login.demo.label")}: {t("login.demo.value")} (Demo Mode — no real data)</span>
-            <button type="button" className={s["demo-login-btn"]} onClick={handleDemoLogin}>
-              {t("login.demo.autofill")}
-            </button>
-          </div>
-          )}
 
           <div className={s["or-divider"]}>
             <span></span>

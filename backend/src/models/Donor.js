@@ -24,6 +24,16 @@ const donorSchema = new mongoose.Schema(
     email: { type: String, lowercase: true, trim: true },
     // bcrypt(password + pepper). Absent for legacy donors created before auth.
     passwordHash: { type: String, select: false },
+    // Rotating refresh sessions (hashed) — same scheme as Hospital/User.
+    refreshTokens: {
+      type: [
+        {
+          tokenHash: { type: String, required: true },
+          expiresAt: { type: Date, required: true },
+        },
+      ],
+      default: [],
+    },
     district: { type: String, trim: true },
     districtId: { type: String, trim: true, lowercase: true },
     city: { type: String, trim: true },

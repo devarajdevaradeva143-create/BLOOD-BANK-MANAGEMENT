@@ -1,4 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import { clearAccessToken, fetchDonorProfile, logoutDonor } from "../lib/api";
+import { saveLocalDonor } from "../services/authApi";
 
 const DonorAuthContext = createContext(null);
 
@@ -36,16 +38,39 @@ export function DonorAuthProvider({ children }) {
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
-  const login = useCallback((email, isDemo = false) => {
-    // Real website: only the temporary demo login is allowed here.
-    // VITE_ENABLE_DEMO=false disables it in one step (future removal).
-    const demoEnabled = import.meta.env.VITE_ENABLE_DEMO !== "false";
-    if (!isDemo && email !== "demo@lifesaver.com") {
-      return;
-    }
-    if (isDemo && !demoEnabled) {
-      return;
-    }
+  // Boot check: a remembered flag alone is not a session. Verify it against
+  // GET /api/donors/me (silently refreshing first) and refresh the cached
+  // profile. Offline keeps the session; a rejected one is signed out.
+  useEffect(() => {
+    if (!readLoggedIn()) return undefined;
+    let cancelled = false;
+
+    fetchDonorProfile()
+      .then((data) => {
+        if (!cancelled && data?.user) saveLocalDonor(data.user);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const message = String(err?.message || "");
+        if (message.includes("Unable to reach server")) return; // offline
+        try {
+          localStorage.removeItem(LOGGED_IN_KEY);
+        } catch {
+          // ignore
+        }
+        clearAccessToken();
+        setIsAuthenticated(false);
+        setDonorEmail("");
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const login = useCallback((email) => {
+    // Real account session — the caller has already verified credentials
+    // against POST /api/donors/login and stored the access token.
     try {
       localStorage.setItem(LOGGED_IN_KEY, "true");
     } catch {
@@ -65,6 +90,10 @@ export function DonorAuthProvider({ children }) {
     }
     setIsAuthenticated(false);
     setDonorEmail("");
+    // Best-effort: revoke the refresh session server-side.
+    logoutDonor().catch(() => {
+      clearAccessToken();
+    });
   }, []);
 
   return (

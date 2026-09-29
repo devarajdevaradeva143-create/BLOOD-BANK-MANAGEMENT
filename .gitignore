@@ -141,3 +141,10 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# DB dumps / backups (mongodump output)
+dump*/
+dump-*/
+*.pem
+.wrangler/
+.dev.vars

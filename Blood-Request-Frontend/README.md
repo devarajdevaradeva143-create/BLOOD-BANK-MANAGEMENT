@@ -1,6 +1,6 @@
 # Life Saver Blood Bank Management — Blood Request
 
-A frontend demo for a Tamil Nadu blood request and district-wise blood availability system. Built with React 19, Vite, and Tailwind CSS v4. **No backend or database — all stock data is mocked.**
+A Tamil Nadu blood request and district-wise blood availability frontend, backed by the Express + MongoDB API in `backend/`. Built with React 19, Vite, and Tailwind CSS v4. Hospitals sign in with a real registered account (register → admin approval → login); there is no demo account.
 
 ## Features
 

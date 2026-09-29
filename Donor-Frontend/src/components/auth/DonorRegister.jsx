@@ -12,8 +12,11 @@ import {
 } from "lucide-react";
 import s from "./DonorRegister.module.css";
 import ls from "./DonorLogin.module.css";
+import DonationOtpDialog from "../donate/DonationOtpDialog";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { TN_DISTRICTS } from "../../data/constants";
+import { registerDonor, requestOtp } from "../../lib/api";
+import { saveLocalDonor } from "../../services/authApi";
 import {
   generateStrongPassword,
   getPasswordStrength,
@@ -59,6 +62,10 @@ export default function DonorRegister() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [otpOpen, setOtpOpen] = useState(false);
+  const [otpVerifying, setOtpVerifying] = useState(false);
+  const [otpResending, setOtpResending] = useState(false);
+  const [otpError, setOtpError] = useState("");
 
   const handleChange = (e) => {
     setForm({
@@ -68,7 +75,7 @@ export default function DonorRegister() {
     setError("");
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
@@ -129,39 +136,39 @@ export default function DonorRegister() {
     }
 
     setLoading(true);
-
-    setTimeout(() => {
-      const { confirmPassword: _confirmPassword, password: _password, ...formFields } = form;
-      void _password;
-      let prev = {};
-      try {
-        const raw = localStorage.getItem("registeredDonor");
-        const parsed = raw ? JSON.parse(raw) : {};
-        if (parsed && typeof parsed === "object") prev = parsed;
-      } catch {
-        prev = {};
-      }
-      const today = new Date().toISOString().slice(0, 10);
-      const year = new Date().getFullYear();
-      const donorId =
-        prev.donorId || `DB-${year}${Math.floor(1000 + Math.random() * 9000)}`;
-      const registeredDonor = {
-        ...prev,
-        ...formFields,
-        address: prev.address ?? "",
-        photo: prev.photo || prev.photoUrl || prev.avatar || "",
-        donorId,
-        registrationDate: prev.registrationDate || today,
-        totalDonations: Number(prev.totalDonations ?? 0) || 0,
-        isActive: prev.isActive ?? true,
-      };
-      try {
-        localStorage.setItem("registeredDonor", JSON.stringify(registeredDonor));
-      } catch {
-        // ignore storage errors
-      }
-
+    // Real account: OTP-gated POST /api/donors, then the form is verified
+    // against the backend (see handleVerifyOtp).
+    try {
+      await requestOtp(form.phone.trim());
+      setOtpError("");
+      setError("");
+      setOtpOpen(true);
+    } catch (err) {
+      setError(String(err?.message || t("signup.otp.error")));
+    } finally {
       setLoading(false);
+    }
+  };
+
+  const buildPayload = () => ({
+    fullName: form.name.trim(),
+    email: form.email.trim().toLowerCase(),
+    mobile: form.phone.trim(),
+    dob: form.dob,
+    gender: form.gender,
+    bloodGroup: form.bloodGroup,
+    district: form.district,
+    districtId: form.district.toLowerCase().replace(/[^a-z0-9]/g, ""),
+    password: form.password,
+  });
+
+  const handleVerifyOtp = async (code) => {
+    setOtpError("");
+    setOtpVerifying(true);
+    try {
+      const data = await registerDonor(buildPayload(), code);
+      if (data?.donor) saveLocalDonor(data.donor);
+      setOtpOpen(false);
       setSuccess(t("signup.success"));
 
       setTimeout(() => {
@@ -170,7 +177,23 @@ export default function DonorRegister() {
           state: { registeredEmail: form.email, justRegistered: true },
         });
       }, 1200);
-    }, 800);
+    } catch (err) {
+      setOtpError(String(err?.message || t("signup.otp.error")));
+    } finally {
+      setOtpVerifying(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setOtpError("");
+    setOtpResending(true);
+    try {
+      await requestOtp(form.phone.trim());
+    } catch (err) {
+      setOtpError(String(err?.message || t("signup.otp.error")));
+    } finally {
+      setOtpResending(false);
+    }
   };
 
   const strength = getPasswordStrength(form.password);
@@ -456,6 +479,21 @@ export default function DonorRegister() {
           </div>
         </div>
       </div>
+
+      <DonationOtpDialog
+        open={otpOpen}
+        mobile={form.phone.trim()}
+        title={t("signup.otp.title")}
+        description={t("signup.otp.description")}
+        verifying={otpVerifying}
+        resending={otpResending}
+        error={otpError}
+        onVerify={handleVerifyOtp}
+        onResend={handleResendOtp}
+        onClose={() => {
+          if (!otpVerifying) setOtpOpen(false);
+        }}
+      />
     </div>
   );
 }

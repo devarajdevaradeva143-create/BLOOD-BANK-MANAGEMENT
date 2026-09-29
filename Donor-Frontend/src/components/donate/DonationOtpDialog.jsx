@@ -5,6 +5,8 @@ import Button from "../ui/Button";
 export default function DonationOtpDialog({
   open,
   mobile,
+  title = "Verify OTP",
+  description = "",
   verifying = false,
   resending = false,
   error = "",
@@ -67,11 +69,19 @@ export default function DonationOtpDialog({
           id="donation-otp-title"
           className="mt-4 text-lg font-bold text-gray-900 dark:text-white"
         >
-          Verify OTP
+          {title}
         </h2>
         <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-          We sent a 6-digit code to +91 {mobile}. Enter it below to confirm
-          your donation request.
+          {description ? (
+            <>
+              {description} +91 {mobile}.
+            </>
+          ) : (
+            <>
+              We sent a 6-digit code to +91 {mobile}. Enter it below to confirm
+              your donation request.
+            </>
+          )}
         </p>
 
         <form onSubmit={handleSubmit} className="mt-5">

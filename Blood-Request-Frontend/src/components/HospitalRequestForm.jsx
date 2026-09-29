@@ -496,14 +496,13 @@ export default function HospitalRequestForm() {
       }
       if (!p.ward) next[`patient.${i}.ward`] = 'Ward / department is required'
       if (!p.diagnosis.trim()) next[`patient.${i}.diagnosis`] = 'Diagnosis is required'
-    })
-
       if (!p.doctorName.trim()) next[`patient.${i}.doctorName`] = 'Doctor name is required'
       if (!p.doctorId.trim()) next[`patient.${i}.doctorId`] = 'Doctor ID is required'
       if (!p.doctorDepartment) next[`patient.${i}.doctorDepartment`] = 'Department is required'
       if (!/^[0-9]{10}$/.test(p.doctorContact.trim())) {
         next[`patient.${i}.doctorContact`] = 'Enter a valid 10-digit contact number'
       }
+    })
 
     if (!confirmed) next.confirmed = 'Please confirm the declaration before submitting'
 
@@ -511,7 +510,7 @@ export default function HospitalRequestForm() {
   }
 
   function handleSaveDraft() {
-    const payload = { form, patients, doctor, savedAt: new Date().toISOString() }
+    const payload = { form, patients, savedAt: new Date().toISOString() }
     try {
       localStorage.setItem(DRAFT_KEY, JSON.stringify(payload))
       toast.success(s.draftSaved)

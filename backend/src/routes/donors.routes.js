@@ -6,12 +6,17 @@ import { authLimiter } from '../middleware/rateLimit.js';
 import { donorCreateSchema } from '../schemas/donor.schema.js';
 import {
   donorForgotPasswordSchema,
+  donorLoginSchema,
   donorResetPasswordSchema,
 } from '../schemas/auth.schema.js';
 import {
   createDonor,
   listDonors,
   listDonorMap,
+  loginDonor,
+  refreshDonor,
+  logoutDonor,
+  meDonor,
   forgotDonorPassword,
   resetDonorPassword,
 } from '../controllers/donors.controller.js';
@@ -25,6 +30,11 @@ const router = Router();
 router.post('/', validate(donorCreateWithOtpSchema), createDonor);
 router.get('/map', requireAuth, listDonorMap);
 router.get('/', requireAuth, listDonors);
+// Donor session (real account: email + password -> JWT + refresh cookie).
+router.post('/login', authLimiter, validate(donorLoginSchema), loginDonor);
+router.post('/refresh', refreshDonor);
+router.post('/logout', logoutDonor);
+router.get('/me', requireAuth, meDonor);
 // Secure donor password reset (generic responses, hashed OTP, cooldown).
 router.post(
   '/forgot-password',

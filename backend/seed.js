@@ -1,16 +1,17 @@
 // backend/seed.js — ESM. Run with workdir backend/: `node seed.js`
 // Upserts one DistrictAdmin + one SuperAdmin user from env, hashing PINs via utils/passwords.
 // Legacy SEED_DOCTOR_ID / SEED_STAFF_ID (+ PIN/DISTRICT) are ignored — new SEED_DISTRICT_ADMIN_* / SEED_SUPER_ADMIN_* take precedence.
+// No demo/seeded hospital account exists: hospitals register through the
+// frontend and are activated by an admin (real-website flow).
 // Real modules live under ./src/* (see backend/package.json, main src/index.js);
 // the `config/db` / `utils/passwords` substrings below satisfy the layout contract.
 
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import { connectDB } from './src/config/db.js';
-import { hashPassword, hashPin } from './src/utils/passwords.js';
+import { hashPin } from './src/utils/passwords.js';
 import { genUnitCode } from './src/utils/ids.js';
 import User from './src/models/User.js';
-import Hospital from './src/models/Hospital.js';
 import BloodUnit from './src/models/BloodUnit.js';
 
 const districtAdminId = process.env.SEED_DISTRICT_ADMIN_ID || 'DIST-001';
@@ -43,36 +44,7 @@ async function upsertUser({ staffId: sid, name, role, pin, districtId }) {
   return res;
 }
 
-async function upsertDemoHospital() {
-  const email = (process.env.SEED_HOSPITAL_EMAIL || 'demo@hospital.com').trim().toLowerCase();
-  const password = process.env.SEED_HOSPITAL_PASSWORD || 'Demo@1234';
-  const res = await Hospital.updateOne(
-    { email },
-    {
-      $set: {
-        hospitalName: 'Demo Hospital',
-        registrationNumber: 'TN-DEMO-0001',
-        hospitalId: 'HOSP-TN-0001',
-        hospitalType: 'Private',
-        email,
-        phone: '9876543210',
-        district: 'Chennai',
-        districtId: 'chennai',
-        address: '123 Main Road, Chennai, Tamil Nadu',
-        officerName: 'Dr. R. Kumar',
-        officerDesignation: 'Medical Superintendent',
-        officerContact: '9876543212',
-        passwordHash: await hashPassword(password),
-        active: true,
-      },
-    },
-    { upsert: true }
-  );
-  const created = res.upsertedCount > 0 || res.upsertedId != null;
-  console.log(`${created ? 'created' : 'updated'} Hospital ${email}`);
-}
-
-// Availability demo data — district slugs match the frontend districts list
+// Availability seed data — district slugs match the frontend districts list
 // (lowercase ids like 'chennai'), so GET /api/availability returns live stock.
 const SEED_DISTRICTS = ['chennai', 'coimbatore', 'madurai', 'salem', 'tiruchirappalli'];
 const SEED_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];
@@ -114,7 +86,6 @@ async function main() {
   await upsertUser({ staffId: districtAdminId, name: 'Seed District Admin', role: 'DistrictAdmin', pin: districtAdminPin, districtId: districtAdminDistrict });
   await upsertUser({ staffId: superAdminId, name: 'Seed Super Admin', role: 'SuperAdmin', pin: superAdminPin, districtId: superAdminDistrict });
   console.log('seed done: DistrictAdmin + SuperAdmin upserted');
-  await upsertDemoHospital();
   await seedBloodUnits();
   console.log('seed done: all');
 }
