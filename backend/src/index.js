@@ -32,6 +32,8 @@ app.use(
     origin(origin, cb) {
       // Allow same-origin / curl (no Origin header) and whitelisted frontends.
       if (!origin) return cb(null, true);
+      // Dev: any localhost port (Vite auto-shifts 5173 -> 5174 when busy).
+      if (!config.isProd && /^https?:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, true);
       if (config.corsOrigins.includes(origin)) return cb(null, true);
       return cb(new Error(`CORS blocked for origin: ${origin}`));
     },

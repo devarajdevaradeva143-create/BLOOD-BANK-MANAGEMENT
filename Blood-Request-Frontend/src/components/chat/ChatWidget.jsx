@@ -60,13 +60,22 @@ export default function ChatWidget() {
   const [sending, setSending] = useState(false)
   const [messages, setMessages] = useState(() => [
     { role: 'assistant', content: STRINGS[lang]?.greeting || STRINGS.en.greeting },
-    ...loadHistory(),
+    ...loadHistory().filter(
+      (m) => m?.content && m.content !== STRINGS.en.greeting && m.content !== STRINGS.ta.greeting,
+    ),
   ])
   const bottomRef = useRef(null)
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(messages.slice(1, 21)))
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(
+          messages
+            .filter((m) => m?.content && m.content !== STRINGS.en.greeting && m.content !== STRINGS.ta.greeting)
+            .slice(0, 20),
+        ),
+      )
     } catch {
       /* ignore */
     }

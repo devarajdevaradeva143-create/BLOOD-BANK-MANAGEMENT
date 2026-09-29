@@ -30,7 +30,10 @@ export const config = {
     refreshExpires: process.env.JWT_REFRESH_EXPIRES || '7d',
   },
 
-  corsOrigins: parseCsv(process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:3000'),
+  corsOrigins: parseCsv(
+    process.env.CORS_ORIGINS ||
+      'http://localhost:5173,http://localhost:5174,http://localhost:5175,http://localhost:5176,http://localhost:3000'
+  ),
 
   otp: {
     provider: process.env.OTP_PROVIDER || 'log',

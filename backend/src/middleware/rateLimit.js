@@ -26,7 +26,7 @@ export const otpLimiter = rateLimit({
 
 export const chatLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: 40,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { message: 'Too many chat requests, try again later' },

@@ -3,8 +3,11 @@ import { Link } from "react-router-dom";
 import { MessageCircle, X, Send, Loader2, Trash2 } from "lucide-react";
 import { useLanguage } from "../../i18n/LanguageContext";
 import { sendChatMessage } from "../../lib/chat";
+import chatDict from "../../i18n/dictionaries/chat";
 
 const STORAGE_KEY = "donor-chat-history-v1";
+const GREETINGS = [chatDict["chat.greeting"].en, chatDict["chat.greeting"].ta];
+const isGreeting = (m) => !m?.content || GREETINGS.includes(m.content);
 
 function loadHistory() {
   try {
@@ -24,16 +27,16 @@ export default function ChatWidget() {
   const [sending, setSending] = useState(false);
   const [messages, setMessages] = useState(() => [
     { role: "assistant", content: t("chat.greeting") },
-    ...loadHistory(),
+    ...loadHistory().filter((m) => !isGreeting(m)),
   ]);
   const bottomRef = useRef(null);
 
-  // Refresh greeting language on toggle, persist history
+  // Persist history only (greeting is re-added on mount), avoid duplicates
   useEffect(() => {
     try {
       localStorage.setItem(
         STORAGE_KEY,
-        JSON.stringify(messages.filter((m) => m.role !== "system").slice(-20))
+        JSON.stringify(messages.filter((m) => !isGreeting(m)).slice(-20))
       );
     } catch {
       /* ignore */
@@ -45,6 +48,11 @@ export default function ChatWidget() {
     if (sending) return;
     setMessages([{ role: "assistant", content: t("chat.greeting") }]);
     setInput("");
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch {
+      /* ignore */
+    }
   }
 
   async function send(text) {

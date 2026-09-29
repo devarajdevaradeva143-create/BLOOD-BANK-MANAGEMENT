@@ -4,6 +4,9 @@ import { DONOR_KNOWLEDGE, REQUEST_KNOWLEDGE } from '../data/bloodbank-faq.js';
 const GEMINI_URL = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
+// Tried in order when the configured model is missing/retired (404).
+const MODEL_FALLBACKS = ['gemini-flash-latest', 'gemini-2.0-flash'];
+
 function systemPrompt(lang, page) {
   const languageLine =
     lang === 'ta'
@@ -127,24 +130,19 @@ export async function chatCompletion(messages, { lang = 'en', page = 'donor' } =
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 20000);
   try {
-    const url = `${GEMINI_URL(model)}?key=${apiKey}`;
+    // Gemini accepts only 'user' | 'model'. Our API uses 'assistant' -> map it.
     const contents = [
       { role: 'user', parts: [{ text: systemPrompt(lang, page) }] },
-      ...messages.map((m) => ({ role: m.role, parts: [{ text: m.content }] })),
+      ...messages.map((m) => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }],
+      })),
     ];
-    const res = await fetch(url, {
-      method: 'POST',
-      signal: controller.signal,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ contents }),
-    });
-    if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      throw new Error(`Gemini ${res.status}: ${errText.slice(0, 200)}`);
-    }
-    const data = await res.json();
-    const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-    if (!reply) throw new Error('Empty Gemini reply');
+    const data = await requestGemini(apiKey, model, contents, controller.signal);
+
+    const candidate = data?.candidates?.[0];
+    const reply = candidate?.content?.parts?.map((p) => p.text).join('').trim();
+    if (!reply) throw new Error(`Empty Gemini reply (${candidate?.finishReason || data?.promptFeedback?.blockReason || 'no candidates'})`);
     return { reply, fallback: false, model };
   } catch (err) {
     console.error('chatCompletion failed, using fallback:', err?.message || err);
@@ -152,6 +150,32 @@ export async function chatCompletion(messages, { lang = 'en', page = 'donor' } =
   } finally {
     clearTimeout(timer);
   }
+}
+
+// Calls Gemini; if the configured model is missing/retired (404), retries MODEL_FALLBACKS.
+async function requestGemini(apiKey, model, contents, signal) {
+  const models = [model, ...MODEL_FALLBACKS.filter((m) => m !== model)];
+  let lastError;
+  for (const name of models) {
+    const res = await fetch(GEMINI_URL(name), {
+      method: 'POST',
+      signal,
+      headers: { 'Content-Type': 'application/json', 'X-goog-api-key': apiKey },
+      body: JSON.stringify({
+        contents,
+        generationConfig: {
+          maxOutputTokens: config.chat.maxTokens,
+          temperature: 0.6,
+        },
+      }),
+    });
+    if (res.ok) return res.json();
+
+    const errText = await res.text().catch(() => '');
+    lastError = new Error(`Gemini ${res.status} [${name}]: ${errText.slice(0, 200)}`);
+    if (res.status !== 404) throw lastError; // only model-not-found is worth a retry
+  }
+  throw lastError || new Error('All Gemini models failed');
 }
 
 export default { chatCompletion, fallbackReply };
