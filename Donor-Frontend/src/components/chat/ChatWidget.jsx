@@ -87,10 +87,10 @@ export default function ChatWidget() {
   return (
     <div className="fixed bottom-5 right-5 z-50 flex flex-col items-end gap-3">
       {open && (
-        <div className="flex h-[480px] w-[min(92vw,380px)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-fade-in">
+        <div className="flex h-[min(72vh,620px)] w-[min(94vw,450px)] flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900 animate-fade-in">
           <div className="flex items-center justify-between bg-brand-600 px-4 py-3 text-white">
             <div>
-              <p className="text-sm font-bold">{t("chat.title")}</p>
+              <p className="text-base font-bold">{t("chat.title")}</p>
               <p className="text-xs text-red-100">{t("chat.subtitle")}</p>
             </div>
             <div className="flex items-center gap-1">
@@ -164,7 +164,7 @@ export default function ChatWidget() {
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={t("chat.placeholder")}
                 maxLength={2000}
-                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                className="flex-1 rounded-xl border border-gray-200 px-3 py-2 text-base outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
               />
               <button
                 type="submit"
@@ -193,9 +193,9 @@ export default function ChatWidget() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? t("chat.close") : t("chat.open")}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-brand-600 text-white shadow-xl shadow-brand-600/30 transition hover:bg-brand-700 active:scale-95"
+        className="flex h-16 w-16 items-center justify-center rounded-full bg-brand-600 text-white shadow-xl shadow-brand-600/30 transition hover:bg-brand-700 active:scale-95"
       >
-        {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {open ? <X className="h-7 w-7" /> : <MessageCircle className="h-7 w-7" />}
       </button>
     </div>
   );

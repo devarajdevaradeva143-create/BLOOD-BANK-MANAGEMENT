@@ -6,7 +6,7 @@ import EmergencyCta from "../components/home/EmergencyCta";
 
 export default function HomePage() {
   return (
-    <div>
+    <div className="home-shift">
       <Hero />
       <StatsCounter />
       <WhyDonate />

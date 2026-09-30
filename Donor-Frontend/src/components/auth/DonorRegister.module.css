@@ -2,6 +2,7 @@
 
 .register-page {
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   /* parent-level-ku scrollbar vanthalum hide pannu (mobile fallback-ku) */
   scrollbar-width: none;
@@ -17,6 +18,7 @@
 .register-section {
   width: 52%;
   height: 100vh;
+  height: 100dvh;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 35px 50px;
@@ -39,6 +41,7 @@
 }
 
 .register-card {
+  position: relative;
   width: 100%;
   max-width: 760px;
   /* viewport perusa irundha vertical center, form tall-na scroll — safe centering */
@@ -49,12 +52,70 @@
   border-radius: 20px;
   background: #ffffff;
   box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+  overflow: hidden;
+  animation: card-enter 0.45s ease both;
+}
+
+/* Brand accent bar — matches login card professional look */
+.register-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ef4444, #b91c1c 55%, #7f1d1d);
 }
 
 :global(.dark) .register-card {
   border-color: #1e293b;
   background: #111a2e;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Eyebrow badge pill above the title — matches login */
+.card-badge {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.register-card > .card-badge {
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+:global(.dark) .card-badge {
+  background: rgba(185, 28, 28, 0.18);
+  border-color: rgba(185, 28, 28, 0.45);
+  color: #fca5a5;
+}
+
+/* Required asterisk — matches login */
+.required {
+  color: #dc2626;
+  margin-left: 3px;
+  font-weight: 700;
 }
 
 .register-icon {
@@ -89,6 +150,31 @@
 
 :global(.dark) .register-subtitle {
   color: #94a3b8;
+}
+
+/* ============ FORM SECTION TITLES ============ */
+
+.form-section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 22px 0 14px;
+  padding-top: 18px;
+  border-top: 1px solid #eef2f7;
+  color: #b91c1c;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.form-section-title:first-of-type {
+  margin-top: 4px;
+}
+
+:global(.dark) .form-section-title {
+  border-top-color: #1e293b;
+  color: #fca5a5;
 }
 
 /* ============ FORM ============ */
@@ -160,6 +246,54 @@
   box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
 }
 
+.register-field input:hover:not(:disabled):not(:focus),
+.register-field select:hover:not(:disabled):not(:focus),
+.register-field textarea:hover:not(:disabled):not(:focus) {
+  border-color: #b9c4d4;
+}
+
+:global(.dark) .register-field input:hover:not(:disabled):not(:focus),
+:global(.dark) .register-field select:hover:not(:disabled):not(:focus),
+:global(.dark) .register-field textarea:hover:not(:disabled):not(:focus) {
+  border-color: #475569;
+}
+
+.register-field input:disabled,
+.register-field select:disabled,
+.register-field textarea:disabled {
+  opacity: 0.65;
+  background: #f1f5f9;
+  cursor: not-allowed;
+}
+
+:global(.dark) .register-field input:disabled,
+:global(.dark) .register-field select:disabled,
+:global(.dark) .register-field textarea:disabled {
+  background: #0b1220;
+}
+
+/* Fix browser autofill washing out the inputs — matches login */
+.register-field input:-webkit-autofill,
+.register-field input:-webkit-autofill:hover,
+.register-field input:-webkit-autofill:focus,
+.password-box input:-webkit-autofill,
+.password-box input:-webkit-autofill:hover,
+.password-box input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a;
+  -webkit-box-shadow: 0 0 0 60px #ffffff inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+:global(.dark) .register-field input:-webkit-autofill,
+:global(.dark) .register-field input:-webkit-autofill:hover,
+:global(.dark) .register-field input:-webkit-autofill:focus,
+:global(.dark) .password-box input:-webkit-autofill,
+:global(.dark) .password-box input:-webkit-autofill:hover,
+:global(.dark) .password-box input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #e2e8f0;
+  -webkit-box-shadow: 0 0 0 60px #0f172a inset;
+}
+
 .register-field input::placeholder,
 .register-field textarea::placeholder {
   color: #94a3b8;
@@ -174,11 +308,23 @@
   border-radius: 9px;
   overflow: hidden;
   background: #ffffff;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
 }
 
 :global(.dark) .password-box {
   border-color: #334155;
   background: #0f172a;
+}
+
+.password-box:hover:not(:focus-within) {
+  border-color: #b9c4d4;
+}
+
+:global(.dark) .password-box:hover:not(:focus-within) {
+  border-color: #475569;
 }
 
 .password-box:focus-within {
@@ -211,6 +357,12 @@
   color: #dc2626;
 }
 
+.password-box button:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 .password-box button svg {
   width: 18px;
   height: 18px;
@@ -219,8 +371,48 @@
 /* ============ PASSWORD STRENGTH ============ */
 
 .password-strength {
-  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
   font-size: 12px;
+  font-weight: 500;
+}
+
+.strength-meter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  width: 72px;
+}
+
+.strength-seg {
+  height: 4px;
+  flex: 1;
+  border-radius: 999px;
+  background: #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+:global(.dark) .strength-seg {
+  background: #334155;
+}
+
+.strength-seg.seg-on {
+  background: #cbd5e1;
+}
+
+.password-strength.weak .strength-seg.seg-on {
+  background: #dc2626;
+}
+
+.password-strength.medium .strength-seg.seg-on {
+  background: #d97706;
+}
+
+.password-strength.strong .strength-seg.seg-on {
+  background: #16a34a;
 }
 
 .password-strength.weak {
@@ -235,20 +427,32 @@
   color: #218838;
 }
 
-/* ============ MESSAGES ============ */
+/* ============ MESSAGES (icon flex layout + left border accent — matches login) ============ */
 
 .register-error,
 .register-success {
-  padding: 11px 13px;
-  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 10px;
   margin: 8px 0 15px;
-  font-size: 13px;
+  font-size: 14px;
+  font-weight: 500;
+  animation: card-enter 0.3s ease both;
+}
+
+.register-error svg,
+.register-success svg {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 .register-error {
   color: #b91c1c;
   background: #fef2f2;
   border: 1px solid #fecaca;
+  border-left: 4px solid #dc2626;
 }
 
 :global(.dark) .register-error {
@@ -261,6 +465,7 @@
   color: #15803d;
   background: #f0fdf4;
   border: 1px solid #bbf7d0;
+  border-left: 4px solid #16a34a;
 }
 
 :global(.dark) .register-success {
@@ -290,15 +495,26 @@
   box-shadow: 0 10px 24px rgba(217, 35, 35, 0.28);
 }
 
-.register-button:hover {
+.register-button:hover:not(:disabled) {
   transform: translateY(-1px);
+  filter: brightness(1.05);
   box-shadow: 0 14px 30px rgba(217, 35, 35, 0.35);
+}
+
+.register-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+
+.register-button:focus-visible {
+  outline: 2px solid #b91c1c;
+  outline-offset: 3px;
 }
 
 .register-button:disabled {
   opacity: 0.7;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 /* ============ LOGIN LINK ============ */
@@ -328,12 +544,19 @@
   text-decoration: underline;
 }
 
+.already-account button:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 /* ============ RESPONSIVE ============ */
 
 @media (max-width: 900px) {
   .register-page {
     height: auto;
     min-height: 100vh;
+    min-height: 100dvh;
     overflow-y: auto;
     overflow-x: hidden;
   }
@@ -345,6 +568,14 @@
     overflow: visible;
     padding: 30px 20px;
   }
+
+  /* iOS auto-zoom prevent: focus pothu screen perusaagama irukkanum */
+  .register-field input,
+  .register-field select,
+  .register-field textarea,
+  .password-box input {
+    font-size: 16px;
+  }
 }
 
 @media (max-width: 650px) {
@@ -355,5 +586,21 @@
 
   .register-card {
     padding: 30px 22px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .register-card,
+  .register-error,
+  .register-success {
+    animation: none;
+  }
+
+  .register-button:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .strength-seg {
+    transition: none;
   }
 }

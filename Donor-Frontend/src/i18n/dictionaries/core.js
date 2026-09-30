@@ -21,6 +21,16 @@
   "nav.switchToTamil": { en: "Switch to Tamil", ta: "தமிழுக்கு மாற்று" },
   "nav.switchToEnglish": { en: "Switch to English", ta: "ஆங்கிலத்திற்கு மாற்று" },
   "nav.langLabel": { en: "Language", ta: "மொழி" },
+  "nav.notifications": { en: "Notifications", ta: "அறிவிப்புகள்" },
+  "nav.markAllRead": { en: "Mark all read", ta: "அனைத்தையும் படித்ததாகக் குறி" },
+  "nav.viewAll": { en: "View all", ta: "அனைத்தையும் காண்க" },
+  "nav.noNotifications": { en: "No new notifications", ta: "புதிய அறிவிப்புகள் இல்லை" },
+  "nav.notificationsEmpty": { en: "You're all caught up!", ta: "எல்லா அறிவிப்புகளையும் பார்த்துவிட்டீர்கள்!" },
+  "nav.filterAll": { en: "All", ta: "அனைத்தும்" },
+  "nav.filterUnread": { en: "Unread", ta: "படிக்காதவை" },
+  "nav.loadMore": { en: "Load more", ta: "மேலும் ஏற்றுக" },
+  "nav.deleteNotification": { en: "Delete", ta: "நீக்கு" },
+  "nav.deleteConfirm": { en: "Delete this notification?", ta: "இந்த அறிவிப்பை நீக்கவா?" },
 
   "footer.brandTagline": {
     en: "Safe, voluntary blood donation serving communities across Tamil Nadu since 2010. Every drop saves a life.",

@@ -1,38 +1,76 @@
 .login-page {
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   display: flex;
   background: #f8fafc;
   font-family: Inter, Arial, Helvetica, sans-serif;
+  /* inner scroll mattum — page scrollbar venam */
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.login-page::-webkit-scrollbar {
+  display: none;
 }
 
 :global(.dark) .login-page {
   background: #0f172a;
 }
 
-/* ============ LEFT SECTION ============ */
+/* ============ LEFT SECTION (blood bank showcase panel) ============ */
 
 .login-info {
   width: 48%;
-  min-height: 100vh;
-  padding: 45px 70px;
+  height: 100vh;
+  height: 100dvh;
+  padding: 45px 70px 40px;
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
   color: #ffffff;
-  background: radial-gradient(
-    130% 130% at 0% 0%,
-    #b91c1c 0%,
-    #991b1b 42%,
-    #7f1d1d 100%
-  );
+  background:
+    radial-gradient(
+      110% 90% at 100% 0%,
+      rgba(255, 255, 255, 0.14) 0%,
+      rgba(255, 255, 255, 0) 55%
+    ),
+    radial-gradient(
+      130% 130% at 0% 0%,
+      #b91c1c 0%,
+      #991b1b 42%,
+      #7f1d1d 100%
+    );
 }
 
 :global(.dark) .login-info {
-  background: radial-gradient(
-    130% 130% at 0% 0%,
-    #7f1d1d 0%,
-    #5f1414 45%,
-    #400d0d 100%
+  background:
+    radial-gradient(
+      110% 90% at 100% 0%,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0) 55%
+    ),
+    radial-gradient(
+      130% 130% at 0% 0%,
+      #7f1d1d 0%,
+      #5f1414 45%,
+      #400d0d 100%
+    );
+}
+
+/* Subtle dot texture over the gradient — premium print feel */
+.login-info::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.09) 1px,
+    transparent 1.5px
   );
+  background-size: 22px 22px;
 }
 
 .hero-blob-1 {
@@ -92,127 +130,235 @@
 .brand h1 {
   margin: 0;
   font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
   color: #ffffff;
 }
 
 .brand p {
-  margin: 4px 0 0;
-  color: rgba(255, 255, 255, 0.75);
-  font-size: 18px;
-  font-weight: 600;
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
 }
 
 .info-content {
   position: relative;
   z-index: 1;
-  margin-top: 75px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  margin-top: clamp(28px, 6vh, 64px);
   max-width: 540px;
 }
 
 .info-content h2 {
-  font-size: 31px;
-  line-height: 1.3;
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.25;
+  text-wrap: balance;
   color: #ffffff;
-  margin-bottom: 20px;
+  margin: 0 0 16px;
+}
+
+.info-content h2::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 4px;
+  border-radius: 999px;
+  margin-top: 16px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0.25)
+  );
 }
 
 .info-description {
   color: rgba(255, 255, 255, 0.82);
-  font-size: 17px;
+  font-size: 16.5px;
   line-height: 1.7;
+  margin: 0;
 }
 
+/* Glass benefit cards */
 .benefits {
-  margin-top: 35px;
+  margin-top: 30px;
   display: flex;
   flex-direction: column;
-  gap: 22px;
+  gap: 12px;
 }
 
 .benefit {
   display: flex;
   align-items: center;
-  gap: 17px;
+  gap: 15px;
+  padding: 13px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  transition:
+    transform 0.2s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+  animation: info-rise 0.5s ease both;
+}
+
+.benefit:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.benefit:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.benefit:nth-child(4) {
+  animation-delay: 0.24s;
+}
+
+.benefit:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
 .benefit-icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   flex-shrink: 0;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.96);
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 .benefit-icon svg {
-  color: #ffffff;
-  width: 22px;
-  height: 22px;
+  color: #b91c1c;
+  width: 21px;
+  height: 21px;
 }
 
 .benefit h3 {
-  margin: 0 0 4px;
+  margin: 0 0 3px;
   color: #ffffff;
-  font-size: 16px;
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.1px;
 }
 
 .benefit p {
   margin: 0;
   color: rgba(255, 255, 255, 0.72);
-  font-size: 14px;
+  font-size: 13.5px;
+  line-height: 1.5;
 }
 
+@keyframes info-rise {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Bottom quote strip — in-flow so it never overlaps the cards */
 .blood-illustration {
-  position: absolute;
-  bottom: 25px;
-  left: 100px;
+  position: relative;
+  z-index: 1;
+  margin-top: 36px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
   display: flex;
   align-items: center;
-  gap: 25px;
-  z-index: 1;
+  gap: 20px;
 }
 
 .blood-drop {
-  width: 150px;
-  height: 180px;
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
   background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  border-radius: 70% 70% 70% 70%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50% 50% 50% 6px;
   transform: rotate(45deg);
   color: #ffffff;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.22);
+  animation: drop-float 5s ease-in-out infinite;
+}
+
+@keyframes drop-float {
+  0%,
+  100% {
+    transform: rotate(45deg) translate(0, 0);
+  }
+  50% {
+    transform: rotate(45deg) translate(-4px, -4px);
+  }
 }
 
 .blood-drop svg {
-  width: 55px;
-  height: 55px;
+  width: 26px;
+  height: 26px;
   transform: rotate(-45deg);
 }
 
 .blood-illustration p {
+  position: relative;
+  margin: 0;
   color: #ffffff;
-  font-size: 24px;
+  font-size: 19px;
   font-weight: 700;
   font-style: italic;
-  width: 150px;
+  letter-spacing: -0.2px;
+  line-height: 1.45;
+}
+
+.blood-illustration p::before {
+  content: "\201C";
+  display: block;
+  font-size: 30px;
+  line-height: 1;
+  font-style: normal;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 2px;
 }
 
 /* ============ RIGHT SECTION ============ */
 
 .login-section {
   width: 52%;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 40px;
   background: #f8fafc;
+}
+
+.login-section::-webkit-scrollbar {
+  display: none;
 }
 
 :global(.dark) .login-section {
@@ -220,19 +366,84 @@
 }
 
 .login-card {
+  position: relative;
   width: 100%;
   max-width: 590px;
+  margin-top: auto;
+  margin-bottom: auto;
   padding: 45px 50px;
   border: 1px solid #e5e9f0;
   border-radius: 20px;
   background: #ffffff;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.05),
+    0 24px 60px rgba(15, 23, 42, 0.1);
+  overflow: hidden;
+  animation: card-enter 0.45s ease both;
+}
+
+/* Brand accent bar — professional SaaS touch */
+.login-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #ef4444, #b91c1c 55%, #7f1d1d);
 }
 
 :global(.dark) .login-card {
   border-color: #1e293b;
   background: #111a2e;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 24px 60px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Eyebrow badge above the title */
+.card-badge {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding: 5px 14px;
+  border-radius: 999px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-card > .card-badge {
+  display: table;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+:global(.dark) .card-badge {
+  background: rgba(185, 28, 28, 0.18);
+  border-color: rgba(185, 28, 28, 0.45);
+  color: #fca5a5;
+}
+
+/* Required asterisk */
+.required {
+  color: #dc2626;
+  margin-left: 3px;
+  font-weight: 700;
 }
 
 .login-icon {
@@ -291,11 +502,14 @@
 .input-wrapper {
   height: 60px;
   border: 1px solid #d8e0ea;
-  border-radius: 10px;
+  border-radius: 12px;
   display: flex;
   align-items: center;
   padding: 0 16px;
-  transition: 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
   background: #ffffff;
 }
 
@@ -304,9 +518,42 @@
   background: #0f172a;
 }
 
+.input-wrapper:hover {
+  border-color: #b9c4d4;
+}
+
+:global(.dark) .input-wrapper:hover {
+  border-color: #475569;
+}
+
 .input-wrapper:focus-within {
   border-color: #dc2626;
-  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+  box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.12);
+}
+
+.input-wrapper:has(input:disabled) {
+  opacity: 0.65;
+  background: #f1f5f9;
+}
+
+:global(.dark) .input-wrapper:has(input:disabled) {
+  background: #0b1220;
+}
+
+/* Fix browser autofill washing out the inputs */
+.input-wrapper input:-webkit-autofill,
+.input-wrapper input:-webkit-autofill:hover,
+.input-wrapper input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #0f172a;
+  -webkit-box-shadow: 0 0 0 60px #ffffff inset;
+  transition: background-color 9999s ease-in-out 0s;
+}
+
+:global(.dark) .input-wrapper input:-webkit-autofill,
+:global(.dark) .input-wrapper input:-webkit-autofill:hover,
+:global(.dark) .input-wrapper input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #e2e8f0;
+  -webkit-box-shadow: 0 0 0 60px #0f172a inset;
 }
 
 .input-icon {
@@ -345,12 +592,29 @@
   color: #94a3b8;
   display: flex;
   align-items: center;
-  padding: 5px;
-  transition: color 0.15s ease;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  padding: 0;
+  flex-shrink: 0;
+  transition:
+    color 0.15s ease,
+    background-color 0.15s ease;
 }
 
 .password-toggle:hover {
   color: #dc2626;
+  background: #fef2f2;
+}
+
+:global(.dark) .password-toggle:hover {
+  background: rgba(185, 28, 28, 0.18);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
 }
 
 .password-toggle svg {
@@ -371,22 +635,40 @@
   cursor: pointer;
   font-size: 14px;
   font-weight: 600;
+  border-radius: 6px;
+  padding: 2px 4px;
 }
 
 .forgot-password:hover {
   text-decoration: underline;
 }
 
+.forgot-password:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
 /* ============ MESSAGES ============ */
 
 .error-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   background: #fef2f2;
   color: #b91c1c;
   border: 1px solid #fecaca;
+  border-left: 4px solid #dc2626;
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
+  font-weight: 500;
   margin-bottom: 18px;
+  animation: card-enter 0.3s ease both;
+}
+
+.error-message svg {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 :global(.dark) .error-message {
@@ -396,13 +678,24 @@
 }
 
 .info-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   background: #eff6ff;
   color: #1d4ed8;
   border: 1px solid #bfdbfe;
+  border-left: 4px solid #2563eb;
   padding: 12px 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
+  font-weight: 500;
   margin-bottom: 18px;
+  animation: card-enter 0.3s ease both;
+}
+
+.info-message svg {
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 :global(.dark) .info-message {
@@ -415,15 +708,19 @@
 
 .login-button {
   width: 100%;
-  height: 60px;
+  height: 58px;
   border: none;
-  border-radius: 9px;
+  border-radius: 12px;
   background: linear-gradient(135deg, #dc2626, #b91c1c);
   color: white;
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 700;
+  letter-spacing: 0.01em;
   cursor: pointer;
-  transition: 0.2s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -431,15 +728,26 @@
   box-shadow: 0 10px 24px rgba(217, 35, 35, 0.28);
 }
 
-.login-button:hover {
+.login-button:hover:not(:disabled) {
   transform: translateY(-1px);
+  filter: brightness(1.05);
   box-shadow: 0 14px 30px rgba(217, 35, 35, 0.35);
 }
 
+.login-button:active:not(:disabled) {
+  transform: translateY(0) scale(0.99);
+}
+
+.login-button:focus-visible {
+  outline: 2px solid #b91c1c;
+  outline-offset: 3px;
+}
+
 .login-button:disabled {
-  opacity: 0.7;
+  opacity: 0.75;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 /* ============ OR ============ */
@@ -487,10 +795,17 @@
   font-weight: 700;
   cursor: pointer;
   font-size: 15px;
+  border-radius: 6px;
+  padding: 2px 4px;
 }
 
 .register-link:hover {
   text-decoration: underline;
+}
+
+.register-link:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
 }
 
 /* ============ RESPONSIVE ============ */
@@ -498,6 +813,11 @@
 @media (max-width: 900px) {
   .login-page {
     flex-direction: column;
+    height: auto;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .login-info {
@@ -508,7 +828,9 @@
 
   .login-section {
     width: 100%;
+    height: auto;
     min-height: auto;
+    overflow: visible;
     padding: 30px 20px;
   }
 
@@ -552,6 +874,32 @@
 
   .login-card h2 {
     font-size: 27px;
+  }
+
+  /* Prevent iOS auto-zoom on focus */
+  .input-wrapper input {
+    font-size: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-card,
+  .error-message,
+  .info-message,
+  .benefit {
+    animation: none;
+  }
+
+  .login-button:hover:not(:disabled) {
+    transform: none;
+  }
+
+  .benefit:hover {
+    transform: none;
+  }
+
+  .blood-drop {
+    animation: none;
   }
 }
 

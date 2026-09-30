@@ -13,6 +13,7 @@ import HomePage from './pages/HomePage'
 import HospitalHome from './pages/HospitalHome'
 import HospitalLogin from './pages/HospitalLogin'
 import HospitalRegister from './pages/HospitalRegister'
+import NotificationsPage from './pages/NotificationsPage'
 import RequestHistoryPage from './pages/RequestHistoryPage'
 import RequestPage from './pages/RequestPage'
 import { logoutUser } from './lib/auth'
@@ -65,6 +66,7 @@ export default function App() {
                 <Route path="emergency" element={<EmergencyPage />} />
                 <Route path="faq" element={<FaqPage />} />
                 <Route path="contact" element={<ContactPage />} />
+                <Route path="notifications" element={<NotificationsPage />} />
               </Route>
 
               <Route path="/hospital" element={<Navigate to="/hospital/home" replace />} />

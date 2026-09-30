@@ -180,4 +180,41 @@ export async function cancelRequestApi(id) {
   })
 }
 
+/* ---------- Notification endpoints (auth) ---------- */
+
+export async function listNotifications({ unreadOnly = false, limit } = {}) {
+  const params = new URLSearchParams()
+  if (unreadOnly) params.set('unreadOnly', 'true')
+  if (limit !== undefined && limit !== null && String(limit) !== '') {
+    params.set('limit', String(limit))
+  }
+  const qs = params.toString()
+  return apiFetch(`/api/notifications${qs ? `?${qs}` : ''}`, { auth: true })
+}
+
+export async function getUnreadCount() {
+  return apiFetch('/api/notifications/unread-count', { auth: true })
+}
+
+export async function markNotificationRead(id) {
+  return apiFetch(`/api/notifications/${encodeURIComponent(id)}/read`, {
+    method: 'PATCH',
+    auth: true,
+  })
+}
+
+export async function markAllNotificationsRead() {
+  return apiFetch('/api/notifications/read-all', {
+    method: 'PATCH',
+    auth: true,
+  })
+}
+
+export async function deleteNotification(id) {
+  return apiFetch(`/api/notifications/${encodeURIComponent(id)}`, {
+    method: 'DELETE',
+    auth: true,
+  })
+}
+
 export { API_BASE }

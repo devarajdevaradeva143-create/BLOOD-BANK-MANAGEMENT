@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  AlertCircle,
+  CheckCircle2,
   Droplet,
   Eye,
   EyeOff,
@@ -39,6 +41,16 @@ function getMaxDob() {
   const d = new Date();
   d.setFullYear(d.getFullYear() - 18);
   return d.toISOString().slice(0, 10);
+}
+
+function getDonorAge(dobStr) {
+  const dob = new Date(dobStr);
+  if (Number.isNaN(dob.getTime())) return null;
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const m = today.getMonth() - dob.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+  return age;
 }
 
 export default function DonorRegister() {
@@ -102,6 +114,12 @@ export default function DonorRegister() {
 
     if (!/^[0-9]{10}$/.test(form.phone)) {
       setError(t("signup.error.phoneInvalid"));
+      return;
+    }
+
+    const donorAge = getDonorAge(form.dob);
+    if (donorAge === null || donorAge < 18 || donorAge > 65) {
+      setError(t("signup.error.ageInvalid"));
       return;
     }
 
@@ -261,13 +279,17 @@ export default function DonorRegister() {
             <Droplet size={28} />
           </div>
 
+          <p className={s["card-badge"]}>{t("signup.badge")}</p>
           <h2>{t("signup.title")}</h2>
           <p className={s["register-subtitle"]}>{t("signup.subtitle")}</p>
 
           <form onSubmit={handleSubmit}>
+            <h3 className={s["form-section-title"]}>
+              {t("signup.section.personal")}
+            </h3>
             <div className={s["form-row"]}>
               <div className={s["register-field"]}>
-                <label htmlFor="reg-name">{t("signup.field.name")} *</label>
+                <label htmlFor="reg-name">{t("signup.field.name")} <span className={s.required} aria-hidden="true">*</span></label>
                 <input
                   id="reg-name"
                   type="text"
@@ -279,7 +301,7 @@ export default function DonorRegister() {
               </div>
 
               <div className={s["register-field"]}>
-                <label htmlFor="reg-email">{t("signup.field.email")} *</label>
+                <label htmlFor="reg-email">{t("signup.field.email")} <span className={s.required} aria-hidden="true">*</span></label>
                 <input
                   id="reg-email"
                   type="email"
@@ -293,7 +315,7 @@ export default function DonorRegister() {
 
             <div className={s["form-row"]}>
               <div className={s["register-field"]}>
-                <label htmlFor="reg-phone">{t("signup.field.phone")} *</label>
+                <label htmlFor="reg-phone">{t("signup.field.phone")} <span className={s.required} aria-hidden="true">*</span></label>
                 <input
                   id="reg-phone"
                   type="tel"
@@ -307,7 +329,7 @@ export default function DonorRegister() {
               </div>
 
               <div className={s["register-field"]}>
-                <label htmlFor="reg-dob">{t("signup.field.dob")} *</label>
+                <label htmlFor="reg-dob">{t("signup.field.dob")} <span className={s.required} aria-hidden="true">*</span></label>
                 <input
                   id="reg-dob"
                   type="date"
@@ -322,7 +344,7 @@ export default function DonorRegister() {
 
             <div className={s["form-row"]}>
               <div className={s["register-field"]}>
-                <label htmlFor="reg-gender">{t("signup.field.gender")} *</label>
+                <label htmlFor="reg-gender">{t("signup.field.gender")} <span className={s.required} aria-hidden="true">*</span></label>
                 <select
                   id="reg-gender"
                   name="gender"
@@ -338,7 +360,7 @@ export default function DonorRegister() {
 
               <div className={s["register-field"]}>
                 <label htmlFor="reg-blood">
-                  {t("signup.field.bloodGroup")} *
+                  {t("signup.field.bloodGroup")} <span className={s.required} aria-hidden="true">*</span>
                 </label>
                 <select
                   id="reg-blood"
@@ -360,7 +382,7 @@ export default function DonorRegister() {
             </div>
 
             <div className={s["register-field"]}>
-              <label htmlFor="reg-district">{t("signup.field.district")} *</label>
+              <label htmlFor="reg-district">{t("signup.field.district")} <span className={s.required} aria-hidden="true">*</span></label>
               <select
                 id="reg-district"
                 name="district"
@@ -376,10 +398,13 @@ export default function DonorRegister() {
               </select>
             </div>
 
+            <h3 className={s["form-section-title"]}>
+              {t("signup.section.account")}
+            </h3>
             <div className={s["form-row"]}>
               <div className={s["register-field"]}>
                 <label htmlFor="reg-password">
-                  {t("signup.field.password")} *
+                  {t("signup.field.password")} <span className={s.required} aria-hidden="true">*</span>
                 </label>
                 <div className={s["password-box"]}>
                   <input
@@ -403,6 +428,8 @@ export default function DonorRegister() {
                     aria-label={
                       showPassword ? "Hide password" : "Show password"
                     }
+                    aria-pressed={showPassword}
+                    title={showPassword ? "Hide password" : "Show password"}
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOff /> : <Eye />}
@@ -411,6 +438,24 @@ export default function DonorRegister() {
 
                 {strength && (
                   <div className={`${s["password-strength"]} ${s[strength]}`}>
+                    <span
+                      className={s["strength-meter"]}
+                      aria-hidden="true"
+                    >
+                      <span
+                        className={`${s["strength-seg"]} ${s["seg-on"]}`}
+                      />
+                      <span
+                        className={`${s["strength-seg"]} ${
+                          strength !== "weak" ? s["seg-on"] : ""
+                        }`}
+                      />
+                      <span
+                        className={`${s["strength-seg"]} ${
+                          strength === "strong" ? s["seg-on"] : ""
+                        }`}
+                      />
+                    </span>
                     {t("signup.strength.label")}:{" "}
                     <strong>{t(`signup.strength.${strength}`)}</strong>
                   </div>
@@ -419,7 +464,7 @@ export default function DonorRegister() {
 
               <div className={s["register-field"]}>
                 <label htmlFor="reg-confirm">
-                  {t("signup.field.confirmPassword")} *
+                  {t("signup.field.confirmPassword")} <span className={s.required} aria-hidden="true">*</span>
                 </label>
                 <div className={s["password-box"]}>
                   <input
@@ -435,6 +480,8 @@ export default function DonorRegister() {
                     aria-label={
                       showConfirm ? "Hide password" : "Show password"
                     }
+                    aria-pressed={showConfirm}
+                    title={showConfirm ? "Hide password" : "Show password"}
                     onClick={() => setShowConfirm(!showConfirm)}
                   >
                     {showConfirm ? <EyeOff /> : <Eye />}
@@ -445,13 +492,15 @@ export default function DonorRegister() {
 
             {error && (
               <div className={s["register-error"]} role="alert">
-                {error}
+                <AlertCircle size={17} aria-hidden="true" />
+                <span>{error}</span>
               </div>
             )}
 
             {success && (
               <div className={s["register-success"]} role="status">
-                {success}
+                <CheckCircle2 size={17} aria-hidden="true" />
+                <span>{success}</span>
               </div>
             )}
 
@@ -459,6 +508,7 @@ export default function DonorRegister() {
               type="submit"
               className={s["register-button"]}
               disabled={loading}
+              aria-busy={loading}
             >
               {loading ? (
                 <>

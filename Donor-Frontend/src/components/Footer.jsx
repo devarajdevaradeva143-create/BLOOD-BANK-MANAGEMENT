@@ -1,13 +1,18 @@
 import { Droplet, Mail, Phone } from "lucide-react";
+import { useLocation } from "react-router-dom";
 import { CONTACT_INFO } from "../data/constants";
 import { useLanguage } from "../i18n/LanguageContext";
 
 export default function Footer() {
   const { t } = useLanguage();
+  const { pathname } = useLocation();
+  const homeShift = pathname === "/" ? "home-shift" : "";
 
   return (
     <footer className="bg-slate-950 text-slate-300">
-      <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+      <div
+        className={`mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8 ${homeShift}`}
+      >
         <div className="grid gap-10 md:grid-cols-2 lg:grid-cols-3">
           <div>
             <div className="flex items-center gap-2.5">

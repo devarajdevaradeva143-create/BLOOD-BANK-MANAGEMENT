@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
+  AlertCircle,
   Droplet,
   Eye,
   EyeOff,
   HeartHandshake,
+  Info,
   Loader2,
   Lock,
   Mail,
@@ -158,15 +160,21 @@ export default function DonorLogin() {
             <ForgotPassword email={email} onBack={handleForgotBack} />
           ) : (
             <>
+              <p className={s["card-badge"]}>{t("login.portal")}</p>
               <h2>{t("login.title")}</h2>
               <p className={s["login-subtitle"]}>{t("login.subtitle")}</p>
 
               <form onSubmit={handleSubmit}>
             {/* EMAIL */}
             <div className={s["form-group"]}>
-              <label htmlFor="login-email">{t("login.email")}</label>
+              <label htmlFor="login-email">
+                {t("login.email")}
+                <span className={s.required} aria-hidden="true">
+                  *
+                </span>
+              </label>
               <div className={s["input-wrapper"]}>
-                <span className={s["input-icon"]}>
+                <span className={s["input-icon"]} aria-hidden="true">
                   <Mail />
                 </span>
                 <input
@@ -175,6 +183,10 @@ export default function DonorLogin() {
                   placeholder={t("login.emailPlaceholder")}
                   value={email}
                   autoComplete="email"
+                  disabled={loading}
+                  aria-required="true"
+                  aria-invalid={error ? "true" : undefined}
+                  aria-describedby={error ? "login-error" : undefined}
                   onChange={(e) => setEmail(e.target.value)}
                 />
               </div>
@@ -182,9 +194,14 @@ export default function DonorLogin() {
 
             {/* PASSWORD */}
             <div className={s["form-group"]}>
-              <label htmlFor="login-password">{t("login.password")}</label>
+              <label htmlFor="login-password">
+                {t("login.password")}
+                <span className={s.required} aria-hidden="true">
+                  *
+                </span>
+              </label>
               <div className={s["input-wrapper"]}>
-                <span className={s["input-icon"]}>
+                <span className={s["input-icon"]} aria-hidden="true">
                   <Lock />
                 </span>
                 <input
@@ -193,12 +210,18 @@ export default function DonorLogin() {
                   placeholder={t("login.passwordPlaceholder")}
                   value={password}
                   autoComplete="current-password"
+                  disabled={loading}
+                  aria-required="true"
+                  aria-invalid={error ? "true" : undefined}
+                  aria-describedby={error ? "login-error" : undefined}
                   onChange={(e) => setPassword(e.target.value)}
                 />
                 <button
                   type="button"
                   className={s["password-toggle"]}
                   aria-label={showPassword ? "Hide password" : "Show password"}
+                  aria-pressed={showPassword}
+                  title={showPassword ? "Hide password" : "Show password"}
                   onClick={() => setShowPassword((v) => !v)}
                 >
                   {showPassword ? <EyeOff /> : <Eye />}
@@ -219,18 +242,25 @@ export default function DonorLogin() {
 
             {/* ERROR / NOTE */}
             {error && (
-              <div className={s["error-message"]} role="alert">
-                {error}
+              <div className={s["error-message"]} role="alert" id="login-error">
+                <AlertCircle size={17} aria-hidden="true" />
+                <span>{error}</span>
               </div>
             )}
             {note && !error && (
               <div className={s["info-message"]} role="status">
-                {note}
+                <Info size={17} aria-hidden="true" />
+                <span>{note}</span>
               </div>
             )}
 
             {/* LOGIN BUTTON */}
-            <button type="submit" className={s["login-button"]} disabled={loading}>
+            <button
+              type="submit"
+              className={s["login-button"]}
+              disabled={loading}
+              aria-busy={loading}
+            >
               {loading ? (
                 <>
                   <Loader2 size={18} className="animate-spin" />

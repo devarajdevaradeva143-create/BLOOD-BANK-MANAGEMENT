@@ -1,7 +1,9 @@
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import Donation from '../models/Donation.js';
+import Donor from '../models/Donor.js';
 import User from '../models/User.js';
 import { genDonationId } from '../utils/ids.js';
+import { notify } from '../services/notifications.service.js';
 import { logAudit } from '../middleware/audit.js';
 import { verifyOtpInternal } from './otp.controller.js';
 
@@ -67,6 +69,18 @@ export const createDonation = asyncHandler(async (req, res) => {
     bloodGroup: doc.bloodGroup,
     districtId: doc.districtId,
   });
+
+  try {
+    await notify({
+      audience: 'district',
+      districtId: doc.districtId,
+      type: 'donation',
+      title: `New donation request: ${doc.donorName} (${doc.bloodGroup})`,
+      link: '/donations',
+    });
+  } catch {
+    // best-effort — never break the main request
+  }
 
   return res.status(201).json({ message: 'Donation submitted', donation: doc });
 });
@@ -185,6 +199,46 @@ export const updateDonationStatus = asyncHandler(async (req, res) => {
     from,
     to: status,
   });
+
+  try {
+    let donor = null;
+    try {
+      const mobile = String(doc.mobile || '').trim();
+      if (mobile) donor = await Donor.findOne({ mobile });
+      const docEmail = String(doc.email || '').trim().toLowerCase();
+      if (!donor && docEmail) donor = await Donor.findOne({ email: docEmail });
+    } catch {
+      donor = null;
+    }
+    if (donor) {
+      const titles = {
+        approved: `Donation approved: ${doc.donationId}`,
+        completed: 'Donation completed — thank you!',
+        cancelled: `Donation request cancelled: ${doc.donationId}`,
+      };
+      const rawDate = doc.availableDate;
+      let dateStr = '';
+      try {
+        dateStr =
+          rawDate instanceof Date
+            ? rawDate.toISOString().slice(0, 10)
+            : String(rawDate || '').trim();
+      } catch {
+        dateStr = String(rawDate || '');
+      }
+      await notify({
+        audience: 'donor',
+        recipientId: String(donor._id),
+        districtId: doc.districtId,
+        type: 'donation',
+        title: titles[status] || `Donation update: ${doc.donationId}`,
+        body: `${doc.bloodGroup || ''} • ${dateStr}`.trim(),
+        link: '/profile',
+      });
+    }
+  } catch {
+    // best-effort — never break the main request
+  }
 
   return res.status(200).json({ message: 'Donation status updated', donation: doc });
 });

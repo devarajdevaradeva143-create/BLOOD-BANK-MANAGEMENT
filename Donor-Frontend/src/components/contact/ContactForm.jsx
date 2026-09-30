@@ -81,7 +81,9 @@ export default function ContactForm() {
     setFormData(EMPTY_FORM);
     setErrors({});
     toast.success(t("contact.toast.sent"));
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const scroller = document.getElementById("app-scroll");
+    if (scroller) scroller.scrollTo({ top: 0, behavior: "smooth" });
+    else window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (

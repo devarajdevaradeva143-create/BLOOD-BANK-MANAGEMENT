@@ -26,6 +26,7 @@ const INITIAL_FORM = {
   date: localToday(),
   time: "",
   prevDate: "",
+  address: "",
   notes: "",
 };
 
@@ -34,6 +35,20 @@ function localToday() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(
     d.getDate()
   ).padStart(2, "0")}`;
+}
+
+const MAX_PREFERRED_DATES = 3;
+
+// "2026-01-15, 2026-01-20" -> ["2026-01-15", "2026-01-20"]
+// Empty + trailing ", " (pending new row) -> [""] so the new row renders.
+function parseDateList(dateStr) {
+  const raw = String(dateStr ?? "");
+  if (!raw.trim()) return [""];
+  return raw.split(",").map((s) => s.trim());
+}
+
+function cleanDateList(dateStr) {
+  return parseDateList(dateStr).filter(Boolean);
 }
 
 function isNetworkError(err) {
@@ -49,8 +64,17 @@ function isNetworkError(err) {
 
 function buildDonationPayload(formValues, code) {
   const district = formValues.district || "";
-  const date = formValues.date || "";
+  // Backend accepts a single availableDate — primary = first preferred date.
+  // Extra dates ride along in preferredDates + notes for staff visibility.
+  const dates = cleanDateList(formValues.date);
+  const date = dates[0] || "";
+  const extraDates = dates.slice(1);
   const time = formValues.time || "";
+  let notes = String(formValues.notes || "").trim();
+  if (extraDates.length > 0) {
+    const alt = `Alternate preferred dates: ${extraDates.join(", ")}`;
+    notes = notes ? `${notes}\n${alt}` : alt;
+  }
   return {
     // Contract fields for POST /api/donations.
     donorName: String(formValues.donorName || "").trim(),
@@ -58,13 +82,15 @@ function buildDonationPayload(formValues, code) {
     mobile: String(formValues.mobile || "").trim(),
     districtId: toDistrictId(district),
     district,
+    address: String(formValues.address || "").trim(),
     availableDate: date,
+    preferredDates: dates,
     preferredTime: time,
-    notes: String(formValues.notes || "").trim(),
+    notes,
     code: String(code || "").trim(),
     // Backend schema aliases (date/time) + optional display fields kept for
     // compatibility and local offline cache / Confirmation display.
-    date,
+    date: dates.join(", "),
     time,
 
     email: String(formValues.email || "").trim(),
@@ -136,11 +162,33 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
       newErrors.email = t("donate.validation.email");
 
     if (!form.district) newErrors.district = t("donate.validation.district");
-    if (!form.date) newErrors.date = t("donate.validation.date");
-    if (!form.time) newErrors.time = t("donate.validation.time");
-
-    if (form.prevDate && form.prevDate > today)
+    const pickedDates = cleanDateList(form.date);
+    if (pickedDates.length === 0) {
+      newErrors.date = t("donate.validation.date");
+    } else {
+      const seen = new Set();
+      for (const d of pickedDates) {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(d) || Number.isNaN(Date.parse(d))) {
+          newErrors.date = t("donate.validation.dateInvalid");
+          break;
+        }
+        if (d < today) {
+          newErrors.date = t("donate.validation.datePast");
+          break;
+        }
+        if (seen.has(d)) {
+          newErrors.date = t("donate.validation.dateDuplicate");
+          break;
+        }
+        seen.add(d);
+      }
+    }
+    if (form.prevDate && form.prevDate > today) {
       newErrors.prevDate = t("donate.validation.prevDate");
+    }
+
+    if (!String(form.address || "").trim())
+      newErrors.address = t("donate.validation.address");
 
     if (!eligibility) newErrors.eligibility = t("donate.validation.eligibility");
 
@@ -323,26 +371,32 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300">
               {t("donate.field.date")}
+              <span className="ml-0.5 text-red-600" aria-hidden="true">
+                *
+              </span>
             </label>
+            {/* Preferred dates list — works on all viewports (up to 3). */}
             <div className="flex flex-col gap-2">
-              {form.date.split(",").map((d, i) => d.trim() && (
+              {parseDateList(form.date).map((d, i, arr) => (
                 <div key={i} className="flex items-center gap-2">
                   <Input
                     type="date"
-                    value={d.trim()}
+                    value={d}
                     onChange={(v) => {
-                      const dates = form.date.split(",").map((x) => x.trim()).filter(Boolean);
+                      const dates = parseDateList(form.date);
                       dates[i] = v;
                       handleChange("date", dates.join(", "));
                     }}
                     min={today}
                     className="flex-1"
                   />
-                  {form.date.split(",").filter((x) => x.trim()).length > 1 && (
+                  {arr.length > 1 && (
                     <button
                       type="button"
+                      aria-label={t("donate.removeDate")}
+                      title={t("donate.removeDate")}
                       onClick={() => {
-                        const dates = form.date.split(",").map((x) => x.trim()).filter(Boolean);
+                        const dates = parseDateList(form.date);
                         dates.splice(i, 1);
                         handleChange("date", dates.join(", "));
                       }}
@@ -353,15 +407,28 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
                   )}
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={() => handleChange("date", form.date ? form.date + ", " : "")}
-                className="inline-flex items-center gap-1 text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
-              >
-                <Plus className="h-4 w-4" />
-                {t("donate.addDate")}
-              </button>
+              {parseDateList(form.date).length < MAX_PREFERRED_DATES && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const dates = parseDateList(form.date);
+                    handleChange("date", [...dates, ""].join(", "));
+                  }}
+                  className="inline-flex items-center gap-1 self-start text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400"
+                >
+                  <Plus className="h-4 w-4" />
+                  {t("donate.addDate")}
+                </button>
+              )}
             </div>
+            {errors.date && (
+              <p
+                role="alert"
+                className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400"
+              >
+                {errors.date}
+              </p>
+            )}
           </div>
           <Input
             id="time"
@@ -370,7 +437,6 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
             value={form.time}
             onChange={(v) => handleChange("time", v)}
             error={errors.time}
-            required
           />
           <Input
             id="prevDate"
@@ -381,8 +447,41 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
             error={errors.prevDate}
             max={today}
           />
-
-
+          <div className="sm:col-span-2">
+            <label
+              htmlFor="address"
+              className="mb-1.5 block text-sm font-medium text-gray-700 dark:text-slate-300"
+            >
+              {t("donate.field.address")}
+              <span className="ml-0.5 text-red-600" aria-hidden="true">
+                *
+              </span>
+            </label>
+            <textarea
+              id="address"
+              name="address"
+              rows={2}
+              value={form.address}
+              onChange={(e) => handleChange("address", e.target.value)}
+              placeholder={t("donate.placeholder.address")}
+              aria-invalid={errors.address ? "true" : undefined}
+              aria-describedby={errors.address ? "address-error" : undefined}
+              className={`block w-full min-h-[64px] rounded-lg border bg-white px-3.5 py-2.5 text-sm text-gray-900 placeholder-gray-400 shadow-sm outline-none transition-colors focus:ring-2 dark:bg-slate-900 dark:text-slate-100 dark:placeholder-slate-500 ${
+                errors.address
+                  ? "border-red-400 focus:border-red-500 focus:ring-red-200 dark:border-red-500 dark:focus:border-red-400 dark:focus:ring-red-900/60"
+                  : "border-gray-300 focus:border-red-500 focus:ring-red-200 dark:border-slate-700 dark:focus:border-brand-500 dark:focus:ring-brand-900/60"
+              }`}
+            />
+            {errors.address && (
+              <p
+                id="address-error"
+                role="alert"
+                className="mt-1.5 text-xs font-medium text-red-600 dark:text-red-400"
+              >
+                {errors.address}
+              </p>
+            )}
+          </div>
         </div>
       </SectionCard>
 

@@ -39,10 +39,22 @@ export default {
     en: "Register to become a blood donor",
     ta: "இரத்ததானராக பதிவு செய்யவும்",
   },
+  "signup.section.personal": {
+    en: "Personal Details",
+    ta: "தனிப்பட்ட விவரங்கள்",
+  },
+  "signup.section.account": {
+    en: "Account Security",
+    ta: "கணக்கு பாதுகாப்பு",
+  },
   "signup.field.name": { en: "Full Name", ta: "முழுப்பெயர்" },
   "signup.field.email": { en: "Email Address", ta: "மின்னஞ்சல் முகவரி" },
   "signup.field.phone": { en: "Phone Number", ta: "கைபேசி எண்" },
   "signup.field.dob": { en: "Date of Birth", ta: "பிறந்த தேதி" },
+  "signup.error.ageInvalid": {
+    en: "Donors must be between 18 and 65 years old.",
+    ta: "இரத்ததானர் 18 முதல் 65 வயதுக்குள் இருக்க வேண்டும்.",
+  },
   "signup.field.gender": { en: "Gender", ta: "பாலினம்" },
   "signup.field.bloodGroup": { en: "Blood Group", ta: "இரத்தக் குழு" },
   "signup.field.district": { en: "District", ta: "மாவட்டம்" },

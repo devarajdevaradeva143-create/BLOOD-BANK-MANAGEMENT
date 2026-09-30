@@ -33,6 +33,7 @@ export const en = {
   'nav.openMenu': 'Open menu',
 
   'login.title': 'Sign in to your account',
+  'login.welcome': 'Welcome back',
   'login.subtitle': 'Access the blood unit management dashboard',
   'login.staffId': 'Admin ID',
   'login.staffIdPh': 'Enter your admin ID',
@@ -52,6 +53,10 @@ export const en = {
   'login.errorRequired': 'ID and PIN are required',
   'login.errorInvalid': 'Invalid ID or PIN. Please try again.',
   'login.secure': 'Secure admin access · Authorized personnel only',
+  'login.forgotPin': 'Forgot PIN?',
+  'login.capsLock': 'Caps Lock is on',
+  'login.secureBadge': 'Encrypted & secure',
+  'login.helpCta': 'Need help? Call 104',
 
   'dash.title': 'Dashboard',
   'dash.subtitle': 'Blood unit overview and recent activity',
@@ -684,6 +689,7 @@ export const ta: Record<TranslationKey, string> = {
   'nav.openMenu': 'மெனுவைத் திற',
 
   'login.title': 'உங்கள் கணக்கில் உள்நுழையவும்',
+  'login.welcome': 'மீண்டும் வருக',
   'login.subtitle': 'இரத்த அலகு மேலாண்மை டாஷ்போர்ட்டை அணுகவும்',
   'login.staffId': 'நிர்வாகி ஐடி',
   'login.staffIdPh': 'உங்கள் நிர்வாகி ஐடியை உள்ளிடவும்',
@@ -703,6 +709,10 @@ export const ta: Record<TranslationKey, string> = {
   'login.errorRequired': 'ஐடி மற்றும் பின் தேவை',
   'login.errorInvalid': 'தவறான ஐடி அல்லது பின். மீண்டும் முயற்சிக்கவும்.',
   'login.secure': 'பாதுகாப்பான நிர்வாக அணுகல் · அங்கீகரிக்கப்பட்டவர்கள் மட்டும்',
+  'login.forgotPin': 'பின் மறந்துவிட்டதா?',
+  'login.capsLock': 'Caps Lock இயக்கத்தில் உள்ளது',
+  'login.secureBadge': 'மறைகுறியாக்கப்பட்ட & பாதுகாப்பானது',
+  'login.helpCta': 'உதவி தேவையா? 104 ஐ அழைக்கவும்',
 
   'dash.title': 'டாஷ்போர்டு',
   'dash.subtitle': 'இரத்த அலகு மேலோட்டம் மற்றும் சமீபத்திய செயல்பாடு',

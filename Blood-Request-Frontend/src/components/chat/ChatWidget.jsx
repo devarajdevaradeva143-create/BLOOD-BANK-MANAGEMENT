@@ -122,10 +122,10 @@ export default function ChatWidget() {
   return (
     <div className="fixed right-5 bottom-5 z-50 flex flex-col items-end gap-3">
       {open && (
-        <div className="card flex h-[480px] w-[min(92vw,380px)] flex-col overflow-hidden shadow-2xl animate-scale-in">
+        <div className="card flex h-[min(72vh,620px)] w-[min(94vw,450px)] flex-col overflow-hidden shadow-2xl animate-scale-in">
           <div className="flex items-center justify-between bg-gradient-to-r from-red-600 to-red-700 px-4 py-3 text-white">
             <div>
-              <p className="text-sm font-bold">{s.title}</p>
+              <p className="text-base font-bold">{s.title}</p>
               <p className="text-xs text-red-100">{s.subtitle}</p>
             </div>
             <div className="flex items-center gap-1">
@@ -222,9 +222,9 @@ export default function ChatWidget() {
       <button
         onClick={() => setOpen((v) => !v)}
         aria-label={open ? s.close : s.open}
-        className="flex h-14 w-14 items-center justify-center rounded-full bg-gradient-to-b from-red-600 to-red-700 text-white shadow-lg shadow-red-600/30 transition hover:from-red-500 hover:to-red-600 active:scale-95"
+        className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-b from-red-600 to-red-700 text-white shadow-lg shadow-red-600/30 transition hover:from-red-500 hover:to-red-600 active:scale-95"
       >
-        {open ? <X className="h-6 w-6" /> : <MessageCircle className="h-6 w-6" />}
+        {open ? <X className="h-7 w-7" /> : <MessageCircle className="h-7 w-7" />}
       </button>
     </div>
   )

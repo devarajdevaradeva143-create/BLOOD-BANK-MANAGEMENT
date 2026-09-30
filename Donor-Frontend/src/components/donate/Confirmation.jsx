@@ -9,7 +9,7 @@ import {
 } from "../../services/reminderApi";
 import { useLanguage } from "../../i18n/LanguageContext";
 
-function StatusBadge({ status, pendingLabel }) {
+function StatusBadge({ status, pendingLabel, cancelledLabel, approvedLabel }) {
   const norm = String(status || "approved").toLowerCase();
   if (norm === "pending") {
     return (
@@ -21,13 +21,13 @@ function StatusBadge({ status, pendingLabel }) {
   if (norm === "cancelled") {
     return (
       <span className="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700 dark:bg-red-950 dark:text-red-400">
-        {t("donate.confirm.cancelled")}
+        {cancelledLabel}
       </span>
     );
   }
   return (
     <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-800 dark:bg-emerald-950 dark:text-emerald-400">
-      {t("donate.confirm.approved")}
+      {approvedLabel}
     </span>
   );
 }
@@ -49,8 +49,20 @@ export default function Confirmation({ data, onNewRequest }) {
   const [reminder, setReminder] = useState(null);
   const [reminding, setReminding] = useState(false);
 
+  // data.date can hold "one or more" comma-separated dates — reminder math
+  // always uses the primary (first) date.
+  const preferredDates =
+    Array.isArray(data.preferredDates) && data.preferredDates.length > 0
+      ? data.preferredDates
+      : String(data.date || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+  const primaryDate = preferredDates[0] || "";
+  const displayDates = preferredDates.join(", ");
+
   const nextDonationDate = (() => {
-    const d = new Date(data.date);
+    const d = new Date(primaryDate);
     d.setDate(d.getDate() + 90);
     return d.toLocaleDateString("en-GB", {
       day: "2-digit",
@@ -123,13 +135,20 @@ export default function Confirmation({ data, onNewRequest }) {
         {data.district && (
           <DetailRow label={t("donate.field.district")}>{data.district}</DetailRow>
         )}
+        {data.address && (
+          <DetailRow label={t("donate.field.address")}>{data.address}</DetailRow>
+        )}
         <DetailRow label={t("donate.confirm.scheduled")}>
-          {`${data.date} · ${data.time}`}
+          {data.time
+            ? `${displayDates || primaryDate} · ${data.time}`
+            : displayDates || primaryDate}
         </DetailRow>
         <DetailRow label={t("donate.confirm.status")}>
           <StatusBadge
             status={data.status}
             pendingLabel={t("donate.confirm.statusPending")}
+            cancelledLabel={t("donate.confirm.cancelled")}
+            approvedLabel={t("donate.confirm.approved")}
           />
         </DetailRow>
       </div>

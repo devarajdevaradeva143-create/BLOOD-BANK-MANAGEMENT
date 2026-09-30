@@ -164,3 +164,35 @@ export function submitDonation(payload) {
 export function fetchStats() {
   return req("/api/stats");
 }
+
+export function listNotifications({ unreadOnly = false, limit } = {}) {
+  const params = new URLSearchParams();
+  if (unreadOnly) params.set("unreadOnly", "true");
+  if (limit !== undefined && limit !== null && limit !== "") {
+    params.set("limit", String(limit));
+  }
+  const query = params.toString();
+  return req(`/api/notifications${query ? `?${query}` : ""}`, { auth: true });
+}
+
+export function getUnreadCount() {
+  return req("/api/notifications/unread-count", { auth: true });
+}
+
+export function markNotificationRead(id) {
+  return req(`/api/notifications/${encodeURIComponent(id)}/read`, {
+    method: "PATCH",
+    auth: true,
+  });
+}
+
+export function markAllNotificationsRead() {
+  return req("/api/notifications/read-all", { method: "PATCH", auth: true });
+}
+
+export function deleteNotification(id) {
+  return req(`/api/notifications/${encodeURIComponent(id)}`, {
+    method: "DELETE",
+    auth: true,
+  });
+}

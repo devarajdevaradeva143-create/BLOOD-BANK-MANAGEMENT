@@ -14,6 +14,7 @@ import {
 import { useTheme } from "../context/ThemeContext";
 import { useDonorAuth } from "../context/DonorAuthContext";
 import { useLanguage } from "../i18n/LanguageContext";
+import NotificationBell from "./NotificationBell";
 
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
@@ -44,7 +45,7 @@ export default function Navbar() {
   ];
 
   function linkClassName({ isActive }) {
-    return `rounded-lg px-3 py-2 text-sm font-medium transition ${
+    return `shrink-0 whitespace-nowrap rounded-lg px-3 py-2 text-sm font-medium transition ${
       isActive
         ? "bg-red-50 text-red-700 dark:bg-red-950/60 dark:text-red-300"
         : "text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
@@ -53,8 +54,12 @@ export default function Navbar() {
 
   return (
     <nav className="fixed inset-x-0 top-0 z-50 border-b border-slate-200/80 bg-white/80 backdrop-blur supports-[backdrop-filter]:bg-white/60 dark:border-slate-800 dark:bg-slate-950/80">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8">
-        <Link to="/" className="flex h-9 items-center gap-2.5" onClick={() => setOpen(false)}>
+      <div
+        className={`mx-auto flex max-w-7xl items-center justify-between gap-3 px-4 py-2 sm:px-6 lg:px-8 ${
+          pathname === "/" ? "nav-shift" : ""
+        }`}
+      >
+        <Link to="/" className="flex h-9 shrink-0 items-center gap-2.5" onClick={() => setOpen(false)}>
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-red-600 text-white shadow-sm shadow-red-600/30">
             <Droplet className="h-4 w-4" aria-hidden="true" />
           </div>
@@ -68,7 +73,7 @@ export default function Navbar() {
           </div>
         </Link>
 
-        <div className="hidden items-center gap-1 lg:flex">
+        <div className="no-scrollbar hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto lg:flex">
           {links.map((link) => (
             <NavLink key={link.to} to={link.to} end={link.end} className={linkClassName}>
               {t(link.key)}
@@ -76,7 +81,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div className="flex h-10 items-center gap-2 sm:gap-3">
+        <div className="flex h-10 shrink-0 items-center gap-2 sm:gap-3">
           <button
             type="button"
             onClick={toggleLang}
@@ -100,11 +105,12 @@ export default function Navbar() {
               <Moon className="h-5 w-5" aria-hidden="true" />
             )}
           </button>
+          <NotificationBell />
           {isAuthenticated ? (
             <>
               <Link
                 to="/profile"
-                className="hidden h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 lg:flex dark:border-red-900 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/40"
+                className="hidden h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 lg:flex dark:border-red-900 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/40"
               >
                 <User size={16} aria-hidden="true" />
                 {t("nav.profile")}
@@ -112,7 +118,7 @@ export default function Navbar() {
               <button
                 type="button"
                 onClick={handleLogout}
-                className="hidden h-10 items-center gap-2 rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 lg:flex dark:border-red-900 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/40"
+                className="hidden h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border border-red-200 bg-white px-4 text-sm font-semibold text-red-600 transition hover:bg-red-50 lg:flex dark:border-red-900 dark:bg-slate-900 dark:text-red-400 dark:hover:bg-red-950/40"
               >
                 <LogOut size={16} aria-hidden="true" />
                 {t("nav.logout")}
@@ -121,7 +127,7 @@ export default function Navbar() {
           ) : (
             <Link
               to="/login"
-              className="hidden h-10 items-center rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-sm shadow-red-600/30 transition hover:bg-red-700 lg:flex dark:bg-red-600 dark:hover:bg-red-700"
+              className="hidden h-10 shrink-0 items-center whitespace-nowrap rounded-xl bg-red-600 px-4 text-sm font-semibold text-white shadow-sm shadow-red-600/30 transition hover:bg-red-700 lg:flex dark:bg-red-600 dark:hover:bg-red-700"
             >
               {t("nav.login")}
             </Link>
@@ -158,6 +164,14 @@ export default function Navbar() {
                 {t(link.key)}
               </NavLink>
             ))}
+            {isAuthenticated && (
+              <div className="flex items-center justify-between rounded-lg px-3 py-2">
+                <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                  {t("nav.notifications")}
+                </span>
+                <NotificationBell onNavigate={() => setOpen(false)} />
+              </div>
+            )}
             {isAuthenticated ? (
               <>
                 <Link

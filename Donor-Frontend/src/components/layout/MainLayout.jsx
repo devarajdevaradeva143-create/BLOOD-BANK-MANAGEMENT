@@ -10,10 +10,12 @@ export default function MainLayout() {
     <>
       <ScrollToTop />
       <Navbar />
-      <main className="min-h-screen pt-16">
-        <Outlet />
-      </main>
-      <Footer />
+      <div id="app-scroll" className="app-scroll">
+        <main className="min-h-screen pt-16">
+          <Outlet />
+        </main>
+        <Footer />
+      </div>
       <Toast />
       <ChatWidget />
     </>

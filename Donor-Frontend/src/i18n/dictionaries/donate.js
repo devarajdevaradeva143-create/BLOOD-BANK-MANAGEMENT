@@ -34,17 +34,24 @@ export default {
     ta: "விருப்பமான இரத்ததான மையம்",
   },
   "donate.field.date": {
-    en: "Preferred Donation Date (one or more)",
-    ta: "விருப்பமான தானத் தேதி (ஒன்று அல்லது அதற்கு மேற்பட்டவை)",
+    en: "Preferred Dates (max 3)",
+    ta: "விருப்பமான தேதிகள் (அதிகபட்சம் 3)",
   },
   "donate.placeholder.date": {
     en: "e.g. 2026-01-15, 2026-01-20, 2026-01-25",
     ta: "எ.கா. 2026-01-15, 2026-01-20, 2026-01-25",
   },
+  "donate.addDate": { en: "Add another date", ta: "மற்றொரு தேதியைச் சேர்க்கவும்" },
+  "donate.removeDate": { en: "Remove this date", ta: "இந்தத் தேதியை நீக்கவும்" },
   "donate.field.time": { en: "Preferred Time", ta: "விருப்பமான நேரம்" },
   "donate.field.prevDate": {
     en: "Previous Donation Date",
     ta: "முந்தைய தானத் தேதி",
+  },
+  "donate.field.address": { en: "Address", ta: "முகவரி" },
+  "donate.placeholder.address": {
+    en: "Door no, street, area, town...",
+    ta: "கதவு எண், தெரு, பகுதி, ஊர்...",
   },
 
 
@@ -116,6 +123,18 @@ export default {
     en: "Please choose a preferred donation date.",
     ta: "விருப்பமான தானத் தேதியைத் தேர்ந்தெடுக்கவும்.",
   },
+  "donate.validation.dateInvalid": {
+    en: "One of the preferred dates is invalid.",
+    ta: "விருப்பத் தேதிகளில் ஒன்று தவறானது.",
+  },
+  "donate.validation.datePast": {
+    en: "Preferred dates cannot be in the past.",
+    ta: "விருப்பத் தேதிகள் கடந்த காலத்தில் இருக்க முடியாது.",
+  },
+  "donate.validation.dateDuplicate": {
+    en: "Please remove duplicate dates.",
+    ta: "ஒரே தேதி இருமுறை இருந்தால் நீக்கவும்.",
+  },
   "donate.validation.time": {
     en: "Please choose a preferred time.",
     ta: "விருப்பமான நேரத்தைத் தேர்ந்தெடுக்கவும்.",
@@ -123,6 +142,10 @@ export default {
   "donate.validation.prevDate": {
     en: "Previous donation date cannot be in the future.",
     ta: "முந்தைய தானத் தேதி எதிர்காலத்தில் இருக்கக் கூடாது.",
+  },
+  "donate.validation.address": {
+    en: "Please enter your address.",
+    ta: "உங்கள் முகவரியை உள்ளிடவும்.",
   },
   "donate.validation.eligibility": {
     en: "You must confirm the eligibility declaration.",

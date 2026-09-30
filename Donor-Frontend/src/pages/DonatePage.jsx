@@ -31,7 +31,15 @@ export default function DonatePage() {
       now.getDate()
     ).padStart(2, "0")}`;
     const localRequestId = `REQ-${dateNow}-${Math.floor(1000 + Math.random() * 9000)}`;
-    const donationDate = payload.date || now.toISOString().slice(0, 10);
+    // payload.date can be "one or more" comma-separated dates — primary = first.
+    const preferredDates = Array.isArray(payload.preferredDates) &&
+      payload.preferredDates.length > 0
+      ? payload.preferredDates
+      : String(payload.date || "")
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean);
+    const donationDate = preferredDates[0] || now.toISOString().slice(0, 10);
 
     const server =
       payload._server && typeof payload._server === "object"
@@ -71,7 +79,9 @@ export default function DonatePage() {
         district: payload.district || "",
         center: payload.center || "",
         date: donationDate,
+        preferredDates,
         time: payload.time || "",
+        address: payload.address || "",
         notes: payload.notes || "",
         offline: offline || undefined,
       });
@@ -114,7 +124,9 @@ export default function DonatePage() {
       district: payload.district,
       center: payload.center,
       date: donationDate,
+      preferredDates,
       time: payload.time,
+      address: payload.address || "",
       status,
     };
     record.status = status;
@@ -128,7 +140,9 @@ export default function DonatePage() {
       district: record.district,
       center: record.center,
       date: record.date,
+      preferredDates: record.preferredDates || preferredDates,
       time: record.time,
+      address: record.address || payload.address || "",
       status,
       offline: offline || undefined,
     });

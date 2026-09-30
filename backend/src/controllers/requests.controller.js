@@ -3,6 +3,7 @@ import BloodRequest from '../models/BloodRequest.js';
 import Hospital from '../models/Hospital.js';
 import User from '../models/User.js';
 import { genGroupId, genRequestId } from '../utils/ids.js';
+import { notify } from '../services/notifications.service.js';
 import { logAudit } from '../middleware/audit.js';
 import { verifyOtpInternal } from './otp.controller.js';
 
@@ -24,6 +25,38 @@ function parsePagination(query) {
 
 function escapeRegex(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function requestStatusTitle(status, requestId) {
+  switch (status) {
+    case 'approved':
+      return `Request approved: ${requestId}`;
+    case 'fulfilled':
+    case 'completed':
+      return `Request fulfilled: ${requestId}`;
+    case 'cancelled':
+      return `Request cancelled: ${requestId}`;
+    case 'rejected':
+      return `Request rejected: ${requestId}`;
+    default:
+      return `Request update: ${requestId}`;
+  }
+}
+
+async function notifyHospitalOfRequest(doc, status) {
+  try {
+    if (!doc.hospitalId) return;
+    await notify({
+      audience: 'hospital',
+      recipientId: String(doc.hospitalId),
+      districtId: doc.districtId,
+      type: 'request',
+      title: requestStatusTitle(status, doc.requestId),
+      link: '/hospital/history',
+    });
+  } catch {
+    // best-effort — never break the main request
+  }
 }
 
 async function findRequestByIdOrRequestId(id) {
@@ -68,6 +101,18 @@ export const createRequest = asyncHandler(async (req, res) => {
     bloodGroup: doc.bloodGroup,
     units: doc.units,
   });
+
+  try {
+    await notify({
+      audience: 'district',
+      districtId: doc.districtId,
+      type: 'request',
+      title: `New blood request: ${doc.bloodGroup} at ${doc.hospitalName}`,
+      link: '/requests',
+    });
+  } catch {
+    // best-effort — never break the main request
+  }
 
   return res.status(201).json({ message: 'Request submitted', request: doc });
 });
@@ -250,6 +295,7 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
       from: 'submitted',
       to: 'cancelled',
     });
+    await notifyHospitalOfRequest(doc, 'cancelled');
     return res.status(200).json({ message: 'Request cancelled', request: doc });
   }
 
@@ -290,6 +336,8 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
     from,
     to: status,
   });
+
+  await notifyHospitalOfRequest(doc, status);
 
   return res.status(200).json({ message: 'Request status updated', request: doc });
 });

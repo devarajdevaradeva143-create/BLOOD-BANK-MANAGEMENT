@@ -62,4 +62,16 @@
   .scrollbar-thin::-webkit-scrollbar-thumb {
     @apply rounded-full bg-slate-300 dark:bg-slate-700;
   }
+  /* hides scrollbar but keeps scroll — used on login page */
+  .scrollbar-hidden,
+  html.scrollbar-hidden,
+  html.scrollbar-hidden body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar,
+  html.scrollbar-hidden::-webkit-scrollbar,
+  html.scrollbar-hidden body::-webkit-scrollbar {
+    display: none;
+  }
 }
