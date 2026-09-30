@@ -2,45 +2,53 @@ import { Phone, Mail, MapPin, Clock, Siren } from "lucide-react";
 import { CONTACT_INFO } from "../../data/constants";
 import { useLanguage } from "../../i18n/LanguageContext";
 
-const cards = [
-  {
-    id: "phone",
-    value: CONTACT_INFO.phone,
-    href: `tel:${CONTACT_INFO.phone.replace(/\s/g, "")}`,
-    icon: Phone,
-    external: true,
-  },
-  {
+// Empty contact details-ah kaata vendaam — real value irukura card mattum.
+function buildCards() {
+  const cards = [];
+  if (String(CONTACT_INFO.phone || "").trim()) {
+    cards.push({
+      id: "phone",
+      value: CONTACT_INFO.phone,
+      href: `tel:${CONTACT_INFO.phone.replace(/\s/g, "")}`,
+      icon: Phone,
+      external: true,
+    });
+  }
+  cards.push({
     id: "emergency",
     value: CONTACT_INFO.emergency,
     href: `tel:${CONTACT_INFO.emergency}`,
     icon: Siren,
     external: true,
     highlight: true,
-  },
-  {
-    id: "email",
-    value: CONTACT_INFO.email,
-    href: `mailto:${CONTACT_INFO.email}`,
-    icon: Mail,
-    external: true,
-  },
-  {
+  });
+  if (String(CONTACT_INFO.email || "").trim()) {
+    cards.push({
+      id: "email",
+      value: CONTACT_INFO.email,
+      href: `mailto:${CONTACT_INFO.email}`,
+      icon: Mail,
+      external: true,
+    });
+  }
+  cards.push({
     id: "address",
     translated: true,
     icon: MapPin,
     external: false,
-  },
-  {
+  });
+  cards.push({
     id: "hours",
     translated: true,
     icon: Clock,
     external: false,
-  },
-];
+  });
+  return cards;
+}
 
 export default function ContactInfo() {
   const { t } = useLanguage();
+  const cards = buildCards();
   return (
     <div className="grid gap-4 sm:grid-cols-2">
       {cards.map((card, index) => {

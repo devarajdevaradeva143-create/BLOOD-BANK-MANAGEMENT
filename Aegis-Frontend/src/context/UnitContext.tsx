@@ -1,7 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { BloodUnit, NewUnitInput, TestResultInput, UnitStatus } from '../data/types';
-import { getStoredDemoUser, saveDemoUnits } from '../data/demo';
 import { createUnitApi, listUnits, recordTestApi, updateUnitStatusApi } from '../lib/api';
 import { getEffectiveStatus } from '../utils/expiry';
 import { useAuth } from './AuthContext';
@@ -60,30 +59,8 @@ export function UnitProvider({ children }: { children: ReactNode }) {
 
   const getUnit = useCallback((id: string) => units.find((u) => u.id === id), [units]);
 
-  const persistIfDemo = useCallback((next: BloodUnit[]) => {
-    if (getStoredDemoUser() !== null) saveDemoUnits(next);
-  }, []);
-
   const addUnit = useCallback(async (input: NewUnitInput) => {
-    if (getStoredDemoUser() !== null) {
-      const at = new Date().toISOString();
-      const created = withEffectiveStatus({
-        ...input,
-        testStatus: 'Pending',
-        status: 'UnderTesting',
-        updatedAt: at,
-        history: [
-          { id: `${input.id}-demo-registered`, type: 'registered', at },
-          { id: `${input.id}-demo-testing`, type: 'testingStarted', at },
-        ],
-      });
-      setUnits((prev) => {
-        const next = [created, ...prev];
-        saveDemoUnits(next);
-        return next;
-      });
-      return created;
-    }
+    // Real backend only — no offline demo creation.
     const { id, ...rest } = input;
     const created = withEffectiveStatus(await createUnitApi({ unitCode: id, ...rest }));
     setUnits((prev) => [created, ...prev]);
@@ -111,69 +88,20 @@ export function UnitProvider({ children }: { children: ReactNode }) {
         };
         return updated;
       });
-      persistIfDemo(next);
       return next;
     });
     return updated;
-  }, [persistIfDemo]);
+  }, []);
 
   const recordTest = useCallback(async (id: string, input: TestResultInput) => {
-    if (getStoredDemoUser() !== null) {
-      let updated: BloodUnit | undefined;
-      const at = new Date().toISOString();
-      const nextStatus: UnitStatus = input.testStatus === 'Failed' ? 'Discarded' : 'Available';
-      setUnits((prev) => {
-        const next = prev.map((u) => {
-          if (u.id !== id) return u;
-          updated = withEffectiveStatus({
-            ...u,
-            testStatus: input.testStatus,
-            screeningResult: input.screeningResult ?? u.screeningResult,
-            testedBy: input.testedBy ?? u.testedBy,
-            testDate: input.testDate ?? u.testDate,
-            remarks: input.remarks ?? u.remarks,
-            status: nextStatus,
-            updatedAt: at,
-            history: [
-              ...u.history,
-              { id: `${u.id}-test-${Date.now()}`, type: 'testCompleted', at, status: nextStatus },
-            ],
-          });
-          return updated;
-        });
-        saveDemoUnits(next);
-        return next;
-      });
-      return updated;
-    }
+    // Real backend only — no offline demo test recording.
     const updated = withEffectiveStatus(await recordTestApi(id, input));
     setUnits((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
     return updated;
   }, []);
 
   const updateStatus = useCallback(async (id: string, status: UnitStatus, note?: string) => {
-    if (getStoredDemoUser() !== null) {
-      let updated: BloodUnit | undefined;
-      const at = new Date().toISOString();
-      setUnits((prev) => {
-        const next = prev.map((u) => {
-          if (u.id !== id) return u;
-          updated = withEffectiveStatus({
-            ...u,
-            status,
-            updatedAt: at,
-            history: [
-              ...u.history,
-              { id: `${u.id}-status-${Date.now()}`, type: 'statusUpdated', at, status, note },
-            ],
-          });
-          return updated;
-        });
-        saveDemoUnits(next);
-        return next;
-      });
-      return updated;
-    }
+    // Real backend only — no offline demo status updates.
     const updated = withEffectiveStatus(await updateUnitStatusApi(id, status, note));
     setUnits((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
     return updated;

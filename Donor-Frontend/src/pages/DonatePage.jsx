@@ -85,13 +85,11 @@ export default function DonatePage() {
       // ignore storage errors
     }
 
-    // registeredDonor-la total+1, last + next date update pannu.
+    // Identity mattum merge pannu — totals/dates-ah ProfilePage history-la irundhu recalculate pannum.
+    // Ovvoru submit-ku +1 panna count inflate aagum (12 madhri).
     try {
       const raw = localStorage.getItem("registeredDonor");
       const reg = raw ? JSON.parse(raw) : {};
-      const prevTotal = Number(reg.totalDonations ?? 0) || 0;
-      const next = new Date(donationDate);
-      next.setDate(next.getDate() + 90);
       const updated = {
         ...reg,
         name: reg.name || payload.donorName || "",
@@ -99,10 +97,6 @@ export default function DonatePage() {
         phone: reg.phone || payload.mobile || "",
         bloodGroup: reg.bloodGroup || payload.bloodGroup || "",
         district: reg.district || payload.district || "",
-        totalDonations: prevTotal + 1,
-        lastDonationDate: donationDate,
-        nextEligibleDate: next.toISOString().slice(0, 10),
-        eligibilityStatus: "Not Eligible",
         isActive: true,
       };
       localStorage.setItem("registeredDonor", JSON.stringify(updated));

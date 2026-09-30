@@ -8,31 +8,44 @@ import PersonalInfoSection from "../components/profile/PersonalInfoSection";
 import DonationInfoSection from "../components/profile/DonationInfoSection";
 import Certificate from "../components/donate/Certificate";
 import Button from "../components/ui/Button";
+import { fetchDonorProfile } from "../lib/api";
+import { saveLocalDonor } from "../services/authApi";
 
 function loadDonationHistory() {
   try {
     const hRaw = localStorage.getItem("donorDonations");
     const hist = hRaw ? JSON.parse(hRaw) : [];
     if (!Array.isArray(hist)) return [];
-    // Admin removed — pazhaya pending entries-ah approved-ah migrate pannu.
-    let changed = false;
-    const fixed = hist.map((h) => {
-      if (h && h.status && h.status !== "approved") {
-        changed = true;
-        return { ...h, status: "approved" };
-      }
-      return h;
-    });
-    if (changed) {
-      try {
-        localStorage.setItem("donorDonations", JSON.stringify(fixed));
-      } catch {
-        // ignore
-      }
-    }
-    return fixed;
+    // Pending-ah approved-a maatha vendaam — real status-ve vei.
+    return hist;
   } catch {
     return [];
+  }
+}
+
+function computeHistoryStats(hist) {
+  try {
+    const list = Array.isArray(hist) ? hist : [];
+    const approved = list.filter((h) => (h?.status || "approved") === "approved");
+    const dates = approved
+      .map((h) => String(h?.date || "").slice(0, 10))
+      .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d))
+      .sort();
+    const last = dates.length > 0 ? dates[dates.length - 1] : "";
+    let next = "";
+    // Donate pannalana (history empty) Eligible dhaan — pudhu donor ready.
+    let eligible = "Eligible";
+    if (last) {
+      const d = new Date(`${last}T00:00:00`);
+      if (!Number.isNaN(d.getTime())) {
+        d.setDate(d.getDate() + 90);
+        next = d.toISOString().slice(0, 10);
+        eligible = new Date().toISOString().slice(0, 10) >= next ? "Eligible" : "Not Eligible";
+      }
+    }
+    return { total: approved.length, last, next, eligible };
+  } catch {
+    return { total: 0, last: "", next: "", eligible: "Eligible" };
   }
 }
 
@@ -56,48 +69,30 @@ const EMPTY_DONOR = {
   isActive: true,
 };
 
-function genDonorId() {
-  const year = new Date().getFullYear();
-  const rand = Math.floor(1000 + Math.random() * 9000);
-  return `DB-${year}${rand}`;
-}
-
 function loadRealDonor(fallbackEmail = "") {
-  // Fake data vendaam — registeredDonor + donorDonations history mattum source.
+  // Real source: registeredDonor identity + approved history stats.
+  // Totals/dates-ah history-la irundhu recalculate pannu — stale mock value trust panna vendaam.
   try {
     const raw = localStorage.getItem("registeredDonor");
     const reg =
       raw && JSON.parse(raw) && typeof JSON.parse(raw) === "object"
         ? JSON.parse(raw)
         : null;
-    let histTotal = 0;
-    let histLast = "";
-    try {
-      const hRaw = localStorage.getItem("donorDonations");
-      const hist = hRaw ? JSON.parse(hRaw) : [];
-      if (Array.isArray(hist) && hist.length > 0) {
-        // Approve aana donations mattum count — pending/rejected count agadhu.
-        // status illadha pazhaya entries approved madhiri.
-        const approved = hist.filter((h) => (h?.status || "approved") === "approved");
-        histTotal = approved.length;
-        histLast = approved.length > 0 ? approved[approved.length - 1]?.date || "" : "";
-      }
-    } catch {
-      // ignore
-    }
+    const stats = computeHistoryStats(loadDonationHistory());
     if (!reg) {
       return {
         ...EMPTY_DONOR,
         email: fallbackEmail || "",
-        totalDonations: histTotal,
-        lastDonationDate: histLast,
+        totalDonations: stats.total,
+        lastDonationDate: stats.last,
+        nextEligibleDate: stats.next,
+        eligibilityStatus: stats.eligible,
       };
     }
-    const storedTotal = Number(reg.totalDonations ?? 0) || 0;
     return {
       ...EMPTY_DONOR,
       ...reg,
-      name: reg.name || "",
+      name: reg.name || reg.fullName || "",
       email: reg.email || fallbackEmail || "",
       phone: reg.phone || reg.mobile || "",
       password: reg.password || "",
@@ -108,12 +103,11 @@ function loadRealDonor(fallbackEmail = "") {
       district: reg.district || "",
       donorId: reg.donorId || "",
       photo: reg.photo || reg.photoUrl || reg.avatar || "",
-      registrationDate: reg.registrationDate || "",
-      lastDonationDate: reg.lastDonationDate || histLast || "",
-      // History irundha adhuvum count pannu — 0 issue varadhu.
-      totalDonations: Math.max(storedTotal, histTotal),
-      eligibilityStatus: reg.eligibilityStatus || "",
-      nextEligibleDate: reg.nextEligibleDate || "",
+      registrationDate: reg.registrationDate || reg.createdAt?.slice?.(0, 10) || "",
+      lastDonationDate: stats.last,
+      totalDonations: stats.total,
+      eligibilityStatus: stats.eligible,
+      nextEligibleDate: stats.next,
       isActive: reg.isActive ?? true,
     };
   } catch {
@@ -122,13 +116,13 @@ function loadRealDonor(fallbackEmail = "") {
 }
 
 function isProfileIncomplete(donor) {
+  // Address register-la collect pannala, so required illa — false incomplete loop varum.
   return (
     !String(donor.name || "").trim() ||
     !String(donor.email || "").trim() ||
     !String(donor.phone || "").trim() ||
     !donor.gender ||
     !donor.bloodGroup ||
-    !String(donor.address || "").trim() ||
     !donor.district
   );
 }
@@ -195,13 +189,18 @@ export default function ProfilePage() {
       setErrors(newErrors);
       return;
     }
-    // donorId + registrationDate illana ippo generate panni real-ah save pannu.
+    // Fake donorId generate panna vendaam — backend id-ve source.
+    // Totals/dates-ah history-la irundhu recalculate pannu.
+    const stats = computeHistoryStats(loadDonationHistory());
     const toSave = {
       ...donor,
-      donorId: donor.donorId || genDonorId(),
+      donorId: donor.donorId || "",
       registrationDate:
         donor.registrationDate || new Date().toISOString().slice(0, 10),
-      totalDonations: Number(donor.totalDonations ?? 0) || 0,
+      totalDonations: stats.total,
+      lastDonationDate: stats.last,
+      nextEligibleDate: stats.next,
+      eligibilityStatus: stats.eligible,
     };
     try {
       localStorage.setItem("registeredDonor", JSON.stringify(toSave));
@@ -237,9 +236,41 @@ export default function ProfilePage() {
   const [history, setHistory] = useState(loadDonationHistory);
   const [certData, setCertData] = useState(null);
 
+  // Mount-aagumbodhu backend-irundhu fresh profile edu — stale mock data overwrite aagum.
+  useEffect(() => {
+    let cancelled = false;
+    fetchDonorProfile()
+      .then((data) => {
+        if (cancelled || !data?.user) return;
+        try {
+          saveLocalDonor(data.user);
+        } catch {
+          // ignore
+        }
+        if (cancelled) return;
+        const freshHist = loadDonationHistory();
+        setHistory(freshHist);
+        const fresh = loadRealDonor(data.user.email || donorEmail);
+        setDonor(fresh);
+        setSnapshot(fresh);
+        setEditing((prev) => (prev ? isProfileIncomplete(fresh) : prev));
+      })
+      .catch(() => {
+        // offline-na local data-ve kaatu
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     const refresh = () => {
-      setHistory(loadDonationHistory());
+      const freshHist = loadDonationHistory();
+      setHistory(freshHist);
+      const fresh = loadRealDonor(donorEmail);
+      setDonor(fresh);
+      setSnapshot(fresh);
     };
     window.addEventListener("storage", refresh);
     window.addEventListener("focus", refresh);
@@ -247,7 +278,7 @@ export default function ProfilePage() {
       window.removeEventListener("storage", refresh);
       window.removeEventListener("focus", refresh);
     };
-  }, []);
+  }, [donorEmail]);
 
   const openCertificate = (h) => {
     // Certificate open panna munnadi fresh history-ah re-read pannu.

@@ -46,7 +46,7 @@ export const config = {
 
   chat: {
     apiKey: process.env.GEMINI_API_KEY || '',
-    model: process.env.GEMINI_MODEL || 'gemini-2.0-flash',
+    model: process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
     maxTokens: Number(process.env.CHAT_MAX_TOKENS || 500),
   },
 

@@ -58,8 +58,8 @@ export default {
   "contact.info.email.label": { en: "Email", ta: "மின்னஞ்சல்" },
   "contact.info.address.label": { en: "Address", ta: "முகவரி" },
   "contact.info.address.value": {
-    en: "Life Saver Blood Bank Management in Tamil Nadu, 24 Anna Salai, Chennai, Tamil Nadu 600002",
-    ta: "Life Saver Blood Bank Management in Tamil Nadu, 24 அண்ணா சாலை, சென்னை, தமிழ்நாடு 600002",
+    en: "—",
+    ta: "—",
   },
   "contact.info.hours.label": { en: "Opening Hours", ta: "செயல்பாட்டு நேரம்" },
   "contact.info.hours.value": {

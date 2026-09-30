@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import { HOME_STATS } from "../../data/constants";
 import { fetchStats } from "../../lib/api.js";
 import useCountUp from "./useCountUp";
 import { useLanguage } from "../../i18n/LanguageContext";
 
 function StatCard({ id, value, suffix }) {
   const { t } = useLanguage();
-  const { ref, value: current } = useCountUp(value);
+  const { ref, value: current } = useCountUp(value ?? 0);
 
   return (
     <div
@@ -14,19 +13,13 @@ function StatCard({ id, value, suffix }) {
       className="rounded-2xl border border-gray-100 bg-white p-6 text-center shadow-sm dark:border-slate-700 dark:bg-slate-900"
     >
       <p className="text-4xl font-extrabold text-brand-600 dark:text-brand-500 sm:text-5xl">
-        {current.toLocaleString("en-IN")}
-        {suffix}
+        {value === null || value === undefined ? "—" : `${current.toLocaleString("en-IN")}${suffix}`}
       </p>
       <p className="mt-3 text-sm font-medium text-gray-600 dark:text-slate-400 sm:text-base">
         {t(`home.stat.${id}`)}
       </p>
     </div>
   );
-}
-
-function fallbackValue(id) {
-  const found = HOME_STATS.find((s) => s.id === id);
-  return found ? found.value : 0;
 }
 
 export default function StatsCounter() {
@@ -47,29 +40,22 @@ export default function StatsCounter() {
     };
   }, []);
 
+  // Live backend numbers mattum — backend down-na "—", fake fallback illa.
+  const numOrNull = (v) => (v !== null && v !== undefined && Number.isFinite(Number(v)) ? Number(v) : null);
   const stats = [
     {
       id: "donors",
-      value:
-        live && Number.isFinite(Number(live.donors))
-          ? Number(live.donors)
-          : fallbackValue("donors"),
+      value: live ? numOrNull(live.donors) : null,
       suffix: "+",
     },
     {
       id: "lives",
-      value:
-        live && Number.isFinite(Number(live.livesSupported))
-          ? Number(live.livesSupported)
-          : fallbackValue("lives"),
+      value: live ? numOrNull(live.livesSupported) : null,
       suffix: "+",
     },
     {
       id: "available",
-      value:
-        live && Number.isFinite(Number(live.availableUnits))
-          ? Number(live.availableUnits)
-          : 0,
+      value: live ? numOrNull(live.availableUnits) : null,
       suffix: "",
     },
   ];

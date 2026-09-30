@@ -209,7 +209,7 @@ export default function DonorRegister() {
   };
 
   return (
-    <div className={ls["login-page"]}>
+    <div className={`${ls["login-page"]} ${s["register-page"]}`}>
       {/* LEFT SECTION — same blood bank details as login page */}
       <div className={ls["login-info"]}>
         <span className={ls["hero-blob-1"]} aria-hidden="true" />

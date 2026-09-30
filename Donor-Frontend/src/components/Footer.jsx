@@ -46,22 +46,26 @@ export default function Footer() {
             <h3 className="text-sm font-semibold uppercase tracking-wider text-white">
               {t("footer.email")}
             </h3>
-            <a
-              href={`mailto:${CONTACT_INFO.email}`}
-              className="mt-4 inline-flex items-center gap-2 text-sm text-slate-300 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
-            >
-              <Mail
-                className="h-4 w-4 shrink-0 text-brand-500"
-                aria-hidden="true"
-              />
-              {CONTACT_INFO.email}
-            </a>
+            {String(CONTACT_INFO.email || "").trim() ? (
+              <a
+                href={`mailto:${CONTACT_INFO.email}`}
+                className="mt-4 inline-flex items-center gap-2 text-sm text-slate-300 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded"
+              >
+                <Mail
+                  className="h-4 w-4 shrink-0 text-brand-500"
+                  aria-hidden="true"
+                />
+                {CONTACT_INFO.email}
+              </a>
+            ) : null}
             <p className="mt-4 text-xs leading-relaxed text-slate-500">
               {t("footer.hours")}
             </p>
-            <p className="mt-2 text-xs leading-relaxed text-slate-500">
-              {CONTACT_INFO.address}
-            </p>
+            {String(CONTACT_INFO.address || "").trim() ? (
+              <p className="mt-2 text-xs leading-relaxed text-slate-500">
+                {CONTACT_INFO.address}
+              </p>
+            ) : null}
           </div>
         </div>
 

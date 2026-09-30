@@ -1,12 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { AuthUser } from '../data/types';
-import {
-  clearDemoUser,
-  findDemoAccount,
-  getStoredDemoUser,
-  storeDemoUser,
-} from '../data/demo';
 import { fetchMe, login as loginApi, logoutApi } from '../lib/api';
 
 interface AuthContextValue {
@@ -56,15 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      // Demo accounts work fully offline — restore first.
-      const demo = getStoredDemoUser();
-      if (demo) {
-        if (!cancelled) {
-          setUser(applyProfileOverrides(demo));
-          setLoading(false);
-        }
-        return;
-      }
+      // Real backend session only — no offline demo login.
       try {
         const me = await fetchMe();
         if (!cancelled) setUser(applyProfileOverrides(me) ?? me);
@@ -80,13 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (staffId: string, pin: string, _remember: boolean) => {
-    // Demo accounts always succeed locally (no backend needed).
-    const demo = findDemoAccount(staffId, pin);
-    if (demo) {
-      storeDemoUser(demo);
-      setUser(applyProfileOverrides(demo));
-      return demo;
-    }
+    // Real backend login only.
     try {
       const account = await loginApi(staffId.trim(), pin.trim());
       const withOverrides = applyProfileOverrides(account) ?? account;
@@ -99,7 +79,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const logout = useCallback(async () => {
-    clearDemoUser();
     try {
       await logoutApi();
     } catch {
@@ -121,8 +100,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const overrides = getProfileOverrides();
         overrides[prev.id] = { ...(overrides[prev.id] ?? {}), ...cleaned };
         localStorage.setItem(PROFILE_OVERRIDE_KEY, JSON.stringify(overrides));
-        // Keep base demo session in sync so refresh keeps the latest name.
-        storeDemoUser(next);
       } catch {
         /* ignore storage errors */
       }

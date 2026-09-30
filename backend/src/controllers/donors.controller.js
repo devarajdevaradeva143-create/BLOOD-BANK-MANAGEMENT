@@ -125,7 +125,7 @@ export const createDonor = asyncHandler(async (req, res) => {
     ...(districtId ? { districtId } : {}),
     ...(hasCoords
       ? { location: { type: 'Point', coordinates: [lngNum, latNum] } }
-      : {}),
+      : { location: undefined }),
     email: normalizedEmail,
     passwordHash: await hashPassword(password),
     mobile: String(mobile).trim(),

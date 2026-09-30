@@ -155,27 +155,5 @@ export default {
     en: "New Donor Registration",
     ta: "புதிய இரத்ததானர் பதிவு",
   },
-  "signup.stats.donors.value": { en: "12,500+", ta: "12,500+" },
-  "signup.stats.donors.label": {
-    en: "Registered donors",
-    ta: "பதிவு செய்த இரத்ததானர்கள்",
-  },
-  "signup.stats.districts.value": { en: "38", ta: "38" },
-  "signup.stats.districts.label": {
-    en: "Districts covered",
-    ta: "மாவட்டங்கள் கவரப்பட்டவை",
-  },
-  "signup.stats.lives.value": { en: "48,000+", ta: "48,000+" },
-  "signup.stats.lives.label": {
-    en: "Lives impacted",
-    ta: "காக்கப்பட்ட உயிர்கள்",
-  },
-  "signup.quote.text": {
-    en: "Registering took two minutes. When our town needed blood, we were ready.",
-    ta: "பதிவு செய்ய இரண்டு நிமிடங்கள் போதும். எங்கள் ஊருக்கு இரத்தம் தேவைப்பட்டபோது நாங்கள் தயாராக இருந்தோம்.",
-  },
-  "signup.quote.name": {
-    en: "Priya S. · Donor since 2023",
-    ta: "பிரியா ச. · 2023 முதல் இரத்ததானர்",
-  },
+  // Fake marketing stats/quotes removed — real numbers come from GET /api/stats.
 };

@@ -69,18 +69,7 @@ export const UNIT_STATUSES = [
 
 export const EXPIRY_STATUSES = ['Safe', 'ExpiringSoon', 'Expired'] as const;
 
-export interface DemoAccount {
-  role: 'DistrictAdmin' | 'SuperAdmin';
-  staffId: string;
-  pin: string;
-}
-
-// Seeded via backend/seed.js (`node seed.js`):
-// DIST-001 / Dist@1234 (DistrictAdmin, 8+strong).
-// SUPER001 / Admin@123 (SuperAdmin, frontend demo only).
-export const DEMO_ACCOUNTS: DemoAccount[] = [
-  { role: 'DistrictAdmin', staffId: 'DIST-001', pin: 'Dist@1234' },
-  { role: 'SuperAdmin', staffId: 'SUPER001', pin: 'Admin@123' },
-];
+// Staff accounts are seeded via backend/seed.js (`npm run seed`).
+// Login always hits the backend — no demo/offline accounts.
 
 

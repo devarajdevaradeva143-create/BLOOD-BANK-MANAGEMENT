@@ -124,11 +124,8 @@ export function allConsentsChecked(consents) {
   return CONSENT_ITEMS.every((c) => consents[c.id] === true);
 }
 
-export const HOME_STATS = [
-  { id: "donors", label: "Registered Donors", value: 12500, suffix: "+" },
-  { id: "lives", label: "Lives Supported", value: 28400, suffix: "+" },
-  { id: "camps", label: "Blood Donation Camps", value: 340, suffix: "+" },
-];
+// No fallback numbers — home stats come only from GET /api/stats (live).
+// Backend unreachable-na "—" kaatum, fake count kaatadhu.
 
 export const WHY_DONATE = [
   {
@@ -333,32 +330,14 @@ export const MYTHS_AND_FACTS = [
   },
 ];
 
+// Fake contact details removed — real phone/email/address kedaikum varaikum empty.
+// "104" emergency helpline mattum real (TN govt helpline).
 export const CONTACT_INFO = {
-  phone: "+91 44 2850 1010",
+  phone: "",
   emergency: "104",
-  email: "donors@lifesaverbloodbank.in",
-  address:
-    "Life Saver Blood Bank Management in Tamil Nadu, 24 Anna Salai, Chennai, Tamil Nadu 600002",
+  email: "",
+  address: "",
   hours: "Mon – Sat: 8:00 AM – 8:00 PM  |  Emergency: 24/7",
-};
-
-export const MOCK_DONOR = {
-  name: "Arun Kumar",
-  email: "arun@example.com",
-  phone: "9876543210",
-  dob: "1990-05-15",
-  gender: "Male",
-  bloodGroup: "O+",
-  address: "123, Anna Salai, Chennai",
-  district: "Chennai",
-  donorId: "DB-2026001",
-  photo: "",
-  registrationDate: "2024-01-15",
-  lastDonationDate: "2025-09-20",
-  totalDonations: 12,
-  eligibilityStatus: "Eligible",
-  nextEligibleDate: "2025-12-19",
-  isActive: true,
 };
 
 export const DONATION_CENTERS = [

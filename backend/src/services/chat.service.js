@@ -4,8 +4,20 @@ import { DONOR_KNOWLEDGE, REQUEST_KNOWLEDGE } from '../data/bloodbank-faq.js';
 const GEMINI_URL = (model) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
-// Tried in order when the configured model is missing/retired (404).
-const MODEL_FALLBACKS = ['gemini-flash-latest', 'gemini-2.0-flash'];
+// Tried in order when the configured model is missing/retired (404) or
+// temporarily overloaded (429/500/503). Lite models first — fastest + least
+// overloaded (verified live 2026-09-30); aliases track latest releases.
+const MODEL_FALLBACKS = [
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
+  'gemini-flash-latest',
+  'gemini-3.8-flash',
+];
+
+// Retryable statuses: model retired/gone (404) + transient overload/rate-limit.
+function isRetryableStatus(status) {
+  return status === 404 || status === 429 || status === 500 || status === 503;
+}
 
 function systemPrompt(lang, page) {
   const languageLine =
@@ -127,8 +139,6 @@ export async function chatCompletion(messages, { lang = 'en', page = 'donor' } =
     return { reply: fallbackReply(lastUser?.content, lang, page), fallback: true, model: 'faq-fallback' };
   }
 
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 20000);
   try {
     // Gemini accepts only 'user' | 'model'. Our API uses 'assistant' -> map it.
     const contents = [
@@ -138,42 +148,57 @@ export async function chatCompletion(messages, { lang = 'en', page = 'donor' } =
         parts: [{ text: m.content }],
       })),
     ];
-    const data = await requestGemini(apiKey, model, contents, controller.signal);
+    // Per-attempt timeouts inside requestGemini bound the total (~6s x models).
+    const { data, usedModel } = await requestGemini(apiKey, model, contents);
 
     const candidate = data?.candidates?.[0];
     const reply = candidate?.content?.parts?.map((p) => p.text).join('').trim();
     if (!reply) throw new Error(`Empty Gemini reply (${candidate?.finishReason || data?.promptFeedback?.blockReason || 'no candidates'})`);
-    return { reply, fallback: false, model };
+    return { reply, fallback: false, model: usedModel };
   } catch (err) {
     console.error('chatCompletion failed, using fallback:', err?.message || err);
     return { reply: fallbackReply(lastUser?.content, lang, page), fallback: true, model: 'faq-fallback' };
-  } finally {
-    clearTimeout(timer);
   }
 }
 
-// Calls Gemini; if the configured model is missing/retired (404), retries MODEL_FALLBACKS.
-async function requestGemini(apiKey, model, contents, signal) {
+// Calls Gemini models in order; each attempt has its own timeout so a slow or
+// overloaded model fails over fast. Total stays under the frontend's 25s limit.
+const GEMINI_ATTEMPT_TIMEOUT_MS = 6000;
+
+async function requestGemini(apiKey, model, contents) {
   const models = [model, ...MODEL_FALLBACKS.filter((m) => m !== model)];
   let lastError;
   for (const name of models) {
-    const res = await fetch(GEMINI_URL(name), {
-      method: 'POST',
-      signal,
-      headers: { 'Content-Type': 'application/json', 'X-goog-api-key': apiKey },
-      body: JSON.stringify({
-        contents,
-        generationConfig: {
-          maxOutputTokens: config.chat.maxTokens,
-          temperature: 0.6,
-        },
-      }),
-    });
-    if (res.ok) return res.json();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), GEMINI_ATTEMPT_TIMEOUT_MS);
+    try {
+      const res = await fetch(GEMINI_URL(name), {
+        method: 'POST',
+        signal: controller.signal,
+        headers: { 'Content-Type': 'application/json', 'X-goog-api-key': apiKey },
+        body: JSON.stringify({
+          contents,
+          generationConfig: {
+            maxOutputTokens: config.chat.maxTokens,
+            temperature: 0.6,
+          },
+        }),
+      });
+      if (res.ok) return { data: await res.json(), usedModel: name };
 
-    const errText = await res.text().catch(() => '');
-    lastError = new Error(`Gemini ${res.status} [${name}]: ${errText.slice(0, 200)}`);
-    if (res.status !== 404) throw lastError; // only model-not-found is worth a retry
+      const errText = await res.text().catch(() => '');
+      lastError = new Error(`Gemini ${res.status} [${name}]: ${errText.slice(0, 200)}`);
+      // 400/401/403 = key/config problem — retrying other models won't help.
+      if (!isRetryableStatus(res.status)) throw lastError;
+    } catch (err) {
+      if (err?.name === 'AbortError') {
+        lastError = new Error(`Gemini timeout [${name}] after ${GEMINI_ATTEMPT_TIMEOUT_MS}ms`);
+        continue; // slow model — fail over to the next one
+      }
+      throw err;
+    } finally {
+      clearTimeout(timer);
+    }
   }
   throw lastError || new Error('All Gemini models failed');
 }

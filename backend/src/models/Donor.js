@@ -40,8 +40,9 @@ const donorSchema = new mongoose.Schema(
     pincode: { type: String, trim: true, match: [/^\d{6}$/, 'Invalid pincode'] },
     address: { type: String, trim: true, minlength: 10 },
     location: {
-      type: { type: String, enum: ['Point'], default: 'Point' },
-      coordinates: { type: [Number], default: undefined },
+      type: { type: String, enum: ['Point'] },
+      coordinates: { type: [Number] },
+      _id: false,
     },
     eligibility: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
     consents: { type: Map, of: mongoose.Schema.Types.Mixed, default: {} },
@@ -56,6 +57,6 @@ const donorSchema = new mongoose.Schema(
 
   donorSchema.index({ bloodGroup: 1, district: 1 });
   donorSchema.index({ districtId: 1 });
-  donorSchema.index({ location: '2dsphere' });
+  donorSchema.index({ location: '2dsphere' }, { sparse: true });
 
 export default mongoose.models.Donor || mongoose.model('Donor', donorSchema);

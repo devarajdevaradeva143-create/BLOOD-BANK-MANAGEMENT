@@ -154,29 +154,7 @@ export default {
   },
   "login.register": { en: "Register", ta: "பதிவு செய்யவும்" },
   "login.portal": { en: "Donor Portal", ta: "இரத்ததானர் குழு" },
-  "login.stats.donors.value": { en: "12,500+", ta: "12,500+" },
-  "login.stats.donors.label": {
-    en: "Registered donors",
-    ta: "பதிவு செய்த இரத்ததானர்கள்",
-  },
-  "login.stats.districts.value": { en: "38", ta: "38" },
-  "login.stats.districts.label": {
-    en: "Districts covered",
-    ta: "மாவட்டங்கள் கவரப்பட்டவை",
-  },
-  "login.stats.lives.value": { en: "48,000+", ta: "48,000+" },
-  "login.stats.lives.label": {
-    en: "Lives impacted",
-    ta: "காக்கப்பட்ட உயிர்கள்",
-  },
-  "login.quote.text": {
-    en: "I've donated 6 times. The team makes it safe, simple and genuinely rewarding every single time.",
-    ta: "நான் 6 முறை தானம் செய்துள்ளேன். ஒவ்வொரு முறையும் பாதுகாப்பாக, எளிமையாக, மனநிறைவுடன் செய்கிறார்கள்.",
-  },
-  "login.quote.name": {
-    en: "Arun K. · Regular donor, Coimbatore",
-    ta: "அருண் க. · வழக்கமான இரத்ததானர், கோயம்புத்தூர்",
-  },
+  // Fake marketing stats/quotes removed — real numbers come from GET /api/stats.
   "nav.login": { en: "Login", ta: "உள்நுழைவு" },
   "nav.logout": { en: "Logout", ta: "வெளியேறு" },
 };

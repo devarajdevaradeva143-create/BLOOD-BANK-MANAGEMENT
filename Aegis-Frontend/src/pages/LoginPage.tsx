@@ -8,15 +8,7 @@ import { Input } from '../components/ui/Input';
 import AuthSidePanel from '../components/layout/AuthSidePanel';
 import { getPublicStats, type PublicStats } from '../lib/api';
 import { DISTRICTS } from '../data/constants';
-import { DEMO_ACCOUNTS } from '../data/constants';
-import type { DemoAccount } from '../data/constants';
-import type { TranslationKey } from '../i18n/translations';
 import toast from 'react-hot-toast';
-
-function demoLabel(role: DemoAccount['role'], t: (key: TranslationKey) => string): string {
-  if (role === 'DistrictAdmin') return t('login.demoDistrictAdmin');
-  return t('login.demoSuperAdmin');
-}
 
 export default function LoginPage() {
   const { user, login } = useAuth();
@@ -29,7 +21,6 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState<DemoAccount['role'] | null>(null);
   const [liveStats, setLiveStats] = useState<PublicStats | null>(null);
 
   // Public network stats for the side panel — backend reachable na live numbers,
@@ -68,20 +59,6 @@ export default function LoginPage() {
     }
     setError(t('login.errorInvalid'));
     return false;
-  };
-
-  const handleDemoLogin = async (account: DemoAccount) => {
-    setStaffId(account.staffId);
-    setPin(account.pin);
-    setError('');
-    setDemoLoading(account.role);
-    try {
-      await attemptLogin(account.staffId, account.pin);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.errorInvalid'));
-    } finally {
-      setDemoLoading(null);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -213,44 +190,6 @@ export default function LoginPage() {
               </Button>
             </form>
 
-            <div className="mt-6 border-t border-dashed border-slate-200 pt-4 dark:border-slate-700">
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">
-                  {t('login.demoTitle')}
-                </p>
-                <p className="text-[11px] text-slate-400 dark:text-slate-500">{t('login.demoHint')}</p>
-              </div>
-              <div className="mt-3 space-y-2">
-                {DEMO_ACCOUNTS.map((account) => {
-                  const isActive = demoLoading === account.role;
-                  return (
-                    <div
-                      key={account.role}
-                      className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200 dark:bg-slate-800/60 dark:ring-slate-700"
-                    >
-                      <div className="min-w-0">
-                        <p className="text-xs font-semibold text-slate-800 dark:text-slate-100">
-                          {demoLabel(account.role, t)}
-                        </p>
-                        <p className="truncate font-mono text-[11px] text-slate-500 dark:text-slate-400">
-                          {account.staffId} / {account.pin}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        loading={isActive}
-                        disabled={loading || demoLoading !== null}
-                        onClick={() => void handleDemoLogin(account)}
-                      >
-                        {t('login.demoUse')}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
           </div>
 
           <p className="mt-6 text-center text-[11px] text-slate-400 dark:text-slate-600">
