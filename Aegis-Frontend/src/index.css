@@ -75,3 +75,29 @@
     display: none;
   }
 }
+
+/* Global: hide ALL scrollbars (page, sidebars, modal, tables) — scroll keeps working.
+   Unlayered so it wins over layered utilities like .scrollbar-thin. */
+html,
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.overflow-x-auto,
+.overflow-y-auto,
+.overflow-auto {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar {
+  display: none;
+}

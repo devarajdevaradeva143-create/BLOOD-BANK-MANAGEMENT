@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
-import { Navigation, Route as RouteIcon, Users } from 'lucide-react';
+import { Maximize2, Minimize2, Navigation, Route as RouteIcon, Users } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
 import { BLOOD_GROUPS, DISTRICTS } from '../data/constants';
@@ -55,6 +55,17 @@ function Recenter({ center }: { center: [number, number] }) {
   return null;
 }
 
+function InvalidateOnFullscreen({ isFullscreen }: { isFullscreen: boolean }) {
+  const map = useMap();
+  useEffect(() => {
+    const t = window.setTimeout(() => {
+      map.invalidateSize();
+    }, 60);
+    return () => window.clearTimeout(t);
+  }, [isFullscreen, map]);
+  return null;
+}
+
 export default function DonorsMapPage() {
   const { t } = useI18n();
   const { user } = useAuth();
@@ -66,6 +77,21 @@ export default function DonorsMapPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [tripMode, setTripMode] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setIsFullscreen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [isFullscreen]);
 
   const userDistrictSlug = useMemo(() => (user?.districtId ?? '').trim().toLowerCase(), [user]);
   const userDistrictDisplay = useMemo(() => {
@@ -179,9 +205,106 @@ export default function DonorsMapPage() {
               {t('donorMap.clear')} ({selected.size})
             </Button>
           ) : null}
+          <div className="ml-auto">
+            <Button
+              variant="outline"
+              size="sm"
+              icon={
+                isFullscreen ? <Minimize2 className="h-3.5 w-3.5" /> : <Maximize2 className="h-3.5 w-3.5" />
+              }
+              onClick={() => setIsFullscreen((v) => !v)}
+              aria-pressed={isFullscreen}
+              title={isFullscreen ? t('donorMap.exitFullscreen') : t('donorMap.fullscreen')}
+            >
+              {isFullscreen ? t('donorMap.exitFullscreen') : t('donorMap.fullscreen')}
+            </Button>
+          </div>
         </div>
         {tripMode ? <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">{t('donorMap.tripHint')}</p> : null}
       </Card>
+
+      {isFullscreen ? (
+        <div className="fixed inset-0 z-[200] flex flex-col bg-slate-950/60 p-3 backdrop-blur-sm sm:p-4">
+          <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-3 rounded-xl bg-white px-4 py-2.5 shadow-lg dark:bg-slate-900">
+            <p className="truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
+              {t('donorMap.title')} · {t('donorMap.scope', { district: scopeDisplay })} · {donors.length} dots
+            </p>
+            <Button
+              variant="outline"
+              size="sm"
+              icon={<Minimize2 className="h-3.5 w-3.5" />}
+              onClick={() => setIsFullscreen(false)}
+            >
+              {t('donorMap.exitFullscreen')}
+            </Button>
+          </div>
+          <Card padded={false} className="mx-auto mt-3 w-full max-w-7xl flex-1 overflow-hidden">
+            {loading ? (
+              <div className="flex items-center justify-center gap-3 py-16 text-slate-500">
+                <Spinner />
+                <span className="text-sm">{t('donorMap.loading')}</span>
+              </div>
+            ) : error && donors.length === 0 ? (
+              <div className="flex flex-col items-center gap-3 px-6 py-12">
+                <EmptyState title={t('donors.error')} hint={error} />
+                <Button variant="outline" size="sm" onClick={() => setRefreshNonce((n) => n + 1)}>
+                  {t('donors.retry')}
+                </Button>
+              </div>
+            ) : donors.length === 0 ? (
+              <EmptyState title={t('donors.empty')} hint={t('donors.noResultsHint')} />
+            ) : (
+              <MapContainer
+                center={center}
+                zoom={11}
+                style={{ height: 'calc(100dvh - 160px)', width: '100%' }}
+                scrollWheelZoom
+              >
+                <TileLayer
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                />
+                <Recenter center={center} />
+                <InvalidateOnFullscreen isFullscreen={isFullscreen} />
+                {donors.map((d) => {
+                  const order = tripStops.findIndex((s) => s.donorId === d.donorId);
+                  return (
+                    <Marker
+                      key={d.donorId}
+                      position={[d.mapLat, d.mapLng]}
+                      icon={dotIcon(GROUP_COLORS[d.bloodGroup] ?? '#dc2626', order >= 0 ? String(order + 1) : undefined)}
+                    >
+                      <Popup>
+                        <div className="min-w-[160px]">
+                          <p className="text-sm font-bold">{d.fullName || d.donorId}</p>
+                          <p className="mt-0.5 text-xs text-slate-600">
+                            {d.bloodGroup} · {d.status}
+                            {d.approx ? ' · approx' : ''}
+                          </p>
+                          {d.address ? <p className="mt-1 text-xs">{d.address}</p> : null}
+                          <p className="mt-0.5 text-xs text-slate-500">
+                            {[d.city, d.pincode].filter(Boolean).join(' · ')}
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => toggleSelect(d.donorId)}
+                            className="mt-2 w-full rounded-md bg-red-600 px-2 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                          >
+                            {selected.has(d.donorId) ? t('donorMap.removeStop') : t('donorMap.addStop')}
+                          </button>
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
+                {tripStops.length >= 2 ? (
+                  <Polyline positions={tripStops.map((s) => [s.mapLat, s.mapLng] as [number, number])} color="#059669" weight={4} />
+                ) : null}
+              </MapContainer>
+            )}
+          </Card>
+        </div>
+      ) : null}
 
       <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_300px]">
         <Card padded={false} className="overflow-hidden">
@@ -206,6 +329,7 @@ export default function DonorsMapPage() {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               />
               <Recenter center={center} />
+              <InvalidateOnFullscreen isFullscreen={isFullscreen} />
               {donors.map((d) => {
                 const order = tripStops.findIndex((s) => s.donorId === d.donorId);
                 return (

@@ -28,21 +28,39 @@ body {
   display: none;
 }
 
-/* Hide scrollbar but keep scroll (e.g. navbar links row on narrow screens) */
-.no-scrollbar {
+/* Global: hide ALL scrollbars (page, chat, dropdowns, modals, tables) — scroll keeps working */
+html,
+body {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
 
-.no-scrollbar::-webkit-scrollbar {
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
   display: none;
 }
 
-/* Donor main page: navbar + content + footer share one subtle offset (mobile/tablet stay centered) */
+.overflow-x-auto,
+.overflow-y-auto,
+.overflow-auto {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar {
+  display: none;
+}
+
+/* Donor navbar: position changes with language (desktop only, mobile stays centered) */
 @media (min-width: 1340px) {
-  .home-shift .max-w-7xl,
-  .max-w-7xl.home-shift,
-  .max-w-7xl.nav-shift {
+  .max-w-7xl.nav-shift-ta {
+    margin-left: calc((100vw - 80rem) / 2 - 3.5rem);
+    margin-right: auto;
+  }
+
+  .max-w-7xl.nav-shift-en {
     margin-left: calc((100vw - 80rem) / 2 + 1rem);
     margin-right: auto;
   }

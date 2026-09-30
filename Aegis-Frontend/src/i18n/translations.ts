@@ -47,7 +47,10 @@ export const en = {
   'login.demoDistrictAdmin': 'District Admin',
   'login.demoSuperAdmin': 'Super Admin',
   'login.demoUse': 'Use',
-  'login.demoTitle': 'Demo accounts',
+  // TEMP-DEMO-LOGIN: demo quick-access keys (remove with LoginPage demo box).
+  'login.demoTitle': 'Quick Demo Access',
+  'login.demoDistrict': 'Demo: District Admin',
+  'login.demoSuper': 'Demo: Super Admin',
   'login.demoHint': 'One-click sign in',
   'login.superAdminLink': 'Super Admin? Sign in here →',
   'login.errorRequired': 'ID and PIN are required',
@@ -378,6 +381,8 @@ export const en = {
   'donorMap.allDonors': 'All donors',
   'donorMap.addStop': 'Add to trip',
   'donorMap.removeStop': 'Remove from trip',
+  'donorMap.fullscreen': 'Full screen',
+  'donorMap.exitFullscreen': 'Exit full screen',
 
   'donations.title': 'Donate Requests',
   'donations.subtitle': 'Donor intents for your district',
@@ -703,7 +708,10 @@ export const ta: Record<TranslationKey, string> = {
   'login.demoDistrictAdmin': 'மாவட்ட நிர்வாகி',
   'login.demoSuperAdmin': 'சூப்பர் அட்மின்',
   'login.demoUse': 'பயன்படுத்து',
-  'login.demoTitle': 'டெமோ கணக்குகள்',
+  // TEMP-DEMO-LOGIN: demo quick-access keys (remove with LoginPage demo box).
+  'login.demoTitle': 'விரைவு டெமோ அணுகல்',
+  'login.demoDistrict': 'டெமோ: மாவட்ட நிர்வாகி',
+  'login.demoSuper': 'டெமோ: உயர் நிர்வாகி',
   'login.demoHint': 'ஒரு கிளிக் உள்நுழைவு',
   'login.superAdminLink': 'சூப்பர் அட்மின்? இங்கே உள்நுழையவும் →',
   'login.errorRequired': 'ஐடி மற்றும் பின் தேவை',
@@ -1034,6 +1042,8 @@ export const ta: Record<TranslationKey, string> = {
   'donorMap.allDonors': 'அனைத்து நன்கொடையாளர்கள்',
   'donorMap.addStop': 'பயணத்தில் சேர்',
   'donorMap.removeStop': 'பயணத்தில் இருந்து நீக்கு',
+  'donorMap.fullscreen': 'முழு திரை',
+  'donorMap.exitFullscreen': 'முழு திரையில் இருந்து வெளியேறு',
 
   'donations.title': 'தான கோரிக்கைகள்',
   'donations.subtitle': 'உங்கள் மாவட்டத்திற்கான நன்கொடை விருப்பங்கள்',

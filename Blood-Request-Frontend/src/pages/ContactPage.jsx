@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
-import { LoaderCircle, Mail, MapPin, Phone, Send } from 'lucide-react'
+import { LoaderCircle, Mail, MapPin, Maximize2, Minimize2, Phone, Send } from 'lucide-react'
 import { useLanguage } from '../context/useLanguage'
 import FormField from '../components/FormField'
 
@@ -16,6 +16,21 @@ export default function ContactPage() {
   const [values, setValues] = useState(INITIAL_VALUES)
   const [errors, setErrors] = useState({})
   const [sending, setSending] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  useEffect(() => {
+    if (!isFullscreen) return
+    const onKey = (e) => {
+      if (e.key === 'Escape') setIsFullscreen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prev
+    }
+  }, [isFullscreen])
 
   function setField(name, value) {
     setValues((prev) => ({ ...prev, [name]: value }))
@@ -213,10 +228,21 @@ export default function ContactPage() {
             </div>
           </section>
           <div className="overflow-hidden rounded-2xl border border-slate-200 shadow-sm dark:border-slate-700">
-            <p className="flex items-center gap-2 bg-slate-50 px-4 py-3 text-sm font-semibold text-slate-900 dark:bg-slate-900 dark:text-white">
-              <MapPin className="h-4 w-4 text-red-600 dark:text-red-400" aria-hidden="true" />
-              {t('contact.mapTitle')}
-            </p>
+            <div className="flex items-center justify-between gap-2 bg-slate-50 px-4 py-3 dark:bg-slate-900">
+              <p className="flex min-w-0 items-center gap-2 text-sm font-semibold text-slate-900 dark:text-white">
+                <MapPin className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
+                <span className="truncate">{t('contact.mapTitle')}</span>
+              </p>
+              <button
+                type="button"
+                onClick={() => setIsFullscreen(true)}
+                className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
+                title={t('map.fullscreen')}
+              >
+                <Maximize2 className="h-3.5 w-3.5" aria-hidden="true" />
+                {t('map.fullscreen')}
+              </button>
+            </div>
             <iframe
               title={t('contact.mapTitle')}
               src="https://www.openstreetmap.org/export/embed.html?bbox=80.24%2C13.06%2C80.30%2C13.10&layer=mapnik&marker=13.0810%2C80.2694"
@@ -226,6 +252,33 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
+
+      {isFullscreen ? (
+        <div className="fixed inset-0 z-[200] flex flex-col bg-slate-950/60 p-3 backdrop-blur-sm sm:p-4">
+          <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 rounded-xl bg-white px-4 py-2.5 shadow-lg dark:bg-slate-900">
+            <p className="flex min-w-0 items-center gap-2 truncate text-xs font-semibold text-slate-700 dark:text-slate-200">
+              <MapPin className="h-4 w-4 shrink-0 text-red-600" aria-hidden="true" />
+              <span className="truncate">{t('contact.mapTitle')}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsFullscreen(false)}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 transition hover:border-red-300 hover:text-red-600 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300"
+            >
+              <Minimize2 className="h-3.5 w-3.5" aria-hidden="true" />
+              {t('map.exitFullscreen')}
+            </button>
+          </div>
+          <div className="mx-auto mt-3 w-full max-w-6xl flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            <iframe
+              title={t('contact.mapTitle')}
+              src="https://www.openstreetmap.org/export/embed.html?bbox=80.24%2C13.06%2C80.30%2C13.10&layer=mapnik&marker=13.0810%2C80.2694"
+              className="h-[calc(100dvh-160px)] w-full border-0"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }

@@ -1,18 +1,20 @@
 // backend/seed.js — ESM. Run with workdir backend/: `node seed.js`
 // Upserts one DistrictAdmin + one SuperAdmin user from env, hashing PINs via utils/passwords.
 // Legacy SEED_DOCTOR_ID / SEED_STAFF_ID (+ PIN/DISTRICT) are ignored — new SEED_DISTRICT_ADMIN_* / SEED_SUPER_ADMIN_* take precedence.
-// No demo/seeded hospital account exists: hospitals register through the
-// frontend and are activated by an admin (real-website flow).
+// TEMP-DEMO-LOGIN: remove before production — seeds one active demo hospital // TEMP-DEMO-LOGIN
+// TEMP-DEMO-LOGIN: (demo.hospital@demo.local / Demo@1234) for temporary demo logins; // TEMP-DEMO-LOGIN
+// TEMP-DEMO-LOGIN: real hospitals register via frontend + admin activation otherwise. // TEMP-DEMO-LOGIN
 // Real modules live under ./src/* (see backend/package.json, main src/index.js);
 // the `config/db` / `utils/passwords` substrings below satisfy the layout contract.
 
 import 'dotenv/config';
 import mongoose from 'mongoose';
 import { connectDB } from './src/config/db.js';
-import { hashPin } from './src/utils/passwords.js';
+import { hashPin, hashPassword } from './src/utils/passwords.js'; // TEMP-DEMO-LOGIN
 import { genUnitCode } from './src/utils/ids.js';
 import User from './src/models/User.js';
 import BloodUnit from './src/models/BloodUnit.js';
+import Hospital from './src/models/Hospital.js'; // TEMP-DEMO-LOGIN
 
 const districtAdminId = process.env.SEED_DISTRICT_ADMIN_ID || 'DIST-001';
 const districtAdminPin = process.env.SEED_DISTRICT_ADMIN_PIN || 'Dist@1234';
@@ -80,12 +82,39 @@ async function seedBloodUnits() {
   console.log(`seeded ${docs.length} blood units across ${SEED_DISTRICTS.length} districts`);
 }
 
+async function seedDemoHospital() { // TEMP-DEMO-LOGIN
+  const passwordHash = await hashPassword('Demo@1234'); // TEMP-DEMO-LOGIN
+  await Hospital.updateOne( // TEMP-DEMO-LOGIN
+    { email: 'demo.hospital@demo.local' }, // TEMP-DEMO-LOGIN
+    { // TEMP-DEMO-LOGIN
+      $set: { // TEMP-DEMO-LOGIN
+        hospitalName: 'Demo General Hospital', // TEMP-DEMO-LOGIN
+        registrationNumber: 'DEMO-REG-001', // TEMP-DEMO-LOGIN
+        hospitalId: 'HOSP-DEMO-001', // TEMP-DEMO-LOGIN
+        hospitalType: 'Private', // TEMP-DEMO-LOGIN
+        email: 'demo.hospital@demo.local', // TEMP-DEMO-LOGIN
+        phone: '9876543210', // TEMP-DEMO-LOGIN
+        district: 'Chennai', // TEMP-DEMO-LOGIN
+        districtId: 'chennai', // TEMP-DEMO-LOGIN
+        address: '123 Demo Street, Chennai', // TEMP-DEMO-LOGIN
+        pincode: '600001', // TEMP-DEMO-LOGIN
+        passwordHash, // TEMP-DEMO-LOGIN
+        active: true, // TEMP-DEMO-LOGIN
+      }, // TEMP-DEMO-LOGIN
+    }, // TEMP-DEMO-LOGIN
+    { upsert: true }, // TEMP-DEMO-LOGIN
+  ); // TEMP-DEMO-LOGIN
+  console.log('seeded demo hospital demo.hospital@demo.local'); // TEMP-DEMO-LOGIN
+} // TEMP-DEMO-LOGIN
+
 async function main() {
   requireSeedEnv();
   await connectDB();
   await upsertUser({ staffId: districtAdminId, name: 'Seed District Admin', role: 'DistrictAdmin', pin: districtAdminPin, districtId: districtAdminDistrict });
   await upsertUser({ staffId: superAdminId, name: 'Seed Super Admin', role: 'SuperAdmin', pin: superAdminPin, districtId: superAdminDistrict });
   console.log('seed done: DistrictAdmin + SuperAdmin upserted');
+  await seedDemoHospital(); // TEMP-DEMO-LOGIN
+  console.log('seed done: demo hospital upserted'); // TEMP-DEMO-LOGIN
   await seedBloodUnits();
   console.log('seed done: all');
 }

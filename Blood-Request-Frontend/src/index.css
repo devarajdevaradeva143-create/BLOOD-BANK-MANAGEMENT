@@ -102,14 +102,30 @@
   .accordion-panel.open {
     grid-template-rows: 1fr;
   }
+}
 
-  /* Hide scrollbar but keep scroll (e.g. navbar links row on narrow screens) */
-  .no-scrollbar {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
+/* Global: hide ALL scrollbars (page, chat, dropdowns, modals, tables) — scroll keeps working.
+   Unlayered so it wins over utilities. */
+html,
+body {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
 
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  display: none;
+}
+
+.overflow-x-auto,
+.overflow-y-auto,
+.overflow-auto {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.overflow-x-auto::-webkit-scrollbar,
+.overflow-y-auto::-webkit-scrollbar,
+.overflow-auto::-webkit-scrollbar {
+  display: none;
 }

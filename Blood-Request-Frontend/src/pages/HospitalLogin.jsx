@@ -5,6 +5,7 @@ import {
   CircleAlert,
   Eye,
   EyeOff,
+  FlaskConical,
   HeartPulse,
   LoaderCircle,
   Lock,
@@ -27,6 +28,23 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
   const [notice, setNotice] = useState('')
   const [loading, setLoading] = useState(false)
 
+  // TEMP-DEMO-LOGIN: shared login runner (extracted from handleLogin for demo reuse)
+  const doLogin = async (emailVal, pwVal) => {
+    setLoading(true)
+    try {
+      await loginUser({ email: emailVal, password: pwVal })
+      setRememberedEmail(emailVal, remember)
+      toast.success(t('login.toastSuccess'))
+      if (onLogin) {
+        onLogin()
+      }
+    } catch (err) {
+      setError(err.message || t('login.errInvalid'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault()
     setError('')
@@ -37,19 +55,22 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
       return
     }
 
-    setLoading(true)
-    try {
-      await loginUser({ email, password })
-      setRememberedEmail(email, remember)
-      toast.success(t('login.toastSuccess'))
-      if (onLogin) {
-        onLogin()
-      }
-    } catch (err) {
-      setError(err.message || t('login.errInvalid'))
-    } finally {
-      setLoading(false)
-    }
+    await doLogin(email, password)
+  }
+
+  // TEMP-DEMO-LOGIN: one-click demo hospital login (remove before production)
+  const handleDemoLogin = async () => {
+    if (loading) return
+    setError('')
+    setNotice('')
+    const demoEmail = 'demo.hospital@demo.local'
+    const demoPassword = 'Demo@1234'
+    // Fill visible fields so the user sees the demo credentials,
+    // but pass values directly to doLogin to avoid the stale-state bug
+    // (setEmail + submit in the same tick would still read old state).
+    setEmail(demoEmail)
+    setPassword(demoPassword)
+    await doLogin(demoEmail, demoPassword)
   }
 
 
@@ -239,6 +260,40 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                   )}
                 </button>
               </form>
+
+              {/* TEMP-DEMO-LOGIN: demo access box — remove before production */}
+              <div className="mt-4 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/40">
+                <div className="flex items-center gap-2">
+                  <FlaskConical size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
+                  <p className="text-xs font-bold text-amber-800 dark:text-amber-200">
+                    {t('login.demoTitle')}
+                  </p>
+                  <span className="rounded-full bg-amber-200 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-amber-800 dark:bg-amber-800 dark:text-amber-100">
+                    Demo
+                  </span>
+                </div>
+                <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
+                  {t('login.demoHint')}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleDemoLogin}
+                  disabled={loading}
+                  className="mt-2 flex h-10 w-full items-center justify-center gap-2 rounded-xl border border-amber-400 bg-white text-xs font-bold text-amber-700 transition hover:bg-amber-100 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-70 dark:border-amber-700 dark:bg-transparent dark:text-amber-200 dark:hover:bg-amber-900/40"
+                >
+                  {loading ? (
+                    <>
+                      <LoaderCircle size={16} className="animate-spin" />
+                      {t('login.signingIn')}
+                    </>
+                  ) : (
+                    <>
+                      <FlaskConical size={16} />
+                      {t('login.demoHospital')}
+                    </>
+                  )}
+                </button>
+              </div>
 
               {/* Divider */}
               <div className="my-5 flex items-center gap-3">

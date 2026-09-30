@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { asyncHandler } from '../middleware/asyncHandler.js';
 import Donor from '../models/Donor.js';
+import Hospital from '../models/Hospital.js';
 import User from '../models/User.js';
 import Otp from '../models/Otp.js';
 import { genDonorId } from '../utils/ids.js';
@@ -173,11 +174,21 @@ export const listDonors = asyncHandler(async (req, res) => {
       adminDistrict = '';
     }
   }
-  // DistrictAdmin-ku district illana fail-closed — ella district-um kaata koodadhu.
-  if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
+  if (!adminDistrict && req.user?.role === 'Hospital' && req.user?.id) {
+    try {
+      const me = await Hospital.findById(req.user.id).select('districtId district').lean();
+      adminDistrict =
+        String(me?.districtId || '').trim().toLowerCase() ||
+        String(me?.district || '').trim().toLowerCase();
+    } catch {
+      adminDistrict = '';
+    }
+  }
+  // DistrictAdmin + Hospital-ku district illana fail-closed — ella district-um kaata koodadhu.
+  if ((req.user?.role === 'DistrictAdmin' || req.user?.role === 'Hospital') && !adminDistrict) {
     return res.status(403).json({ message: 'Forbidden: district not assigned' });
   }
-  if (req.user?.role === 'DistrictAdmin' && adminDistrict) {
+  if ((req.user?.role === 'DistrictAdmin' || req.user?.role === 'Hospital') && adminDistrict) {
     filter.district = new RegExp(`^${escapeRegex(adminDistrict)}$`, 'i');
   } else if (districtId || district) {
     filter.district = new RegExp(`^${escapeRegex(String(districtId || district).trim())}$`, 'i');
@@ -471,10 +482,22 @@ export const listDonorMap = asyncHandler(async (req, res) => {
       adminDistrict = '';
     }
   }
-  if (req.user?.role === 'DistrictAdmin' && !adminDistrict) {
+  // Hospital-ku DB fallback — JWT districtId empty-na hospital record-la irundhu edu.
+  // Hospital + DistrictAdmin map mattum — vere district enumerate panna vida koodadhu.
+  if (!adminDistrict && req.user?.role === 'Hospital' && req.user?.id) {
+    try {
+      const me = await Hospital.findById(req.user.id).select('districtId district').lean();
+      adminDistrict =
+        String(me?.districtId || '').trim().toLowerCase() ||
+        String(me?.district || '').trim().toLowerCase();
+    } catch {
+      adminDistrict = '';
+    }
+  }
+  if ((req.user?.role === 'DistrictAdmin' || req.user?.role === 'Hospital') && !adminDistrict) {
     return res.status(403).json({ message: 'Forbidden: district not assigned' });
   }
-  if (req.user?.role === 'DistrictAdmin' && adminDistrict) {
+  if ((req.user?.role === 'DistrictAdmin' || req.user?.role === 'Hospital') && adminDistrict) {
     filter.$or = [
       { districtId: new RegExp(`^${escapeRegex(adminDistrict)}$`, 'i') },
       {
