@@ -8,7 +8,8 @@ const port = config.port;
 
 connectDB()
   .then(() => {
-    app.listen(port, () => console.log(`blood-bank-api listening on :${port} [${config.env}]`));
+    // Suga / Render / Docker: must bind 0.0.0.0, not localhost, else healthcheck fails
+    app.listen(port, '0.0.0.0', () => console.log(`blood-bank-api listening on :${port} [${config.env}]`));
   })
   .catch((err) => {
     console.error('Failed to connect to MongoDB, exiting:', err?.message || err);
