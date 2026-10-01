@@ -5,6 +5,7 @@ import {
   setAccessToken,
   toUserMessage,
 } from './api.js'
+import { DEMO_HOSPITAL_USER, DEMO_LOGIN_ENABLED, DEMO_TOKEN } from './demoLogin.js'
 
 const USER_KEY = 'hospitalUser'
 const REMEMBER_KEY = 'hospitalRememberedEmail'
@@ -95,6 +96,9 @@ export async function loginUser({ email, password }) {
   writeUser(data?.user || null)
   return data?.user || null
 }
+
+// TEMP-DEMO-LOGIN: frontend-only demo session (no backend). Removal: delete demoLoginHospital + demoLogin.js + 401 guard in api.js + demo box in HospitalLogin.jsx + login.demoOffline key.
+export function demoLoginHospital() { if (!DEMO_LOGIN_ENABLED) throw new Error('Demo login disabled'); setAccessToken(DEMO_TOKEN); writeUser(DEMO_HOSPITAL_USER); return DEMO_HOSPITAL_USER }
 
 export async function logoutUser() {
   try {

@@ -16,6 +16,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../i18n/I18nContext';
+// TEMP-DEMO-LOGIN: frontend-only demo login (no backend).
+import { DEMO_LOGIN_ENABLED } from '../lib/demo';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import AuthSidePanel from '../components/layout/AuthSidePanel';
@@ -24,7 +26,7 @@ import { DISTRICTS } from '../data/constants';
 import toast from 'react-hot-toast';
 
 export default function LoginPage() {
-  const { user, login } = useAuth();
+  const { user, login, demoLogin } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
 
@@ -112,20 +114,18 @@ export default function LoginPage() {
     }
   };
 
-  // TEMP-DEMO-LOGIN: one-click demo sign-in (remove with demo box + i18n keys).
-  const handleDemoLogin = async (id: string, pinCode: string) => {
+  // TEMP-DEMO-LOGIN: frontend-only demo sign-in (no backend).
+  const handleDemoLogin = (role: 'DistrictAdmin' | 'SuperAdmin') => {
     if (loading) return;
-    setStaffId(id);
-    setPin(pinCode);
     setError('');
-    setLoading(true);
-    try {
-      await attemptLogin(id, pinCode);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : t('login.errorInvalid'));
-    } finally {
-      setLoading(false);
+    const account = demoLogin(role);
+    if (!account) {
+      setError(t('login.errorInvalid'));
+      return;
     }
+    toast.success(t('login.title'));
+    if (account.role === 'SuperAdmin') navigate('/superadmin/dashboard', { replace: true });
+    else navigate('/dashboard', { replace: true });
   };
 
   const handleCapsLock = (e: React.KeyboardEvent) => {
@@ -349,25 +349,40 @@ export default function LoginPage() {
                 </Button>
               </form>
 
-              {/* TEMP-DEMO-LOGIN: quick demo access — remove box + handler + i18n keys for production */}
-              <div className="mt-6 rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
-                <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200">
-                  <FlaskConical className="h-4 w-4" />
-                  {t('login.demoTitle')}
-                </p>
-                <div className="mt-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    fullWidth
-                    disabled={loading}
-                    onClick={() => handleDemoLogin('DIST-001', 'Dist@1234')}
-                    className="border-amber-300 bg-white text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-transparent dark:text-amber-200 dark:hover:bg-amber-900/40"
-                  >
-                    {t('login.demoDistrict')}
-                  </Button>
+              {/* TEMP-DEMO-LOGIN: frontend-only demo access — remove box + handler + i18n keys for production */}
+              {DEMO_LOGIN_ENABLED ? (
+                <div className="mt-6 rounded-xl border border-dashed border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
+                  <p className="flex items-center gap-1.5 text-xs font-semibold text-amber-800 dark:text-amber-200">
+                    <FlaskConical className="h-4 w-4" />
+                    {t('login.demoTitle')}
+                  </p>
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      fullWidth
+                      disabled={loading}
+                      onClick={() => handleDemoLogin('DistrictAdmin')}
+                      className="border-amber-300 bg-white text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-transparent dark:text-amber-200 dark:hover:bg-amber-900/40"
+                    >
+                      {t('login.demoDistrict')}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      fullWidth
+                      disabled={loading}
+                      onClick={() => handleDemoLogin('SuperAdmin')}
+                      className="border-amber-300 bg-white text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:bg-transparent dark:text-amber-200 dark:hover:bg-amber-900/40"
+                    >
+                      {t('login.demoSuper')}
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-300">
+                    {t('login.demoOffline')}
+                  </p>
                 </div>
-              </div>
+              ) : null}
 
               <div className="mt-8 flex items-center justify-center gap-2 text-xs font-medium text-slate-400 dark:text-slate-500">
                 <ShieldCheck className="h-4 w-4 text-emerald-600 dark:text-emerald-500" />

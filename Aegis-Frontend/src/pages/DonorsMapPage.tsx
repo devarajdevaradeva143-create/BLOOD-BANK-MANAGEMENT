@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { Suspense, lazy, useEffect, useMemo, useState } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -22,6 +22,13 @@ import {
   tripKm,
   type MappedDonor,
 } from '../utils/geo';
+import {
+  storedMapProvider,
+  storeMapProvider,
+  type MapProvider,
+} from '../lib/googleMaps';
+
+const DonorGoogleMap = lazy(() => import('./DonorGoogleMap'));
 
 const GROUP_COLORS: Record<string, string> = {
   'O+': '#dc2626',
@@ -66,6 +73,106 @@ function InvalidateOnFullscreen({ isFullscreen }: { isFullscreen: boolean }) {
   return null;
 }
 
+interface DonorMapPaneProps {
+  provider: MapProvider;
+  donors: MappedDonor[];
+  tripStops: MappedDonor[];
+  selected: Set<string>;
+  toggleSelect: (id: string) => void;
+  center: [number, number];
+  height: string;
+  isFullscreen: boolean;
+}
+
+/** OSM (Leaflet) pane — original map, untouched behaviour. */
+function OsmDonorMap({
+  donors,
+  tripStops,
+  selected,
+  toggleSelect,
+  center,
+  height,
+  isFullscreen,
+}: Omit<DonorMapPaneProps, 'provider'>) {
+  const { t } = useI18n();
+  return (
+    <MapContainer center={center} zoom={11} style={{ height, width: '100%' }} scrollWheelZoom>
+      <TileLayer
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+      <Recenter center={center} />
+      <InvalidateOnFullscreen isFullscreen={isFullscreen} />
+      {donors.map((d) => {
+        const order = tripStops.findIndex((s) => s.donorId === d.donorId);
+        return (
+          <Marker
+            key={d.donorId}
+            position={[d.mapLat, d.mapLng]}
+            icon={dotIcon(GROUP_COLORS[d.bloodGroup] ?? '#dc2626', order >= 0 ? String(order + 1) : undefined)}
+          >
+            <Popup>
+              <div className="min-w-[160px]">
+                <p className="text-sm font-bold">{d.fullName || d.donorId}</p>
+                <p className="mt-0.5 text-xs text-slate-600">
+                  {d.bloodGroup} · {d.status}
+                  {d.approx ? ' · approx' : ''}
+                </p>
+                {d.address ? <p className="mt-1 text-xs">{d.address}</p> : null}
+                <p className="mt-0.5 text-xs text-slate-500">
+                  {[d.city, d.pincode].filter(Boolean).join(' · ')}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => toggleSelect(d.donorId)}
+                  className="mt-2 w-full rounded-md bg-red-600 px-2 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                >
+                  {selected.has(d.donorId) ? t('donorMap.removeStop') : t('donorMap.addStop')}
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        );
+      })}
+      {tripStops.length >= 2 ? (
+        <Polyline positions={tripStops.map((s) => [s.mapLat, s.mapLng] as [number, number])} color="#059669" weight={4} />
+      ) : null}
+    </MapContainer>
+  );
+}
+
+/** Provider switch — OSM default, Google lazy-loads only when selected. */
+function DonorMapPane({ provider, ...rest }: DonorMapPaneProps) {
+  if (provider === 'google') {
+    return <DonorGoogleMapLazy {...rest} />;
+  }
+  return <OsmDonorMap {...rest} />;
+}
+
+function DonorGoogleMapLazy(props: Omit<DonorMapPaneProps, 'provider' | 'isFullscreen'>) {
+  const { t } = useI18n();
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center gap-3 py-16 text-slate-500">
+          <Spinner />
+          <span className="text-sm">{t('donorMap.googleLoading')}</span>
+        </div>
+      }
+    >
+      <DonorGoogleMap
+        donors={props.donors}
+        tripStops={props.tripStops}
+        selected={props.selected}
+        onToggleSelect={props.toggleSelect}
+        center={props.center}
+        groupColors={GROUP_COLORS}
+        height={props.height}
+      />
+    </Suspense>
+  );
+}
+
 export default function DonorsMapPage() {
   const { t } = useI18n();
   const { user } = useAuth();
@@ -78,6 +185,12 @@ export default function DonorsMapPage() {
   const [tripMode, setTripMode] = useState(false);
   const [refreshNonce, setRefreshNonce] = useState(0);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [provider, setProvider] = useState<MapProvider>(() => storedMapProvider());
+
+  const switchProvider = (p: MapProvider) => {
+    setProvider(p);
+    storeMapProvider(p);
+  };
 
   useEffect(() => {
     if (!isFullscreen) return;
@@ -205,6 +318,36 @@ export default function DonorsMapPage() {
               {t('donorMap.clear')} ({selected.size})
             </Button>
           ) : null}
+          <div
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-900"
+            role="group"
+            aria-label={t('donorMap.mapProvider')}
+          >
+            <button
+              type="button"
+              onClick={() => switchProvider('osm')}
+              aria-pressed={provider === 'osm'}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
+                provider === 'osm'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
+            >
+              {t('donorMap.providerOsm')}
+            </button>
+            <button
+              type="button"
+              onClick={() => switchProvider('google')}
+              aria-pressed={provider === 'google'}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
+                provider === 'google'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                  : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+              }`}
+            >
+              {t('donorMap.providerGoogle')}
+            </button>
+          </div>
           <div className="ml-auto">
             <Button
               variant="outline"
@@ -254,53 +397,16 @@ export default function DonorsMapPage() {
             ) : donors.length === 0 ? (
               <EmptyState title={t('donors.empty')} hint={t('donors.noResultsHint')} />
             ) : (
-              <MapContainer
+              <DonorMapPane
+                provider={provider}
+                donors={donors}
+                tripStops={tripStops}
+                selected={selected}
+                toggleSelect={toggleSelect}
                 center={center}
-                zoom={11}
-                style={{ height: 'calc(100dvh - 160px)', width: '100%' }}
-                scrollWheelZoom
-              >
-                <TileLayer
-                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                />
-                <Recenter center={center} />
-                <InvalidateOnFullscreen isFullscreen={isFullscreen} />
-                {donors.map((d) => {
-                  const order = tripStops.findIndex((s) => s.donorId === d.donorId);
-                  return (
-                    <Marker
-                      key={d.donorId}
-                      position={[d.mapLat, d.mapLng]}
-                      icon={dotIcon(GROUP_COLORS[d.bloodGroup] ?? '#dc2626', order >= 0 ? String(order + 1) : undefined)}
-                    >
-                      <Popup>
-                        <div className="min-w-[160px]">
-                          <p className="text-sm font-bold">{d.fullName || d.donorId}</p>
-                          <p className="mt-0.5 text-xs text-slate-600">
-                            {d.bloodGroup} · {d.status}
-                            {d.approx ? ' · approx' : ''}
-                          </p>
-                          {d.address ? <p className="mt-1 text-xs">{d.address}</p> : null}
-                          <p className="mt-0.5 text-xs text-slate-500">
-                            {[d.city, d.pincode].filter(Boolean).join(' · ')}
-                          </p>
-                          <button
-                            type="button"
-                            onClick={() => toggleSelect(d.donorId)}
-                            className="mt-2 w-full rounded-md bg-red-600 px-2 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
-                          >
-                            {selected.has(d.donorId) ? t('donorMap.removeStop') : t('donorMap.addStop')}
-                          </button>
-                        </div>
-                      </Popup>
-                    </Marker>
-                  );
-                })}
-                {tripStops.length >= 2 ? (
-                  <Polyline positions={tripStops.map((s) => [s.mapLat, s.mapLng] as [number, number])} color="#059669" weight={4} />
-                ) : null}
-              </MapContainer>
+                height="calc(100dvh - 160px)"
+                isFullscreen={isFullscreen}
+              />
             )}
           </Card>
         </div>
@@ -323,48 +429,16 @@ export default function DonorsMapPage() {
           ) : donors.length === 0 ? (
             <EmptyState title={t('donors.empty')} hint={t('donors.noResultsHint')} />
           ) : (
-            <MapContainer center={center} zoom={11} style={{ height: 480, width: '100%' }} scrollWheelZoom>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              <Recenter center={center} />
-              <InvalidateOnFullscreen isFullscreen={isFullscreen} />
-              {donors.map((d) => {
-                const order = tripStops.findIndex((s) => s.donorId === d.donorId);
-                return (
-                  <Marker
-                    key={d.donorId}
-                    position={[d.mapLat, d.mapLng]}
-                    icon={dotIcon(GROUP_COLORS[d.bloodGroup] ?? '#dc2626', order >= 0 ? String(order + 1) : undefined)}
-                  >
-                    <Popup>
-                      <div className="min-w-[160px]">
-                        <p className="text-sm font-bold">{d.fullName || d.donorId}</p>
-                        <p className="mt-0.5 text-xs text-slate-600">
-                          {d.bloodGroup} · {d.status}
-                          {d.approx ? ' · approx' : ''}
-                        </p>
-                        {d.address ? <p className="mt-1 text-xs">{d.address}</p> : null}
-                        <p className="mt-0.5 text-xs text-slate-500">
-                          {[d.city, d.pincode].filter(Boolean).join(' · ')}
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => toggleSelect(d.donorId)}
-                          className="mt-2 w-full rounded-md bg-red-600 px-2 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
-                        >
-                          {selected.has(d.donorId) ? t('donorMap.removeStop') : t('donorMap.addStop')}
-                        </button>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-              {tripStops.length >= 2 ? (
-                <Polyline positions={tripStops.map((s) => [s.mapLat, s.mapLng] as [number, number])} color="#059669" weight={4} />
-              ) : null}
-            </MapContainer>
+            <DonorMapPane
+              provider={provider}
+              donors={donors}
+              tripStops={tripStops}
+              selected={selected}
+              toggleSelect={toggleSelect}
+              center={center}
+              height="480"
+              isFullscreen={isFullscreen}
+            />
           )}
         </Card>
 

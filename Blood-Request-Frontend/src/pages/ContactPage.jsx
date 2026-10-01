@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { LoaderCircle, Mail, MapPin, Maximize2, Minimize2, Phone, Send } from 'lucide-react'
 import { useLanguage } from '../context/useLanguage'
+import { storedMapProvider, storeMapProvider } from '../lib/mapProvider'
 import FormField from '../components/FormField'
+
+const ContactMap = lazy(() => import('../components/ContactMap'))
 
 import PageHeader from '../components/PageHeader'
 
@@ -17,6 +20,12 @@ export default function ContactPage() {
   const [errors, setErrors] = useState({})
   const [sending, setSending] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [mapProvider, setMapProvider] = useState(() => storedMapProvider())
+
+  function switchMapProvider(p) {
+    setMapProvider(p)
+    storeMapProvider(p)
+  }
 
   useEffect(() => {
     if (!isFullscreen) return
@@ -233,6 +242,36 @@ export default function ContactPage() {
                 <MapPin className="h-4 w-4 shrink-0 text-red-600 dark:text-red-400" aria-hidden="true" />
                 <span className="truncate">{t('contact.mapTitle')}</span>
               </p>
+              <div
+                className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-slate-200 bg-white p-1 dark:border-slate-700 dark:bg-slate-950"
+                role="group"
+                aria-label={t('map.provider')}
+              >
+                <button
+                  type="button"
+                  onClick={() => switchMapProvider('osm')}
+                  aria-pressed={mapProvider === 'osm'}
+                  className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
+                    mapProvider === 'osm'
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {t('map.osm')}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => switchMapProvider('google')}
+                  aria-pressed={mapProvider === 'google'}
+                  className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
+                    mapProvider === 'google'
+                      ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900'
+                      : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {t('map.google')}
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={() => setIsFullscreen(true)}
@@ -243,12 +282,24 @@ export default function ContactPage() {
                 {t('map.fullscreen')}
               </button>
             </div>
-            <iframe
-              title={t('contact.mapTitle')}
-              src="https://www.openstreetmap.org/export/embed.html?bbox=80.24%2C13.06%2C80.30%2C13.10&layer=mapnik&marker=13.0810%2C80.2694"
-              className="h-64 w-full border-0"
-              loading="lazy"
-            />
+            {mapProvider === 'google' ? (
+              <Suspense
+                fallback={
+                  <div className="flex w-full items-center justify-center px-6 py-12">
+                    <span className="text-sm text-slate-500">{t('map.googleLoading')}</span>
+                  </div>
+                }
+              >
+                <ContactMap heightClass="h-64" />
+              </Suspense>
+            ) : (
+              <iframe
+                title={t('contact.mapTitle')}
+                src="https://www.openstreetmap.org/export/embed.html?bbox=80.24%2C13.06%2C80.30%2C13.10&layer=mapnik&marker=13.0810%2C80.2694"
+                className="h-64 w-full border-0"
+                loading="lazy"
+              />
+            )}
           </div>
         </div>
       </div>
@@ -270,12 +321,24 @@ export default function ContactPage() {
             </button>
           </div>
           <div className="mx-auto mt-3 w-full max-w-6xl flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-            <iframe
-              title={t('contact.mapTitle')}
-              src="https://www.openstreetmap.org/export/embed.html?bbox=80.24%2C13.06%2C80.30%2C13.10&layer=mapnik&marker=13.0810%2C80.2694"
-              className="h-[calc(100dvh-160px)] w-full border-0"
-              loading="lazy"
-            />
+            {mapProvider === 'google' ? (
+              <Suspense
+                fallback={
+                  <div className="flex w-full items-center justify-center px-6 py-12">
+                    <span className="text-sm text-slate-500">{t('map.googleLoading')}</span>
+                  </div>
+                }
+              >
+                <ContactMap heightClass="h-[calc(100dvh-160px)]" />
+              </Suspense>
+            ) : (
+              <iframe
+                title={t('contact.mapTitle')}
+                src="https://www.openstreetmap.org/export/embed.html?bbox=80.24%2C13.06%2C80.30%2C13.10&layer=mapnik&marker=13.0810%2C80.2694"
+                className="h-[calc(100dvh-160px)] w-full border-0"
+                loading="lazy"
+              />
+            )}
           </div>
         </div>
       ) : null}

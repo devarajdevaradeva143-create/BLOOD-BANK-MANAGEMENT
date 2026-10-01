@@ -14,7 +14,8 @@ import {
 } from 'lucide-react'
 import AuthSidePanel from '../components/AuthSidePanel'
 import ForgotPassword from '../components/ForgotPassword'
-import { getRememberedEmail, loginUser, setRememberedEmail } from '../lib/auth'
+import { demoLoginHospital, getRememberedEmail, loginUser, setRememberedEmail } from '../lib/auth'
+import { DEMO_LOGIN_ENABLED } from '../lib/demoLogin'
 import { useLanguage } from '../context/useLanguage'
 
 const HospitalLogin = ({ onLogin, onRegister }) => {
@@ -58,20 +59,8 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
     await doLogin(email, password)
   }
 
-  // TEMP-DEMO-LOGIN: one-click demo hospital login (remove before production)
-  const handleDemoLogin = async () => {
-    if (loading) return
-    setError('')
-    setNotice('')
-    const demoEmail = 'demo.hospital@demo.local'
-    const demoPassword = 'Demo@1234'
-    // Fill visible fields so the user sees the demo credentials,
-    // but pass values directly to doLogin to avoid the stale-state bug
-    // (setEmail + submit in the same tick would still read old state).
-    setEmail(demoEmail)
-    setPassword(demoPassword)
-    await doLogin(demoEmail, demoPassword)
-  }
+  // TEMP-DEMO-LOGIN: frontend-only demo session (no backend). Removal: delete demoLoginHospital + demoLogin.js + 401 guard in api.js + demo box here + login.demoOffline key.
+  const handleDemoLogin = async () => { if (loading) return; setError(''); setNotice(''); try { demoLoginHospital(); toast.success(t('login.toastSuccess')); if (onLogin) { onLogin() } } catch (err) { setError(err.message || t('login.errInvalid')) } }
 
 
   const handleForgotBack = (returnedEmail, successMessage) => {
@@ -262,6 +251,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
               </form>
 
               {/* TEMP-DEMO-LOGIN: demo access box — remove before production */}
+              {DEMO_LOGIN_ENABLED ? (
               <div className="mt-4 rounded-xl border border-dashed border-amber-300 bg-amber-50 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/40">
                 <div className="flex items-center gap-2">
                   <FlaskConical size={16} className="shrink-0 text-amber-600 dark:text-amber-400" />
@@ -275,6 +265,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                 <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
                   {t('login.demoHint')}
                 </p>
+                <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">{t('login.demoOffline')}</p>
                 <button
                   type="button"
                   onClick={handleDemoLogin}
@@ -294,6 +285,7 @@ const HospitalLogin = ({ onLogin, onRegister }) => {
                   )}
                 </button>
               </div>
+              ) : null}
 
               {/* Divider */}
               <div className="my-5 flex items-center gap-3">

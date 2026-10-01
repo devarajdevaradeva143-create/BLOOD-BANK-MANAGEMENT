@@ -148,6 +148,12 @@ export const translations = {
     'map.empty': 'No donors found in your district yet',
     'map.fullscreen': 'Full screen',
     'map.exitFullscreen': 'Exit full screen',
+    'map.provider': 'Map',
+    'map.osm': 'OSM',
+    'map.google': 'Google',
+    'map.googleLoading': 'Loading Google Maps…',
+    'map.keyMissingTitle': 'Google Maps not configured',
+    'map.keyMissing': 'Add VITE_GOOGLE_MAPS_KEY to .env, or switch back to OSM.',
 
     'toast.copied': 'Request ID copied to clipboard',
     'toast.requestSubmitted': 'Blood request submitted successfully',
@@ -437,6 +443,7 @@ export const translations = {
     'login.demoTitle': 'Quick Demo Access',
     'login.demoHospital': 'Try Demo Hospital',
     'login.demoHint': 'Demo account: demo.hospital@demo.local',
+    'login.demoOffline': 'Works without backend — sample screens only.',
 
     'reg.badge': 'Join the network',
     'reg.title': 'Hospital Registration',
@@ -716,6 +723,12 @@ export const translations = {
     'map.empty': 'உங்கள் மாவட்டத்தில் நன்கொடையாளர்கள் இன்னும் இல்லை',
     'map.fullscreen': 'முழு திரை',
     'map.exitFullscreen': 'முழு திரையில் இருந்து வெளியேறு',
+    'map.provider': 'மேப்',
+    'map.osm': 'OSM',
+    'map.google': 'Google',
+    'map.googleLoading': 'Google Maps ஏற்றப்படுகிறது…',
+    'map.keyMissingTitle': 'Google Maps அமைக்கப்படவில்லை',
+    'map.keyMissing': '.env-ல் VITE_GOOGLE_MAPS_KEY சேர்க்கவும், அல்லது OSM-க்கு மாறவும்.',
 
     'toast.copied': 'கோரிக்கை எண் நகலெடுக்கப்பட்டது',
     'toast.requestSubmitted': 'இரத்த கோரிக்கை வெற்றிகரமாகச் சமர்ப்பிக்கப்பட்டது',
@@ -1005,6 +1018,7 @@ export const translations = {
     'login.demoTitle': 'விரைவு டெமோ அணுகல்',
     'login.demoHospital': 'டெமோ மருத்துவமனையை முயற்சிக்கவும்',
     'login.demoHint': 'டெமோ கணக்கு: demo.hospital@demo.local',
+    'login.demoOffline': 'Backend இல்லாமல் வேலை செய்யும் — மாதிரி திரைகள் மட்டும்.',
 
     'reg.badge': 'வலைப்பின்னலில் இணையுங்கள்',
     'reg.title': 'மருத்துவமனை பதிவு',

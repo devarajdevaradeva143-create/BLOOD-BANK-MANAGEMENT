@@ -1,3 +1,5 @@
+import { isDemoSession } from './demoLogin.js'
+
 const _rawBase = import.meta.env.VITE_API_URL || 'http://localhost:5000'
 const API_BASE = String(_rawBase).trim().replace(/\/+$/, '')
 if (!import.meta.env.VITE_API_URL && import.meta.env.PROD) {
@@ -115,12 +117,8 @@ export async function apiFetch(path, options = {}) {
     if (refreshed) {
       return apiFetch(path, { ...options, _retried: true })
     }
-    clearAccessToken()
-    try {
-      localStorage.removeItem('hospitalUser')
-    } catch {
-      /* ignore */
-    }
+    // TEMP-DEMO-LOGIN: keep mock demo session on 401 (remove with demoLogin.js).
+    if (!isDemoSession()) { clearAccessToken(); try { localStorage.removeItem('hospitalUser') } catch { /* ignore */ } }
   }
 
   const data = await parseJson(res)

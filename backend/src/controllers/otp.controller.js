@@ -8,6 +8,7 @@ import {
   isOnCooldown,
   otpExpiryDate,
 } from '../utils/otp.js';
+import { sendSms } from '../services/sms.service.js';
 
 const MAX_ATTEMPTS = 5;
 
@@ -95,6 +96,15 @@ export const requestOtp = asyncHandler(async (req, res) => {
 
   if (config.env !== 'production') {
     console.log(`[OTP:${purpose}] ${target} -> ${code}`);
+  }
+
+  // Real SMS via configured provider (log | supabase). OTP is already
+  // saved above, so a send failure must not lose it — report 502 strictly.
+  try {
+    await sendSms(target, `Life Saver Blood Bank OTP: ${code}. Valid ${config.otp.ttlMinutes} mins.`);
+  } catch (err) {
+    console.error('SMS send failed:', err?.message || err);
+    return res.status(502).json({ message: 'OTP send failed, please retry' });
   }
 
   return res.status(201).json({

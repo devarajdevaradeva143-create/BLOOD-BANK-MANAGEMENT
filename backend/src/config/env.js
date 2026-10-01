@@ -40,6 +40,10 @@ export const config = {
     providerKey: process.env.OTP_PROVIDER_KEY || '',
     ttlMinutes: Number(process.env.OTP_TTL_MINUTES || 5),
     cooldownSeconds: Number(process.env.OTP_COOLDOWN_SECONDS || 60),
+    // Supabase SMS gateway (server-side only — never expose KEY to frontend).
+    // Values come from process.env; .env files are managed by the user.
+    supabaseSmsUrl: process.env.SUPABASE_SMS_URL || '',
+    supabaseSmsKey: process.env.SUPABASE_SMS_KEY || '',
   },
 
   pepper: process.env.PIN_PEPPER || process.env.PEPPER || '',

@@ -2,10 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 import type { ReactNode } from 'react';
 import type { AuthUser } from '../data/types';
 import { fetchMe, login as loginApi, logoutApi } from '../lib/api';
+// TEMP-DEMO-LOGIN: frontend-only demo sessions (no backend).
+import { DEMO_LOGIN_ENABLED, DEMO_DISTRICT_ADMIN, DEMO_SUPER_ADMIN, readDemoSession, writeDemoSession, clearDemoSession } from '../lib/demo';
 
 interface AuthContextValue {
   user: AuthUser | null;
   login: (staffId: string, pin: string, remember: boolean) => Promise<AuthUser | null>;
+  // TEMP-DEMO-LOGIN: frontend-only demo login (no backend).
+  demoLogin: (role: 'DistrictAdmin' | 'SuperAdmin') => AuthUser | null;
   logout: () => Promise<void>;
   updateProfile: (patch: Partial<Pick<AuthUser, 'name' | 'email' | 'phone'>>) => void;
   loading: boolean;
@@ -50,6 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // TEMP-DEMO-LOGIN: restore frontend-only demo session before backend check.
+      const demo = DEMO_LOGIN_ENABLED ? readDemoSession() : null;
+      if (demo) {
+        setUser(demo);
+        setLoading(false);
+        return;
+      }
       // Real backend session only — no offline demo login.
       try {
         const me = await fetchMe();
@@ -84,8 +95,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch {
       /* ignore network errors on logout */
     } finally {
+      // TEMP-DEMO-LOGIN: clear frontend-only demo session.
+      clearDemoSession();
       setUser(null);
     }
+  }, []);
+
+  // TEMP-DEMO-LOGIN: frontend-only demo login (no backend).
+  const demoLogin = useCallback((role: 'DistrictAdmin' | 'SuperAdmin') => {
+    if (!DEMO_LOGIN_ENABLED) return null;
+    const mock = role === 'SuperAdmin' ? DEMO_SUPER_ADMIN : DEMO_DISTRICT_ADMIN;
+    writeDemoSession(role);
+    setUser(mock);
+    return mock;
   }, []);
 
   const updateProfile = useCallback((patch: Partial<Pick<AuthUser, 'name' | 'email' | 'phone'>>) => {
@@ -108,8 +130,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, login, logout, updateProfile, loading }),
-    [user, login, logout, updateProfile, loading],
+    () => ({ user, login, demoLogin, logout, updateProfile, loading }),
+    [user, login, demoLogin, logout, updateProfile, loading],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
