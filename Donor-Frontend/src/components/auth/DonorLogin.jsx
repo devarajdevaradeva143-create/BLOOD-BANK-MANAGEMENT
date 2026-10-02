@@ -162,7 +162,9 @@ export default function DonorLogin() {
             <>
               <p className={s["card-badge"]}>{t("login.portal")}</p>
               <h2>{t("login.title")}</h2>
-              <p className={s["login-subtitle"]}>{t("login.subtitle")}</p>
+              <p className={s["login-subtitle"]}>
+                {t("login.subtitle")}
+              </p>
 
               <form onSubmit={handleSubmit}>
             {/* EMAIL */}

@@ -147,6 +147,47 @@ export default {
   },
   "login.submit": { en: "Login", ta: "உள்நுழைய" },
   "login.submitting": { en: "Logging in...", ta: "உள்நுழைகிறது..." },
+  "login.tab.password": { en: "Password", ta: "கடவுச்சொல்" },
+  "login.tab.otp": { en: "Email OTP", ta: "மின்னஞ்சல் OTP" },
+  "login.otp.subtitle": {
+    en: "Passwordless login — we email you a 6-digit code",
+    ta: "கடவுச்சொல் இல்லா உள்நுழைவு — 6 இலக்க குறியீட்டை மின்னஞ்சலில் அனுப்புவோம்",
+  },
+  "login.otp.send": { en: "Send code", ta: "குறியீடு அனுப்பு" },
+  "login.otp.sending": { en: "Sending...", ta: "அனுப்பப்படுகிறது..." },
+  "login.otp.sent": {
+    en: "Code sent! Check your email — valid for 5 minutes.",
+    ta: "குறியீடு அனுப்பப்பட்டது! மின்னஞ்சலைப் பார்க்கவும் — 5 நிமிடங்கள் செல்லும்.",
+  },
+  "login.otp.codeLabel": { en: "6-digit code", ta: "6 இலக்க குறியீடு" },
+  "login.otp.codePlaceholder": {
+    en: "Enter code from email",
+    ta: "மின்னஞ்சலில் வந்த குறியீட்டை உள்ளிடவும்",
+  },
+  "login.otp.verify": { en: "Verify & Login", ta: "சரிபார்த்து உள்நுழை" },
+  "login.otp.verifying": { en: "Verifying...", ta: "சரிபார்க்கப்படுகிறது..." },
+  "login.otp.resend": { en: "Resend code", ta: "மீண்டும் அனுப்பு" },
+  "login.otp.resendIn": { en: "Resend in", ta: "மீண்டும் அனுப்ப" },
+  "login.otp.error.notConfigured": {
+    en: "Email login is not configured yet. Please use password login.",
+    ta: "மின்னஞ்சல் உள்நுழைவு இன்னும் அமைக்கப்படவில்லை. கடவுச்சொல்லைப் பயன்படுத்தவும்.",
+  },
+  "login.otp.error.cooldown": {
+    en: "Please wait a minute before requesting another code.",
+    ta: "மற்றொரு குறியீட்டைக் கோருவதற்கு முன் ஒரு நிமிடம் காத்திருக்கவும்.",
+  },
+  "login.otp.error.invalid": {
+    en: "Invalid or expired code. Please try again.",
+    ta: "குறியீடு தவறானது அல்லது காலாவதியானது. மீண்டும் முயற்சிக்கவும்.",
+  },
+  "login.otp.error.notFound": {
+    en: "No donor account found with this email. Please register first.",
+    ta: "இந்த மின்னஞ்சலுக்கு இரத்ததானர் கணக்கு இல்லை. முதலில் பதிவு செய்யவும்.",
+  },
+  "login.otp.error.network": {
+    en: "Unable to reach server. Please check your connection.",
+    ta: "சேவையகத்தை அணுக முடியவில்லை. இணைப்பைச் சரிபார்க்கவும்.",
+  },
   "login.or": { en: "OR", ta: "அல்லது" },
   "login.noAccount": {
     en: "Don't have an account?",

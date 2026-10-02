@@ -98,8 +98,8 @@ export const requestOtp = asyncHandler(async (req, res) => {
     console.log(`[OTP:${purpose}] ${target} -> ${code}`);
   }
 
-  // Real SMS via configured provider (log | supabase). OTP is already
-  // saved above, so a send failure must not lose it — report 502 strictly.
+  // SMS is log-only (free). OTP is already saved above,
+  // so a send failure must not lose it — report 502 strictly.
   try {
     await sendSms(target, `Life Saver Blood Bank OTP: ${code}. Valid ${config.otp.ttlMinutes} mins.`);
   } catch (err) {

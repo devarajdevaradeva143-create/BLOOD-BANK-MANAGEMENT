@@ -21,13 +21,26 @@ import {
   resetDonorPassword,
 } from '../controllers/donors.controller.js';
 
-const donorCreateWithOtpSchema = donorCreateSchema.extend({
-  code: z.string().length(6, 'code must be 6 characters'),
+const donorCreateWithVerificationSchema = donorCreateSchema.extend({
+  // Supabase-only (preferred). Legacy clerkToken kept optional for transition.
+  supabaseAccessToken: z.string().min(10).max(10000).optional(),
+  supabaseToken: z.string().min(10).max(10000).optional(),
+  clerkToken: z.string().min(10, 'Verification is required').max(10000).optional(),
+});
+
+const donorResetWithVerificationSchema = donorResetPasswordSchema.extend({
+  supabaseAccessToken: z.string().min(10).max(10000).optional(),
+  supabaseToken: z.string().min(10).max(10000).optional(),
+  code: z.string().length(6, 'code must be 6 characters').optional(),
+}).superRefine((v, ctx) => {
+  if (!v.supabaseAccessToken && !v.supabaseToken && !v.code) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Verification is required', path: ['code'] });
+  }
 });
 
 const router = Router();
 
-router.post('/', validate(donorCreateWithOtpSchema), createDonor);
+router.post('/', validate(donorCreateWithVerificationSchema), createDonor);
 router.get('/map', requireAuth, listDonorMap);
 router.get('/', requireAuth, listDonors);
 // Donor session (real account: email + password -> JWT + refresh cookie).
@@ -45,7 +58,7 @@ router.post(
 router.post(
   '/reset-password',
   authLimiter,
-  validate(donorResetPasswordSchema),
+  validate(donorResetWithVerificationSchema),
   resetDonorPassword
 );
 

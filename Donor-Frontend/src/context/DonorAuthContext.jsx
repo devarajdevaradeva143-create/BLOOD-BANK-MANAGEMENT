@@ -90,7 +90,7 @@ export function DonorAuthProvider({ children }) {
     }
     setIsAuthenticated(false);
     setDonorEmail("");
-    // Best-effort: revoke the refresh session server-side.
+    // Best-effort: revoke the refresh session server-side (Mongo logout authoritative).
     logoutDonor().catch(() => {
       clearAccessToken();
     });

@@ -52,6 +52,9 @@ const FILES = [
   'src/utils/jwt.js',
   'src/utils/otp.js',
   'src/utils/ids.js',
+  // services
+  'src/services/supabase-verify.service.js',
+  'src/services/email.service.js',
   // seed / deploy / env
   'seed.js',
   'Dockerfile',

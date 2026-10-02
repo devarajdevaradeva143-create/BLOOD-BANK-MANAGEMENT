@@ -6,6 +6,9 @@ import { genDonationId } from '../utils/ids.js';
 import { notify } from '../services/notifications.service.js';
 import { logAudit } from '../middleware/audit.js';
 import { verifyOtpInternal } from './otp.controller.js';
+import {
+  verifySupabaseEmail,
+} from '../services/supabase-verify.service.js';
 
 const TRANSITIONS = {
   pending: ['approved', 'cancelled'],
@@ -41,21 +44,36 @@ async function findDonationByIdOrDonationId(id) {
 }
 
 /**
- * POST /api/donations  (public — OTP gate replaces auth)
- * Body: donation fields + { code } (mobile OTP, purpose 'donation').
+ * POST /api/donations  (public — Supabase-only OTP for donor flow, Option A)
+ * Body (preferred): donation fields + { email, supabaseAccessToken }.
+ * Legacy Body: donation fields + { mobile, code } (mobile OTP, purpose 'donation', deprecated).
  */
 export const createDonation = asyncHandler(async (req, res) => {
-  const { mobile, code, otp, otpCode, districtId, ...donationData } = req.body;
+  const { mobile, code, otp, otpCode, email, supabaseAccessToken, supabaseToken, districtId, ...donationData } = req.body;
   const plainCode = code ?? otp ?? otpCode;
+  const supToken = String(supabaseAccessToken || supabaseToken || '').trim();
+  const emailNorm = String(email || donationData.email || '').trim().toLowerCase();
 
-  if (!mobile) {
-    return res.status(400).json({ message: 'mobile is required' });
-  }
-  if (!plainCode) {
-    return res.status(400).json({ message: 'OTP code is required' });
-  }
+  if (supToken) {
+    // Supabase-only path — email ownership proven by Supabase Email OTP.
+    // Mobile stays as plain contact info (model requires it).
+    if (!emailNorm) {
+      return res.status(400).json({ message: 'email is required' });
+    }
+    if (!mobile) {
+      return res.status(400).json({ message: 'mobile is required' });
+    }
+    await verifySupabaseEmail(supToken, emailNorm);
+  } else {
+    if (!mobile) {
+      return res.status(400).json({ message: 'mobile is required' });
+    }
+    if (!plainCode) {
+      return res.status(400).json({ message: 'OTP code is required' });
+    }
 
-  await verifyOtpInternal(String(mobile).trim(), String(plainCode).trim(), 'donation');
+    await verifyOtpInternal(String(mobile).trim(), String(plainCode).trim(), 'donation');
+  }
 
   const doc = await Donation.create({
     ...donationData,

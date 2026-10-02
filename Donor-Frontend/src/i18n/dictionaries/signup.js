@@ -156,12 +156,20 @@ export default {
     ta: "அனுப்பப்பட்ட 6 இலக்கக் குறியீட்டை உள்ளிடவும்",
   },
   "signup.otp.sent": {
-    en: "OTP sent! Check the backend console (dev) for the 6-digit code — valid for 5 minutes.",
-    ta: "OTP அனுப்பப்பட்டது! 6 இலக்க குறியீட்டிற்கு backend console-ஐப் பார்க்கவும் — 5 நிமிடங்கள் செல்லும்.",
+    en: "Code sent via SMS! Enter the 6-digit code — valid for 10 minutes.",
+    ta: "SMS மூலம் குறியீடு அனுப்பப்பட்டது! 6 இலக்கக் குறியீட்டை உள்ளிடவும் — 10 நிமிடங்கள் செல்லும்.",
   },
   "signup.otp.error": {
-    en: "Could not send the OTP. Please try again.",
-    ta: "OTP-ஐ அனுப்ப முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+    en: "Could not verify the code. Please try again.",
+    ta: "குறியீட்டைச் சரிபார்க்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+  },
+  "signup.otp.notConfigured": {
+    en: "Phone verification is not configured yet. Please try again later.",
+    ta: "கைபேசி சரிபார்ப்பு இன்னும் அமைக்கப்படவில்லை. பின்னர் முயற்சிக்கவும்.",
+  },
+  "signup.error.phoneExists": {
+    en: "This mobile number is already registered. Please login instead.",
+    ta: "இந்த கைபேசி எண் ஏற்கனவே பதிவு செய்யப்பட்டுள்ளது. உள்நுழையவும்.",
   },
   "signup.badge": {
     en: "New Donor Registration",

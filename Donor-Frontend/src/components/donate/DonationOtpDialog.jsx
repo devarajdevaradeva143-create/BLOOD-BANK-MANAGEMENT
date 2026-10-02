@@ -5,6 +5,7 @@ import Button from "../ui/Button";
 export default function DonationOtpDialog({
   open,
   mobile,
+  email,
   title = "Verify OTP",
   description = "",
   verifying = false,
@@ -33,7 +34,11 @@ export default function DonationOtpDialog({
     e.preventDefault();
     const trimmed = code.trim();
     if (!/^\d{6}$/.test(trimmed)) {
-      setLocalError("Please enter the 6-digit OTP sent to your mobile.");
+      setLocalError(
+        email
+          ? "Please enter the 6-digit OTP sent to your email."
+          : "Please enter the 6-digit OTP sent to your mobile."
+      );
       return;
     }
     setLocalError("");
@@ -41,6 +46,7 @@ export default function DonationOtpDialog({
   };
 
   const shownError = localError || error;
+  const contactLabel = email ? String(email) : mobile ? `+91 ${mobile}` : "";
 
   return (
     <div
@@ -74,11 +80,11 @@ export default function DonationOtpDialog({
         <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
           {description ? (
             <>
-              {description} +91 {mobile}.
+              {description} {contactLabel}.
             </>
           ) : (
             <>
-              We sent a 6-digit code to +91 {mobile}. Enter it below to confirm
+              We sent a 6-digit code to {contactLabel || "your email"}. Enter it below to confirm
               your donation request.
             </>
           )}

@@ -7,7 +7,7 @@ import Checkbox from "../ui/Checkbox";
 import Button from "../ui/Button";
 import DonationOtpDialog from "./DonationOtpDialog";
 import { useLanguage } from "../../i18n/LanguageContext";
-import { requestDonationOtp } from "../../lib/api";
+import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { submitDonationServer } from "../../services/donationStore";
 import {
   TN_DISTRICTS,
@@ -62,7 +62,7 @@ function isNetworkError(err) {
   );
 }
 
-function buildDonationPayload(formValues, code) {
+function buildDonationPayload(formValues, supabaseAccessToken) {
   const district = formValues.district || "";
   // Backend accepts a single availableDate — primary = first preferred date.
   // Extra dates ride along in preferredDates + notes for staff visibility.
@@ -87,7 +87,8 @@ function buildDonationPayload(formValues, code) {
     preferredDates: dates,
     preferredTime: time,
     notes,
-    code: String(code || "").trim(),
+    // Supabase-only OTP (Option A) — backend verifies the session token.
+    supabaseAccessToken: String(supabaseAccessToken || "").trim(),
     // Backend schema aliases (date/time) + optional display fields kept for
     // compatibility and local offline cache / Confirmation display.
     date: dates.join(", "),
@@ -205,7 +206,15 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
     setFormError("");
     setSubmitting(true);
     try {
-      await requestDonationOtp(form.mobile);
+      // Supabase-only Email OTP — no custom /api/otp SMS path.
+      if (!isSupabaseConfigured()) {
+        setFormError("Email verification is not configured. Please try again later.");
+        return;
+      }
+      const { error } = await supabase.auth.signInWithOtp({
+        email: String(form.email || "").trim().toLowerCase(),
+      });
+      if (error) throw error;
       setOtpError("");
       setOtpOpen(true);
     } catch (err) {
@@ -222,11 +231,24 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
     setOtpError("");
     setOtpVerifying(true);
     try {
+      const { data, error } = await supabase.auth.verifyOtp({
+        email: String(form.email || "").trim().toLowerCase(),
+        token: String(code || "").trim(),
+        type: "email",
+      });
+      if (error) throw error;
+      const token = String(data?.session?.access_token || "").trim();
+      if (!token) throw new Error("Invalid OTP. Please try again.");
       const serverRes = await submitDonationServer(
-        buildDonationPayload(form, code)
+        buildDonationPayload(form, token)
       );
       setOtpOpen(false);
-      // OTP verified server-side — never keep the code in local state.
+      // OTP verified via Supabase — never keep the code or session in local state.
+      try {
+        await supabase.auth.signOut();
+      } catch {
+        // ignore — one-time OTP session
+      }
       onSubmit({ ...form, eligibility, _server: serverRes || {} });
     } catch (err) {
       // Real website: offline must fail visibly, never fake-approved.
@@ -242,7 +264,10 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
     setOtpError("");
     setResending(true);
     try {
-      await requestDonationOtp(form.mobile);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: String(form.email || "").trim().toLowerCase(),
+      });
+      if (error) throw error;
     } catch (err) {
       setOtpError(
         err && err.message ? err.message : "Could not resend OTP. Please try again."
@@ -552,6 +577,7 @@ export default function DonationForm({ onSubmit, onCancel = () => {} }) {
       <DonationOtpDialog
         open={otpOpen}
         mobile={form.mobile}
+        email={form.email}
         verifying={otpVerifying}
         resending={resending}
         error={otpError}

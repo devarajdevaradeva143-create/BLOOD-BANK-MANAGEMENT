@@ -8,6 +8,9 @@ import { ToastProvider } from "./context/ToastContext";
 import { DonorAuthProvider } from "./context/DonorAuthContext";
 import { LanguageProvider } from "./i18n/LanguageContext";
 
+// Supabase-only OTP (Option A) — no Clerk provider needed.
+// Donor register/donation/forgot use Supabase Email OTP via lib/supabase.js.
+
 createRoot(document.getElementById("root")).render(
   <StrictMode>
     <LanguageProvider>

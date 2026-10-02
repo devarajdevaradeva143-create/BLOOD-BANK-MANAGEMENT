@@ -40,10 +40,27 @@ export const config = {
     providerKey: process.env.OTP_PROVIDER_KEY || '',
     ttlMinutes: Number(process.env.OTP_TTL_MINUTES || 5),
     cooldownSeconds: Number(process.env.OTP_COOLDOWN_SECONDS || 60),
-    // Supabase SMS gateway (server-side only — never expose KEY to frontend).
-    // Values come from process.env; .env files are managed by the user.
-    supabaseSmsUrl: process.env.SUPABASE_SMS_URL || '',
-    supabaseSmsKey: process.env.SUPABASE_SMS_KEY || '',
+  },
+
+  email: {
+    user: process.env.EMAIL_USER || '',
+    pass: process.env.EMAIL_PASS || '',
+    from: process.env.EMAIL_FROM || '',
+  },
+
+  // Clerk phone verification for Donor register (server-side only).
+  // Publishable key stays in Donor-Frontend; SECRET never leaves backend.
+  // DEPRECATED for donor flow — Supabase-only OTP now (see supabase below).
+  clerk: {
+    secretKey: process.env.CLERK_SECRET_KEY || '',
+    jwtKey: process.env.CLERK_JWT_KEY || '',
+  },
+
+  // Supabase-only OTP (donor flow, Option A: JWT stays, OTP via Supabase).
+  // Frontend uses publishable key; SERVICE_ROLE never leaves backend.
+  supabase: {
+    url: process.env.SUPABASE_URL || '',
+    serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
   },
 
   pepper: process.env.PIN_PEPPER || process.env.PEPPER || '',

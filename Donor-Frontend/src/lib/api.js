@@ -122,10 +122,22 @@ export function requestOtp(mobile) {
   });
 }
 
-export function registerDonor(payload, code) {
+/**
+ * Register a donor with a Supabase-verified email session (Supabase-only OTP, Option A).
+ * supabaseAccessToken = Supabase session access_token after Email OTP verification.
+ * Backend matches the verified email to payload.email (JWT stays ours).
+ * Legacy: clerkToken still accepted during transition (deprecated).
+ */
+export function registerDonor(payload, supabaseAccessTokenOrClerkToken) {
+  const token = String(supabaseAccessTokenOrClerkToken || "").trim();
+  // Heuristic: Supabase JWTs are long (3 dot-parts); keep key name explicit.
+  const isSupabase = token.split(".").length === 3 || token.length > 200;
   return req("/api/donors", {
     method: "POST",
-    body: { ...payload, code: String(code).trim() },
+    body: {
+      ...payload,
+      ...(isSupabase ? { supabaseAccessToken: token } : { clerkToken: token }),
+    },
   });
 }
 
@@ -154,10 +166,20 @@ export function requestDonationOtp(mobile) {
 }
 
 export function submitDonation(payload) {
-  const { code, ...rest } = payload || {};
+  const { code, otp, otpCode, supabaseAccessToken, supabaseToken, email, ...rest } =
+    payload || {};
+  const supToken = String(supabaseAccessToken || supabaseToken || "").trim();
+  if (supToken) {
+    // Supabase-only path — backend verifies email via service_role.
+    return req("/api/donations", {
+      method: "POST",
+      body: { ...rest, email: String(email || rest.email || "").trim(), supabaseAccessToken: supToken },
+    });
+  }
+  const legacyCode = String(code ?? otp ?? otpCode ?? "").trim();
   return req("/api/donations", {
     method: "POST",
-    body: { ...rest, code: String(code ?? "").trim() },
+    body: { ...rest, code: legacyCode },
   });
 }
 

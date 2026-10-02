@@ -6,8 +6,12 @@ import User from '../models/User.js';
 import Otp from '../models/Otp.js';
 import { genDonorId } from '../utils/ids.js';
 import { logAudit } from '../middleware/audit.js';
-import { verifyOtpInternal } from './otp.controller.js';
 import { comparePassword, hashPassword } from '../utils/passwords.js';
+import { verifyClerkPhone } from '../services/clerk.service.js';
+import {
+  verifySupabaseEmail,
+  isSupabaseConfigured,
+} from '../services/supabase-verify.service.js';
 import {
   signAccess,
   signRefresh,
@@ -22,6 +26,7 @@ import {
   isOnCooldown,
   otpExpiryDate,
 } from '../utils/otp.js';
+import { sendDonorOtpEmail } from '../services/email.service.js';
 
 function donorResetTarget(email) {
   return `donor-email:${String(email || '').trim().toLowerCase()}`;
@@ -79,24 +84,43 @@ function escapeRegex(s) {
 }
 
 /**
- * POST /api/donors  (public — OTP gate replaces auth)
- * Body: donor fields + { code } (mobile OTP, purpose 'donor').
+ * POST /api/donors  (public — Supabase-only OTP, Option A: JWT stays)
+ * Body: donor fields + { supabaseAccessToken } (Supabase Email OTP session).
+ * The Supabase-verified email must match `email`; verified donors get
+ * mobileVerified:false (phone no longer verified — email is the identity).
+ * Legacy: { clerkToken } still accepted during transition (deprecated).
  */
 export const createDonor = asyncHandler(async (req, res) => {
-  const { mobile, code, otp, otpCode, lat, lng, password, ...donorData } = req.body;
-  const plainCode = code ?? otp ?? otpCode;
+  const { mobile, clerkToken, supabaseAccessToken, supabaseToken, lat, lng, password, ...donorData } = req.body;
+  const supToken = String(supabaseAccessToken || supabaseToken || '').trim();
 
   if (!mobile) {
     return res.status(400).json({ message: 'mobile is required' });
-  }
-  if (!plainCode) {
-    return res.status(400).json({ message: 'OTP code is required' });
   }
   if (!password) {
     return res.status(400).json({ message: 'password is required' });
   }
 
-  await verifyOtpInternal(String(mobile).trim(), String(plainCode).trim(), 'donor');
+  const normalizedEmailEarly = String(donorData.email || '').trim().toLowerCase();
+  if (!normalizedEmailEarly) {
+    return res.status(400).json({ message: 'email is required' });
+  }
+
+  if (supToken) {
+    // Supabase-only path (preferred) — email ownership proven by Supabase OTP.
+    await verifySupabaseEmail(supToken, normalizedEmailEarly);
+  } else if (clerkToken) {
+    // DEPRECATED Clerk fallback (transition only) — will be removed.
+    const { phone10 } = await verifyClerkPhone(clerkToken);
+    if (phone10 !== String(mobile).trim()) {
+      return res.status(400).json({ message: 'Verified number does not match mobile' });
+    }
+  } else if (isSupabaseConfigured()) {
+    return res.status(400).json({ message: 'Email verification is required' });
+  } else {
+    // Local dev without Supabase/Clerk — fail closed with clear message.
+    return res.status(503).json({ message: 'Email verification is not configured' });
+  }
 
   const districtRaw = String(donorData.district || '').trim();
   const districtId =
@@ -131,7 +155,9 @@ export const createDonor = asyncHandler(async (req, res) => {
     passwordHash: await hashPassword(password),
     mobile: String(mobile).trim(),
     donorId: genDonorId(),
-    mobileVerified: true,
+    // Supabase-only: email is verified, phone is plain contact (not verified).
+    // Legacy Clerk path verified the phone instead.
+    mobileVerified: supToken ? false : true,
   }).catch((err) => {
     if (err?.code === 11000) {
       const e = new Error('Donor already exists');
@@ -262,6 +288,16 @@ export const forgotDonorPassword = asyncHandler(async (req, res) => {
   }
 
   const donor = await Donor.findOne({ email });
+  // Real Email OTP (free Gmail) — donor irundha mattum anuppu.
+  // Illana generic response (enumeration block). Fail-na log mattum,
+  // response generic-a irukum so account exists-nu theriyadhu.
+  if (donor) {
+    try {
+      await sendDonorOtpEmail(email, code);
+    } catch (err) {
+      console.error('Donor OTP email failed:', err?.message || err);
+    }
+  }
   logAudit(
     null,
     'donor.forgot_password',
@@ -274,43 +310,56 @@ export const forgotDonorPassword = asyncHandler(async (req, res) => {
 
 /**
  * POST /api/donors/reset-password
- * Body: { email, code, newPassword } — verifies OTP server-side, then
- * stores the bcrypt hash. When no Donor exists the OTP still validates
- * (generic flow) but nothing is written; the response stays identical.
+ * Body (Supabase-only, preferred): { email, supabaseAccessToken, newPassword }
+ *   — verifies Supabase Email OTP session server-side, then stores bcrypt hash.
+ * Legacy Body: { email, code, newPassword } — custom Mongo OTP (deprecated).
+ * When no Donor exists nothing is written; response stays generic-safe.
  */
 export const resetDonorPassword = asyncHandler(async (req, res) => {
   const email = String(req.body?.email || '').trim().toLowerCase();
   const code = String(req.body?.code || '').trim();
+  const supToken = String(req.body?.supabaseAccessToken || req.body?.supabaseToken || '').trim();
   const newPassword = String(req.body?.newPassword || '');
-  if (!email || !code || !newPassword) {
+  if (!email || !newPassword) {
     return res
       .status(400)
-      .json({ message: 'email, code and newPassword are required' });
+      .json({ message: 'email and newPassword are required' });
   }
 
-  const targetHash = hashValue(donorResetTarget(email));
-  const doc = await Otp.findOne({
-    targetHash,
-    purpose: 'reset',
-    consumed: false,
-    expiresAt: { $gt: new Date() },
-  }).sort({ createdAt: -1 });
+  if (supToken) {
+    // Supabase-only path — email ownership proven by Supabase OTP.
+    await verifySupabaseEmail(supToken, email);
+  } else {
+    if (!code) {
+      return res
+        .status(400)
+        .json({ message: 'email, code and newPassword are required' });
+    }
 
-  if (!doc) {
-    return res.status(400).json({ message: 'Invalid or expired OTP' });
-  }
-  if ((doc.attempts || 0) >= MAX_RESET_ATTEMPTS) {
-    return res
-      .status(429)
-      .json({ message: 'Too many OTP attempts, request a new code' });
-  }
-  if (!verifyHash(code, doc.codeHash)) {
-    await Otp.updateOne({ _id: doc._id }, { $inc: { attempts: 1 } });
-    return res.status(400).json({ message: 'Invalid or expired OTP' });
-  }
+    const targetHash = hashValue(donorResetTarget(email));
+    const doc = await Otp.findOne({
+      targetHash,
+      purpose: 'reset',
+      consumed: false,
+      expiresAt: { $gt: new Date() },
+    }).sort({ createdAt: -1 });
 
-  doc.consumed = true;
-  await doc.save();
+    if (!doc) {
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+    if ((doc.attempts || 0) >= MAX_RESET_ATTEMPTS) {
+      return res
+        .status(429)
+        .json({ message: 'Too many OTP attempts, request a new code' });
+    }
+    if (!verifyHash(code, doc.codeHash)) {
+      await Otp.updateOne({ _id: doc._id }, { $inc: { attempts: 1 } });
+      return res.status(400).json({ message: 'Invalid or expired OTP' });
+    }
+
+    doc.consumed = true;
+    await doc.save();
+  }
 
   const donor = await Donor.findOne({ email });
   if (donor) {

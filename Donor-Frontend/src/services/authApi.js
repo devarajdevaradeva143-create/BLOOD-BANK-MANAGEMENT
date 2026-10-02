@@ -1,4 +1,5 @@
 import { clearAccessToken } from "../lib/api";
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
 
 const API_BASE =
   import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -90,40 +91,60 @@ export function saveLocalDonor(user) {
   return merged;
 }
 
-// Secure real-time flow: OTP is generated + hashed server-side
-// (Mongo `otps`, purpose 'reset', 5-min TTL, 60s cooldown, 5 attempts).
-// The code is NEVER returned to the client — in dev it is logged by the
-// backend as `[OTP:reset] donor-email:<email> -> <code>`.
+// Supabase-only OTP flow (Option A: JWT stays, OTP via Supabase Email OTP).
+// The code is sent + verified by Supabase Auth — our backend never sees it,
+// it only verifies the resulting session access_token via service_role.
 export async function requestPasswordReset(email) {
   const normalized = String(email || "").trim().toLowerCase();
 
-  // Local UX guard (the backend answer is always generic, no enumeration).
+  // Local UX guard (Supabase always returns generic-ish errors too).
   if (!isLocalAccount(normalized)) return { ok: false, reason: "not_found" };
+  if (!isSupabaseConfigured()) return { ok: false, reason: "network" };
 
-  let res;
   try {
-    res = await postJson("/api/donors/forgot-password", { email: normalized });
+    const { error } = await supabase.auth.signInWithOtp({ email: normalized });
+    if (error) {
+      const msg = String(error.message || "").toLowerCase();
+      if (msg.includes("rate") || msg.includes("too many") || error.status === 429)
+        return { ok: false, reason: "cooldown" };
+      return { ok: false, reason: "network" };
+    }
   } catch {
     return { ok: false, reason: "network" };
   }
-
-  if (res.ok) return { ok: true };
-  if (res.status === 429) return { ok: false, reason: "cooldown" };
-  if (res.status === 400) return { ok: false, reason: "invalid" };
-  return { ok: false, reason: "network" };
+  return { ok: true };
 }
 
-// Verifies OTP server-side and stores the new bcrypt hash — login then
-// checks the backend, so no local password copy exists anymore.
+// Verifies Email OTP with Supabase, then stores the new bcrypt hash via backend.
+// Backend verifies the Supabase session (email match) — login then checks backend JWT.
 export async function resetPassword({ email, otp, newPassword }) {
   const normalized = String(email || "").trim().toLowerCase();
   const code = String(otp || "").trim();
+
+  if (!isSupabaseConfigured()) return { ok: false, reason: "network" };
+
+  let sessionToken = "";
+  try {
+    const { data, error } = await supabase.auth.verifyOtp({
+      email: normalized,
+      token: code,
+      type: "email",
+    });
+    if (error) {
+      if (error.status === 429) return { ok: false, reason: "cooldown" };
+      return { ok: false, reason: "otp_invalid" };
+    }
+    sessionToken = String(data?.session?.access_token || "").trim();
+    if (!sessionToken) return { ok: false, reason: "otp_invalid" };
+  } catch {
+    return { ok: false, reason: "network" };
+  }
 
   let res;
   try {
     res = await postJson("/api/donors/reset-password", {
       email: normalized,
-      code,
+      supabaseAccessToken: sessionToken,
       newPassword,
     });
   } catch {
@@ -137,5 +158,10 @@ export async function resetPassword({ email, otp, newPassword }) {
 
   // Any session opened with the old password is now dead.
   clearAccessToken();
+  try {
+    await supabase.auth.signOut();
+  } catch {
+    // ignore — Supabase OTP session is one-time anyway
+  }
   return { ok: true };
 }
